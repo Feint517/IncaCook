@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:vinted_v2/core/common/styles/spacing_styles.dart';
 import 'package:vinted_v2/core/common/widgets/login_signup/form_divider.dart';
 import 'package:vinted_v2/core/common/widgets/login_signup/social_buttons.dart';
+import 'package:vinted_v2/core/constants/colors.dart';
 import 'package:vinted_v2/core/constants/sizes.dart';
 import 'package:vinted_v2/core/constants/text_strings.dart';
 import 'package:vinted_v2/features/authentication/presentation/widgets/login_form.dart';
@@ -15,6 +16,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.lightBackground,
       body: SingleChildScrollView(
         child: Padding(
           padding: AppSpacingStyle.paddingWithAppBarHeight,

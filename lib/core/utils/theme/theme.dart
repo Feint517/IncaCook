@@ -8,10 +8,10 @@ import 'package:vinted_v2/core/utils/theme/custom_themes/outlined_button_theme.d
 import 'package:vinted_v2/core/utils/theme/custom_themes/text_field_theme.dart';
 import 'package:vinted_v2/core/utils/theme/custom_themes/text_theme.dart';
 
-class TAppTheme {
-  TAppTheme._(); //?private constructor, to make sure that it's not used again and again
+class CustomAppTheme {
+  CustomAppTheme._();
 
-  static ThemeData ligtTheme = ThemeData(
+  static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     fontFamily: 'Poppins',
     brightness: Brightness.light,

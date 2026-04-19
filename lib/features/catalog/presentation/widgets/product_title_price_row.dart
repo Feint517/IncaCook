@@ -1,0 +1,122 @@
+import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
+import 'package:iconsax/iconsax.dart';
+import 'package:vinted_v2/core/constants/colors.dart';
+import 'package:vinted_v2/core/constants/sizes.dart';
+
+class ProductTitlePriceRow extends StatelessWidget {
+  const ProductTitlePriceRow({
+    super.key,
+    required this.titleLeading,
+    required this.titleMid,
+    required this.titleTrailing,
+    required this.shortDescription,
+    required this.price,
+    required this.rating,
+    required this.reviewsCount,
+  });
+
+  final String titleLeading;
+  final String titleMid;
+  final String titleTrailing;
+  final String shortDescription;
+  final String price;
+  final double rating;
+  final int reviewsCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Theme.of(context).textTheme.headlineSmall?.copyWith(
+      fontWeight: FontWeight.w800,
+      color: AppColors.textPrimary,
+      height: 1.15,
+    );
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        //* title + short description
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: '$titleLeading ', style: base),
+                    TextSpan(
+                      text: '$titleMid ',
+                      style: base?.copyWith(
+                        color: AppColors.grey.withValues(alpha: 0.55),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    TextSpan(text: titleTrailing, style: base),
+                  ],
+                ),
+              ),
+              const Gap(AppSizes.xs),
+              Text(
+                shortDescription,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.grey),
+              ),
+            ],
+          ),
+        ),
+        const Gap(AppSizes.sm),
+
+        //* price + rating
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  '\$',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  price,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Iconsax.star1, size: 14, color: Color(0xFFFFC107)),
+                const Gap(4),
+                Text(
+                  rating.toStringAsFixed(1),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const Gap(4),
+                Text(
+                  '($reviewsCount+Review)',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelSmall?.copyWith(color: AppColors.grey),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}

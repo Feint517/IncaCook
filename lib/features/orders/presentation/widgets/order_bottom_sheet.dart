@@ -1,0 +1,115 @@
+import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
+import 'package:vinted_v2/core/constants/colors.dart';
+import 'package:vinted_v2/core/constants/sizes.dart';
+import 'package:vinted_v2/core/constants/text_strings.dart';
+import 'package:vinted_v2/features/orders/domain/order_stage.dart';
+import 'package:vinted_v2/features/orders/presentation/widgets/order_deliverer_pill.dart';
+import 'package:vinted_v2/features/orders/presentation/widgets/order_timeline.dart';
+
+class OrderBottomSheet extends StatelessWidget {
+  const OrderBottomSheet({
+    super.key,
+    required this.stage,
+    required this.etaMinutes,
+    required this.onStageTap,
+    this.onCallTap,
+    this.onChatTap,
+  });
+
+  final OrderStage stage;
+  final int etaMinutes;
+  final ValueChanged<OrderStage> onStageTap;
+  final VoidCallback? onCallTap;
+  final VoidCallback? onChatTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomSafe = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        AppSizes.lg,
+        AppSizes.sm,
+        AppSizes.lg,
+        bottomSafe + AppSizes.md,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          //* drag handle
+          Container(
+            width: 44,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.grey.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const Gap(AppSizes.lg),
+
+          //* title + subtitle (changes per stage)
+          _StageHeader(stage: stage, etaMinutes: etaMinutes),
+          const Gap(AppSizes.lg),
+
+          //* timeline
+          OrderTimeline(currentStage: stage, onStageTap: onStageTap),
+          const Gap(AppSizes.lg),
+
+          //* deliverer pill
+          OrderDelivererPill(onCallTap: onCallTap, onChatTap: onChatTap),
+        ],
+      ),
+    );
+  }
+}
+
+class _StageHeader extends StatelessWidget {
+  const _StageHeader({required this.stage, required this.etaMinutes});
+
+  final OrderStage stage;
+  final int etaMinutes;
+
+  @override
+  Widget build(BuildContext context) {
+    final titleStyle = Theme.of(context).textTheme.headlineSmall?.copyWith(
+      color: AppColors.textPrimary,
+      fontWeight: FontWeight.w800,
+    );
+    final subtitleStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      color: AppColors.grey,
+      height: 1.35,
+    );
+
+    late final String title;
+    late final String subtitle;
+
+    switch (stage) {
+      case OrderStage.prepared:
+        title = AppTexts.trackingPreparingTitle;
+        subtitle = AppTexts.trackingPreparingSubtitle;
+        break;
+      case OrderStage.onTheWay:
+        title =
+            '${AppTexts.trackingArrivingPrefix} $etaMinutes ${AppTexts.trackingMinutesSuffix}';
+        subtitle = AppTexts.trackingArrivingSubtitle;
+        break;
+      case OrderStage.delivered:
+        title = AppTexts.trackingDeliveredTitle;
+        subtitle = AppTexts.trackingDeliveredSubtitle;
+        break;
+    }
+
+    return Column(
+      children: [
+        Text(title, textAlign: TextAlign.center, style: titleStyle),
+        const Gap(AppSizes.xs),
+        Text(subtitle, textAlign: TextAlign.center, style: subtitleStyle),
+      ],
+    );
+  }
+}

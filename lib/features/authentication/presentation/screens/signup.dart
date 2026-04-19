@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
+import 'package:vinted_v2/core/common/widgets/appbar/appbar.dart';
 import 'package:vinted_v2/core/common/widgets/login_signup/form_divider.dart';
 import 'package:vinted_v2/core/common/widgets/login_signup/social_buttons.dart';
+import 'package:vinted_v2/core/constants/colors.dart';
 import 'package:vinted_v2/core/constants/sizes.dart';
 import 'package:vinted_v2/core/constants/text_strings.dart';
+import 'package:vinted_v2/features/authentication/domain/user_type.dart';
 import 'package:vinted_v2/features/authentication/presentation/widgets/signup_form.dart';
 
 class SignupScreen extends StatelessWidget {
-  const SignupScreen({super.key});
+  const SignupScreen({super.key, required this.userType});
+
+  final UserType userType;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
-      //? to make things scrollable on smaller devices
+      backgroundColor: AppColors.lightBackground,
+      appBar: const CustomAppBar(showBackArrow: true),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(AppSizes.defaultSpace),
@@ -29,7 +34,7 @@ class SignupScreen extends StatelessWidget {
               const Gap(AppSizes.spaceBtwSections),
 
               //* form
-              const SignupForm(),
+              SignupForm(userType: userType),
               const Gap(AppSizes.spaceBtwSections),
 
               //* divider

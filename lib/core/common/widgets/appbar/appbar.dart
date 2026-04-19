@@ -1,95 +1,78 @@
-// import 'dart:ui';
-// import 'package:flutter/material.dart';
-// import 'package:iconsax/iconsax.dart' show Iconsax;
-// import 'package:vinted_v2/core/constants/colors.dart';
-// import 'package:vinted_v2/core/constants/sizes.dart';
-// import 'package:vinted_v2/core/utils/device/device_utility.dart';
+import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
+import 'package:get/get.dart';
+import 'package:iconsax/iconsax.dart';
+import 'package:vinted_v2/core/common/widgets/custon_shapes/container/circular_container.dart';
+import 'package:vinted_v2/core/constants/colors.dart';
+import 'package:vinted_v2/core/constants/sizes.dart';
+import 'package:vinted_v2/core/utils/device_utils.dart';
 
-// class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-//   const CustomAppBar({
-//     super.key,
-//     this.title,
-//     this.showBackArrow = false,
-//     this.leadingIcon,
-//     this.actions,
-//     this.leadingOnPressed,
-//   });
+class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const CustomAppBar({
+    super.key,
+    this.title,
+    this.showBackArrow = false,
+    this.actions,
+    this.leadingOnPressed,
+    this.leading,
+  });
 
-//   final Widget? title;
-//   final bool showBackArrow;
-//   final IconData? leadingIcon;
-//   final List<Widget>? actions;
-//   final VoidCallback? leadingOnPressed;
+  final Widget? title;
+  final bool showBackArrow;
+  final Widget? leading;
+  final List<Widget>? actions;
+  final VoidCallback? leadingOnPressed;
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       padding: EdgeInsets.only(
-//         top: DeviceUtils.getStatusBarHeight(),
-//         bottom: 0,
-//         left: AppSizes.md,
-//         right: AppSizes.md,
-//       ),
-//       height: DeviceUtils.getAppBarHeight() + DeviceUtils.getStatusBarHeight(),
-//       child: Row(
-//         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//         crossAxisAlignment: CrossAxisAlignment.center,
-//         children: [
-//           GestureDetector(
-//             onTap: leadingOnPressed ?? () {},
-//             child: ClipRRect(
-//               borderRadius: BorderRadius.circular(100),
-//               child: BackdropFilter(
-//                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-//                 child: Container(
-//                   width: 48,
-//                   height: 48,
-//                   decoration: BoxDecoration(
-//                     shape: BoxShape.circle,
-//                     color: AppColors.secondary.withValues(alpha: 0.3),
-//                     border: Border.all(
-//                       color: AppColors.white.withValues(alpha: 0.2),
-//                       width: 1,
-//                     ),
-//                   ),
-//                   child: const Icon(Iconsax.user, color: AppColors.white),
-//                 ),
-//               ),
-//             ),
-//           ),
-//           if (title != null)
-//             DefaulAppTextstyle(
-//               style: Theme.of(context).textTheme.titleLarge!.copyWith(
-//                 color: AppColors.white,
-//                 fontWeight: FontWeight.bold,
-//               ),
-//               child: Container(
-//                 padding: const EdgeInsets.symmetric(
-//                   horizontal: 12,
-//                   vertical: 4,
-//                 ),
-//                 decoration: BoxDecoration(
-//                   color: AppColors.black.withValues(alpha: 0.3),
-//                   borderRadius: BorderRadius.circular(8),
-//                 ),
-//                 child: title,
-//               ),
-//             )
-//           else
-//             const Spacer(),
-//           IconButton(
-//             onPressed: () {},
-//             icon: const Icon(Iconsax.notification, color: AppColors.white),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        right: 16.0,
+        left: 16,
+        top: DeviceUtils.getStatusBarHeight(),
+      ),
+      child: Stack(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (leading != null && showBackArrow == false)
+                GestureDetector(onTap: leadingOnPressed, child: leading)
+              else if (showBackArrow)
+                GestureDetector(
+                  onTap: () {
+                    Get.back();
+                  },
+                  child: const CustomCircularContainer(
+                    size: AppSizes.lg * 1.8,
+                    backgroundColor: AppColors.accent,
+                    child: Icon(
+                      Iconsax.arrow_left,
+                      color: AppColors.secondary,
+                      size: AppSizes.lg,
+                    ),
+                  ),
+                ),
+              const Spacer(),
+              ...?actions,
+            ],
+          ),
+          if (title != null)
+            Column(
+              children: [
+                const Gap(AppSizes.sm),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [title!],
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
 
-//   @override
-//   Size get preferredSize {
-//     final statusBarHeight = DeviceUtils.getStatusBarHeight();
-//     final appBarContentHeight = AppSizes.appBarHeight;
-//     return Size.fromHeight(statusBarHeight + appBarContentHeight);
-//   }
-// }
+  @override
+  Size get preferredSize => Size.fromHeight(DeviceUtils.getAppBarHeight());
+}

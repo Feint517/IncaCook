@@ -13,6 +13,15 @@ class SignupController extends GetxController {
   final email = TextEditingController();
   final phoneNumber = TextEditingController();
   final password = TextEditingController();
+
+  //* seller-specific
+  final restaurantName = TextEditingController();
+  final restaurantAddress = TextEditingController();
+
+  //* delivery-specific
+  final vehicleType = TextEditingController();
+  final licenseNumber = TextEditingController();
+
   GlobalKey<FormState> signupFormKey =
       GlobalKey<FormState>(); //? form key for form validation
 

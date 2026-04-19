@@ -10,8 +10,6 @@ class OnBoardingNextButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = DeviceUtils.isDarkMode(context);
-
     return Positioned(
       right: AppSizes.defaultSpace,
       bottom: DeviceUtils.getBottomNavigationBarHeight(),
@@ -19,7 +17,7 @@ class OnBoardingNextButton extends StatelessWidget {
         onPressed: () => OnBoardingController.instance.nextPage(),
         style: ElevatedButton.styleFrom(
           shape: const CircleBorder(),
-          backgroundColor: dark ? AppColors.primary : Colors.black,
+          backgroundColor: AppColors.primary,
         ),
         child: const Icon(Iconsax.arrow_right_3),
       ),

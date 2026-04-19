@@ -2,20 +2,47 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:vinted_v2/core/common/widgets/navigation/navigation_menu.dart';
+import 'package:vinted_v2/core/constants/colors.dart';
 import 'package:vinted_v2/core/constants/sizes.dart';
 import 'package:vinted_v2/core/constants/text_strings.dart';
 import 'package:vinted_v2/core/utils/validators/validators.dart';
 import 'package:vinted_v2/features/authentication/controllers/signup_controller.dart';
+import 'package:vinted_v2/features/authentication/domain/user_type.dart';
 import 'package:vinted_v2/features/authentication/presentation/widgets/terms_and_conditions_checkbox.dart';
 
 class SignupForm extends StatelessWidget {
-  const SignupForm({super.key});
+  const SignupForm({super.key, required this.userType});
+
+  final UserType userType;
+
+  static const _inputBorder = OutlineInputBorder(
+    borderRadius: BorderRadius.all(Radius.circular(48.0)),
+    borderSide: BorderSide.none,
+  );
+
+  InputDecoration _decoration({
+    required String label,
+    required IconData icon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      filled: true,
+      fillColor: AppColors.accent,
+      labelText: label,
+      prefixIcon: Icon(icon, color: AppColors.primary),
+      suffixIcon: suffixIcon,
+      border: _inputBorder,
+      enabledBorder: _inputBorder,
+      focusedBorder: _inputBorder,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(SignupController());
     return Form(
-      key: controller.signupFormKey, //? assign the key to the form
+      key: controller.signupFormKey,
       child: Column(
         children: [
           Row(
@@ -26,9 +53,9 @@ class SignupForm extends StatelessWidget {
                   validator: (value) =>
                       CustomValidator.validateEmptyText('First name', value),
                   expands: false,
-                  decoration: const InputDecoration(
-                    labelText: AppTexts.firstName,
-                    prefixIcon: Icon(Iconsax.user),
+                  decoration: _decoration(
+                    label: AppTexts.firstName,
+                    icon: Iconsax.user,
                   ),
                 ),
               ),
@@ -39,9 +66,9 @@ class SignupForm extends StatelessWidget {
                   validator: (value) =>
                       CustomValidator.validateEmptyText('Last name', value),
                   expands: false,
-                  decoration: const InputDecoration(
-                    labelText: AppTexts.lastName,
-                    prefixIcon: Icon(Iconsax.user),
+                  decoration: _decoration(
+                    label: AppTexts.lastName,
+                    icon: Iconsax.user,
                   ),
                 ),
               ),
@@ -55,9 +82,9 @@ class SignupForm extends StatelessWidget {
             validator: (value) =>
                 CustomValidator.validateEmptyText('Username', value),
             expands: false,
-            decoration: const InputDecoration(
-              labelText: AppTexts.username,
-              prefixIcon: Icon(Iconsax.user_edit),
+            decoration: _decoration(
+              label: AppTexts.username,
+              icon: Iconsax.user_edit,
             ),
           ),
           const Gap(AppSizes.spaceBtwInputFields),
@@ -66,9 +93,9 @@ class SignupForm extends StatelessWidget {
           TextFormField(
             controller: controller.email,
             validator: (value) => CustomValidator.validateEmail(value),
-            decoration: const InputDecoration(
-              labelText: AppTexts.email,
-              prefixIcon: Icon(Iconsax.direct),
+            decoration: _decoration(
+              label: AppTexts.email,
+              icon: Iconsax.direct_right,
             ),
           ),
           const Gap(AppSizes.spaceBtwInputFields),
@@ -77,23 +104,72 @@ class SignupForm extends StatelessWidget {
           TextFormField(
             controller: controller.phoneNumber,
             validator: (value) => CustomValidator.validatePhoneNumber(value),
-            decoration: const InputDecoration(
-              labelText: AppTexts.phoneNumber,
-              prefixIcon: Icon(Iconsax.call),
+            decoration: _decoration(
+              label: AppTexts.phoneNumber,
+              icon: Iconsax.call,
             ),
           ),
           const Gap(AppSizes.spaceBtwInputFields),
 
+          //* seller-specific fields
+          if (userType == UserType.seller) ...[
+            TextFormField(
+              controller: controller.restaurantName,
+              validator: (value) =>
+                  CustomValidator.validateEmptyText('Restaurant name', value),
+              decoration: _decoration(
+                label: AppTexts.restaurantName,
+                icon: Iconsax.shop,
+              ),
+            ),
+            const Gap(AppSizes.spaceBtwInputFields),
+            TextFormField(
+              controller: controller.restaurantAddress,
+              validator: (value) => CustomValidator.validateEmptyText(
+                'Restaurant address',
+                value,
+              ),
+              decoration: _decoration(
+                label: AppTexts.restaurantAddress,
+                icon: Iconsax.location,
+              ),
+            ),
+            const Gap(AppSizes.spaceBtwInputFields),
+          ],
+
+          //* delivery-specific fields
+          if (userType == UserType.delivery) ...[
+            TextFormField(
+              controller: controller.vehicleType,
+              validator: (value) =>
+                  CustomValidator.validateEmptyText('Vehicle type', value),
+              decoration: _decoration(
+                label: AppTexts.vehicleType,
+                icon: Iconsax.car,
+              ),
+            ),
+            const Gap(AppSizes.spaceBtwInputFields),
+            TextFormField(
+              controller: controller.licenseNumber,
+              validator: (value) =>
+                  CustomValidator.validateEmptyText('License number', value),
+              decoration: _decoration(
+                label: AppTexts.licenseNumber,
+                icon: Iconsax.card,
+              ),
+            ),
+            const Gap(AppSizes.spaceBtwInputFields),
+          ],
+
           //* password
           Obx(
-            //? wrap it with observer to redraw the widget on change
             () => TextFormField(
               controller: controller.password,
               validator: (value) => CustomValidator.validatePassword(value),
               obscureText: controller.hidePassword.value,
-              decoration: InputDecoration(
-                labelText: AppTexts.password,
-                prefixIcon: const Icon(Iconsax.password_check),
+              decoration: _decoration(
+                label: AppTexts.password,
+                icon: Iconsax.password_check,
                 suffixIcon: IconButton(
                   onPressed: () => controller.hidePassword.value =
                       !controller.hidePassword.value,
@@ -116,7 +192,7 @@ class SignupForm extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () => Get.to(() => const NavigationMenu()),
               child: const Text(AppTexts.createAccount),
             ),
           ),

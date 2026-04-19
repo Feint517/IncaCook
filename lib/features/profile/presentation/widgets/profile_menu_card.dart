@@ -1,0 +1,67 @@
+import 'package:flutter/material.dart';
+import 'package:vinted_v2/core/constants/colors.dart';
+import 'package:vinted_v2/core/constants/sizes.dart';
+import 'package:vinted_v2/features/profile/domain/profile_menu_item.dart';
+import 'package:vinted_v2/features/profile/presentation/widgets/profile_menu_tile.dart';
+
+class ProfileMenuCard extends StatelessWidget {
+  const ProfileMenuCard({super.key, this.title, required this.items});
+
+  final String? title;
+  final List<ProfileMenuItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.sm,
+        vertical: AppSizes.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.accent,
+        borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg * 1.2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.md,
+                AppSizes.sm,
+                AppSizes.md,
+                AppSizes.xs,
+              ),
+              child: Text(
+                title!,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.secondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          for (var i = 0; i < items.length; i++) ...[
+            ProfileMenuTile(item: items[i]),
+            if (i != items.length - 1) const _Separator(),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _Separator extends StatelessWidget {
+  const _Separator();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 60, right: AppSizes.sm),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: AppColors.lightBackground.withValues(alpha: 0.7),
+      ),
+    );
+  }
+}

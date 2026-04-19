@@ -4,20 +4,15 @@ class AppImages {
   static const String googleLogo = "assets/logos/google.png";
   static const String facebookLogo = "assets/logos/facebook.png";
 
-  //* check email
-  // static const String checkEmail = "assets/animations/email_check.png";
-  // static const String checkEmailAnimatedLight =
-  //     "assets/animations/email_capture_light.gif";
-  // static const String checkEmailAnimatedDark =
-  //     "assets/animations/email_capture_dark.gif";
-  // static const String appreciationLight =
-  //     "assets/animations/appreciation_light.gif";
-  // static const String appreciationDark =
-  //     "assets/animations/appreciation_dark.gif";
+  //* home category icons
+  static const String crafts = "assets/images/categories/crafts.png";
+  static const String food = "assets/images/categories/food.png";
+  static const String plants = "assets/images/categories/plant.png";
+  static const String secondHand = "assets/images/categories/reseller.png";
+  static const String wellness = "assets/images/categories/wellness.png";
 
-  //* password reset
-  // static const String forgotPasswordLight =
-  //     "assets/animations/forgot_password_light.gif";
-  // static const String forgotPasswordDark =
-  //     "assets/animations/forgot_password_dark.gif";
+  //* tests
+  static const String tshirt = "assets/test/tshirt.jpg";
+  static const String profilePic = "assets/test/profile_pic.png";
+  static const String foodTest = "assets/test/food_test.jpeg";
 }

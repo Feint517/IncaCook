@@ -14,7 +14,7 @@ class CustomFullscreenLoader {
         canPop: false,
         child: Container(
           color: DeviceUtils.isDarkMode(Get.context!)
-              ? AppColors.dark
+              ? AppColors.darkBackground
               : AppColors.white,
           width: double.infinity,
           height: double.infinity,

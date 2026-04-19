@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:vinted_v2/bindings/general_bindings.dart';
 import 'package:vinted_v2/core/utils/theme/theme.dart';
+import 'package:vinted_v2/core/common/widgets/navigation/navigation_menu.dart';
 import 'package:vinted_v2/features/onboarding/presentation/screens/onboarding.dart';
 
 class App extends StatelessWidget {
@@ -12,11 +13,10 @@ class App extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.system,
-      theme: TAppTheme.ligtTheme,
-      darkTheme: TAppTheme.darkTheme,
-      //? when the app runs, it will automatically initiate all the methods in GeneralBindings
+      theme: CustomAppTheme.lightTheme,
+      darkTheme: CustomAppTheme.darkTheme,
       initialBinding: GeneralBindings(),
-      home: OnBoardingScreen(),
+      home: const NavigationMenu(),
     );
   }
 }

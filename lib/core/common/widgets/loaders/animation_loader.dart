@@ -44,13 +44,13 @@ class CustomAnimationLoader extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: onActionPressed,
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: AppColors.dark,
+                      backgroundColor: AppColors.darkBackground,
                     ),
                     child: Text(
                       actionText!,
                       style: Theme.of(
                         context,
-                      ).textTheme.bodyMedium!.apply(color: AppColors.light),
+                      ).textTheme.bodyMedium!.apply(color: AppColors.textPrimary),
                     ),
                   ),
                 )

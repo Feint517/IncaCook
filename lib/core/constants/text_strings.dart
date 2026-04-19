@@ -1,15 +1,15 @@
 class AppTexts {
   //* on boarding text
-  static const String onBoardingTitle1 = "Find Charging Stations";
-  static const String onBoardingTitle2 = "Rent Batteries Easily";
-  static const String onBoardingTitle3 = "Stay Powered On The Go";
+  static const String onBoardingTitle1 = "Discover Delicious Meals";
+  static const String onBoardingTitle2 = "Order In A Few Taps";
+  static const String onBoardingTitle3 = "Fast Delivery To Your Door";
 
   static const String onBoardingSubTitle1 =
-      "Discover nearby battery charging stations on an interactive map. See real-time availability and find the perfect spot for your needs";
+      "Explore a wide variety of dishes from your favorite local restaurants. Find something new to crave every day";
   static const String onBoardingSubTitle2 =
-      "Rent a battery in seconds with our seamless process. Check availability, pricing, and reserve your battery with just a few taps";
+      "Browse menus, customize your order, and check out in seconds. Enjoy a smooth, hassle-free food ordering experience";
   static const String onBoardingSubTitle3 =
-      "Never run out of power again. Access charging stations 24/7 and keep your devices charged wherever you go";
+      "Track your order in real time and get hot, fresh food delivered straight to your doorstep by our trusted delivery partners";
 
   //* authentication Forum text
   static const String firstName = "First Name";
@@ -34,6 +34,31 @@ class AppTexts {
   static const String loginTitle = "Welcome!";
   static const String loginSubtitle = "jump back to your account";
   static const String signUpTitile = "Let's create your account";
+
+  //* user type selection
+  static const String userTypeHeading = "How will you use the app?";
+  static const String userTypeSubHeading =
+      "Pick the option that fits you best. You can always contact support to change it later";
+
+  static const String userTypeSellerTitle = "I'm a Seller";
+  static const String userTypeSellerSubtitle =
+      "Own a restaurant or shop? List your dishes and reach hungry customers nearby";
+
+  static const String userTypeClientTitle = "I'm a Client";
+  static const String userTypeClientSubtitle =
+      "Crave something delicious? Browse menus and order your favorite meals in a few taps";
+
+  static const String userTypeDeliveryTitle = "I'm a Delivery Partner";
+  static const String userTypeDeliverySubtitle =
+      "Ride with us to deliver fresh food across the city and earn on your own schedule";
+
+  //* seller-specific fields
+  static const String restaurantName = "Restaurant Name";
+  static const String restaurantAddress = "Restaurant Address";
+
+  //* delivery-specific fields
+  static const String vehicleType = "Vehicle Type";
+  static const String licenseNumber = "License Number";
 
   //* forgot password screen
   static const String forgetPasswordTitle = "Forgot your password?";
@@ -62,4 +87,101 @@ class AppTexts {
   //* home appbar title
   static const String homeAppbarTitle = "Good morning";
   static const String homeAppbarSubtitle = "Feeling good today?";
+
+  //* profile screen
+  static const String profileTitle = "Profile";
+  static const String profileSectionSettings = "Settings";
+  static const String profileSectionSupport = "Support";
+  static const String profileEditAccount = "Edit account";
+
+  //* profile menu — account
+  static const String profileRewards = "Rewards";
+  static const String profileOrders = "Your orders";
+  static const String profilePay = "Cravk pay";
+  static const String profileVouchers = "Vouchers";
+  static const String profilePro = "Cravk pro";
+
+  //* profile menu — support
+  static const String profileGetHelp = "Get help";
+  static const String profileAboutApp = "About app";
+  static const String profileLogout = "Log out";
+
+  //* profile placeholders (until real user data is wired)
+  static const String profileSampleName = "Mark John";
+  static const String profileSampleAddress = "745 Lincoln Pl, New York";
+
+  //* product detail
+  static const String productFreeDelivery = "Free Delivery";
+  static const String productPrepTime = "20-25 min";
+  static const String productCalories = "162 Kcal";
+  static const String productQuickChoices = "Try these quick choices";
+  static const String productDescription = "Description";
+  static const String productReadMore = "More...";
+  static const String productOftenOrderedWith = "Often order with";
+  static const String productAddToCart = "Add to Cart";
+  static const String productOrder = "Order";
+  static const String productDelivererRole = "Deliver man";
+
+  //* order tracking
+  static const String trackingPreparingTitle = "Your order is being prepared";
+  static const String trackingPreparingSubtitle =
+      "The chef is putting magic in your meal. Hang tight!";
+  static const String trackingArrivingPrefix = "Arriving in";
+  static const String trackingMinutesSuffix = "minutes";
+  static const String trackingArrivingSubtitle =
+      "Sit back and relax, your food is on the way.";
+  static const String trackingDeliveredTitle = "Your order has arrived";
+  static const String trackingDeliveredSubtitle =
+      "Enjoy your meal! We hope you love it.";
+  static const String trackingStagePrepared = "Prepared";
+  static const String trackingStageOnTheWay = "On the way";
+  static const String trackingStageDelivered = "Delivered";
+  static const String trackingDelivererName = "John Doe";
+  static const String trackingDelivererMeta = "1k+ Deliveries";
+
+  //* cart screen
+  static const String cartTitle = "Cart";
+  static const String cartEmptyTitle = "Your cart is empty";
+  static const String cartEmptySubtitle =
+      "Browse the menu and add tasty picks to your cart";
+  static const String cartPromoHint = "Promo Code";
+  static const String cartApply = "Apply";
+  static const String cartOrderSummary = "Order Summary";
+  static const String cartSubTotal = "Sub Total";
+  static const String cartShipping = "Shipping";
+  static const String cartTotal = "Total";
+  static const String cartContinuePay = "Continue Pay";
+
+  //* cart placeholder items
+  static const String cartItem1Name = "Grilled chicken breast";
+  static const String cartItem1Desc = "Tender grilled chicken breast seasoned.";
+  static const String cartItem2Name = "Crunchy Taco Supreme";
+  static const String cartItem2Desc =
+      "A crispy, flavor-packed Crunchy Taco Supreme loaded with seasoned filling";
+  static const String cartItem3Name = "El Combo";
+  static const String cartItem3Desc =
+      "Regular, Grilled Chicken Quesadilla, Nacho & Cheese, Pepsi Zero";
+  static const String cartItem4Name = "Gusco Griller Meal";
+  static const String cartItem4Desc =
+      "A flavorful Gusco Griller Meal loaded with juicy grilled chicken, fresh toppings.";
+
+  //* product detail sample data (placeholders)
+  static const String productSampleName = "Grilled Chicken Breast";
+  static const String productSampleShortDesc =
+      "Tender grilled chicken breast seasoned.";
+  static const String productSampleLongDesc =
+      "Premium chicken breast marinated and grilled to perfection. Every bite is flavorful, lean, and incredibly tender. Great for anyone who loves healthy comfort food";
+  static const String productSampleDelivererName = "Alice Johnson";
+
+  //* home screen
+  static const String homeCravingPart1 = "What's";
+  static const String homeCravingPart2 = "Your Craving";
+  static const String homeCravingPart3 = "Today?";
+  static const String homeSearchHint = "Search for food or restaurants...";
+  static const String homeCategory = "Category";
+  static const String homeSeeAll = "See all";
+  static const String homeNearbyOffers = "Nearby offers";
+  static const String homeBrandsNearYou = "Big brands near you";
+  static const String homeFreeDelivery = "Free Delivery";
+  static const String homeSpecialOffers = "Special offers";
 }

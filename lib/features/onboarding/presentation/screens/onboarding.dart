@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:vinted_v2/core/constants/animations.dart';
+import 'package:vinted_v2/core/constants/colors.dart';
 import 'package:vinted_v2/core/constants/text_strings.dart';
 import 'package:vinted_v2/features/onboarding/controllers/onboarding_controller.dart';
 import 'package:vinted_v2/features/onboarding/presentation/widgets/onboarding_dot_navigation.dart';
@@ -16,6 +17,7 @@ class OnBoardingScreen extends StatelessWidget {
     final controller = Get.put(OnBoardingController());
 
     return Scaffold(
+      backgroundColor: AppColors.lightBackground,
       body: Stack(
         children: [
           //* horizontal scrollable pages
