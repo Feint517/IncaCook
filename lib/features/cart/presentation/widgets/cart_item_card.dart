@@ -6,8 +6,8 @@ import 'package:vinted_v2/core/constants/sizes.dart';
 import 'package:vinted_v2/core/constants/text_strings.dart';
 import 'package:vinted_v2/features/cart/domain/cart_line_item.dart';
 
-class CartItemCard extends StatelessWidget {
-  const CartItemCard({
+class CartItemCardDismissible extends StatelessWidget {
+  const CartItemCardDismissible({
     super.key,
     required this.item,
     required this.onIncrement,
@@ -27,8 +27,8 @@ class CartItemCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
+        color: AppColors.accent,
+        borderRadius: BorderRadius.circular(20),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -37,50 +37,70 @@ class CartItemCard extends StatelessWidget {
           Opacity(
             opacity: item.isAvailable ? 1.0 : 0.55,
             child: Padding(
-              padding: const EdgeInsets.all(AppSizes.sm + 2),
+              padding: const EdgeInsets.all(AppSizes.sm + 4),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(AppSizes.cardRadiusMd),
-                    child: Image.asset(
-                      item.listing.imagePath,
-                      width: 72,
-                      height: 72,
-                      fit: BoxFit.cover,
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      color: AppColors.lightBackground,
+                      child: Image.asset(
+                        item.listing.imagePath,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
-                  const Gap(AppSizes.sm + 2),
+                  const Gap(AppSizes.md - 4),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           item.listing.name,
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium
+                          style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textPrimary,
                               ),
                         ),
-                        if (item.selectedAddOns.isNotEmpty) ...[
-                          const Gap(2),
-                          Text(
-                            item.selectedAddOns
-                                .map((a) => a.label)
-                                .join(' · '),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: AppColors.grey),
-                          ),
-                        ],
+                        const Gap(4),
+                        Row(
+                          children: [
+                            const Icon(
+                              Iconsax.star1,
+                              size: 14,
+                              color: Color(0xFFF5B800),
+                            ),
+                            const Gap(4),
+                            Text(
+                              '${item.listing.rating.toStringAsFixed(1)}(${item.listing.reviewCount} ${AppTexts.cartReviewSuffix})',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: AppColors.grey,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                            ),
+                          ],
+                        ),
                         const Gap(AppSizes.sm),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
+                            Expanded(
+                              child: Text(
+                                '${item.quantity} X €${item.unitPrice.toStringAsFixed(2)}',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.textPrimary,
+                                    ),
+                              ),
+                            ),
                             _CompactQuantity(
                               quantity: item.quantity,
                               enabled: item.isAvailable,
@@ -89,31 +109,9 @@ class CartItemCard extends StatelessWidget {
                               onIncrement: onIncrement,
                               onDecrement: onDecrement,
                             ),
-                            const Spacer(),
-                            Text(
-                              '€${item.lineTotal.toStringAsFixed(2)}',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.textPrimary,
-                                  ),
-                            ),
                           ],
                         ),
                       ],
-                    ),
-                  ),
-                  const Gap(AppSizes.sm),
-                  GestureDetector(
-                    onTap: onRemove,
-                    behavior: HitTestBehavior.opaque,
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(
-                        Iconsax.trash,
-                        size: 18,
-                        color: AppColors.grey,
-                      ),
                     ),
                   ),
                 ],
@@ -155,14 +153,14 @@ class _CompactQuantity extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _StepButton(
-            icon: Iconsax.minus,
-            enabled: enabled && canDecrement,
-            onTap: onDecrement,
+            icon: Iconsax.add,
+            enabled: enabled && canIncrement,
+            onTap: onIncrement,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Text(
-              '$quantity',
+              quantity.toString().padLeft(2, '0'),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
@@ -170,9 +168,9 @@ class _CompactQuantity extends StatelessWidget {
             ),
           ),
           _StepButton(
-            icon: Iconsax.add,
-            enabled: enabled && canIncrement,
-            onTap: onIncrement,
+            icon: Iconsax.minus,
+            enabled: enabled && canDecrement,
+            onTap: onDecrement,
           ),
         ],
       ),
@@ -199,10 +197,19 @@ class _StepButton extends StatelessWidget {
         width: 24,
         height: 24,
         decoration: BoxDecoration(
-          color: enabled ? AppColors.secondary : AppColors.buttonDisabled,
+          color: AppColors.white,
           shape: BoxShape.circle,
+          border: Border.all(
+            color: enabled
+                ? AppColors.grey.withValues(alpha: 0.35)
+                : AppColors.buttonDisabled,
+          ),
         ),
-        child: Icon(icon, size: 12, color: AppColors.white),
+        child: Icon(
+          icon,
+          size: 12,
+          color: enabled ? AppColors.textPrimary : AppColors.buttonDisabled,
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:vinted_v2/core/common/widgets/misc/price_display.dart';
 import 'package:vinted_v2/core/constants/colors.dart';
 import 'package:vinted_v2/core/constants/sizes.dart';
 
@@ -73,26 +74,7 @@ class ProductTitlePriceRow extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  '\$',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  price,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
+            PriceDisplay(price: double.parse(price)),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [

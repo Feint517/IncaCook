@@ -381,7 +381,10 @@ class AppTexts {
   static const String paymentCardLabelPrefix = "Carte";
   static const String paymentCardExpiryPrefix = "Expire";
   static const String paymentApplePayLabel = "Apple Pay";
+  static const String paymentApplePayHint = "Face ID / Touch ID";
   static const String paymentGooglePayLabel = "Google Pay";
+  static const String paymentGooglePayHint = "Biométrie";
+  static const String paymentPayPalLabel = "PayPal";
   static const String paymentAddCard = "Ajouter une nouvelle carte";
   static const String paymentSecureNote = "Paiement sécurisé via Stripe";
   static const String paymentTermsPrefix = "En confirmant, tu acceptes les";
@@ -462,6 +465,11 @@ class AppTexts {
   static const String cartDifferentSellerTitle = "Changer de vendeur ?";
   static const String cartDifferentSellerConfirm = "Vider et recommencer";
   static const String cartDifferentSellerCancel = "Annuler";
+  static const String cartReviewSuffix = "avis";
+  static const String cartOrderSummaryTitle = "Récapitulatif";
+  static const String cartShippingLabel = "Livraison";
+  static const String cartTotalLabel = "Total";
+  static const double cartShippingFee = 2.50;
 
   static String cartDifferentSellerBody(String sellerName) =>
       "Tu as déjà un panier chez $sellerName. Veux-tu le vider et recommencer ?";

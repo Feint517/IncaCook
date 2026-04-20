@@ -158,8 +158,7 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
                       _AddressCard(
                         address: address,
                         selected: _selectedId == address.id,
-                        onTap: () =>
-                            setState(() => _selectedId = address.id),
+                        onTap: () => setState(() => _selectedId = address.id),
                         onEdit: () {},
                       ),
                       const Gap(AppSizes.sm + 2),
@@ -177,17 +176,17 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
                     controller: _instructionsController,
                     maxLength: _instructionsMaxLength,
                   ),
-                  const _Divider(),
-                  _SectionLabel(text: AppTexts.addressWhenLabel),
-                  const Gap(AppSizes.sm + 2),
-                  _SchedulePicker(
-                    timing: _timing,
-                    scheduledAt: _scheduledAt,
-                    onTimingChanged: (t) => setState(() => _timing = t),
-                    onPickDate: _pickDate,
-                    onPickTime: _pickTime,
-                  ),
-                  const Gap(AppSizes.md),
+                  // const _Divider(),
+                  // _SectionLabel(text: AppTexts.addressWhenLabel),
+                  // const Gap(AppSizes.sm + 2),
+                  // _SchedulePicker(
+                  //   timing: _timing,
+                  //   scheduledAt: _scheduledAt,
+                  //   onTimingChanged: (t) => setState(() => _timing = t),
+                  //   onPickDate: _pickDate,
+                  //   onPickTime: _pickTime,
+                  // ),
+                  // const Gap(AppSizes.md),
                 ],
               ),
             ),
@@ -223,7 +222,10 @@ class _Divider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
-      child: Container(height: 1, color: AppColors.lightGrey),
+      child: Container(
+        height: 1,
+        color: AppColors.secondary.withValues(alpha: 0.12),
+      ),
     );
   }
 }
@@ -310,11 +312,7 @@ class _AddressCard extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               child: const Padding(
                 padding: EdgeInsets.all(4),
-                child: Icon(
-                  Iconsax.edit_2,
-                  size: 16,
-                  color: AppColors.grey,
-                ),
+                child: Icon(Iconsax.edit_2, size: 16, color: AppColors.grey),
               ),
             ),
             AnimatedOpacity(
@@ -420,9 +418,9 @@ class _EmptyAddressState extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(999),
                 ),
-                textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                textStyle: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               child: const Text(AppTexts.addressAddFirst),
             ),
@@ -667,11 +665,7 @@ class _PickerChip extends StatelessWidget {
               ),
             ),
             const Gap(6),
-            const Icon(
-              Iconsax.arrow_down_1,
-              size: 14,
-              color: AppColors.grey,
-            ),
+            const Icon(Iconsax.arrow_down_1, size: 14, color: AppColors.grey),
           ],
         ),
       ),
@@ -690,14 +684,9 @@ class _Footer extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.lightBackground,
-        border: Border(top: BorderSide(color: AppColors.lightGrey)),
+        border: Border(top: BorderSide(color: Colors.transparent)),
       ),
-      padding: const EdgeInsets.fromLTRB(
-        AppSizes.md,
-        AppSizes.md,
-        AppSizes.md,
-        AppSizes.md,
-      ),
+      padding: const EdgeInsets.all(AppSizes.md),
       child: SafeArea(
         top: false,
         child: SizedBox(
@@ -713,9 +702,7 @@ class _Footer extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(999),
               ),
-              textStyle: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              textStyle: Theme.of(context).textTheme.titleMedium,
             ),
             child: const Text(AppTexts.addressContinueCta),
           ),

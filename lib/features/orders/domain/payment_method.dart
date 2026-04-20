@@ -26,6 +26,12 @@ class SavedCardPaymentMethod extends PaymentMethod {
   final String brand;
 }
 
+class PayPalPaymentMethod extends PaymentMethod {
+  const PayPalPaymentMethod({required super.id, required this.maskedEmail});
+
+  final String maskedEmail;
+}
+
 class ApplePayPaymentMethod extends PaymentMethod {
   const ApplePayPaymentMethod({required super.id});
 }

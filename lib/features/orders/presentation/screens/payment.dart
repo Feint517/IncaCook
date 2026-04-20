@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:vinted_v2/core/common/styles/shadows_styles.dart';
 import 'package:vinted_v2/core/common/widgets/appbar/appbar.dart';
 import 'package:vinted_v2/core/constants/colors.dart';
 import 'package:vinted_v2/core/constants/image_strings.dart';
@@ -34,13 +35,20 @@ class PaymentScreen extends StatefulWidget {
 class _PaymentScreenState extends State<PaymentScreen> {
   //? demo payment methods — swap for user account + Stripe lookup later
   static const List<PaymentMethod> _methods = [
-    WalletPaymentMethod(id: 'wallet', balance: 12.00),
     SavedCardPaymentMethod(
-      id: 'card1',
+      id: 'mastercard',
+      last4: '3508',
+      expiry: '02/30',
+      brand: 'Mastercard',
+    ),
+    PayPalPaymentMethod(id: 'paypal', maskedEmail: 'ariyen***@gmaile.com'),
+    SavedCardPaymentMethod(
+      id: 'visa',
       last4: '4242',
       expiry: '08/27',
       brand: 'Visa',
     ),
+    WalletPaymentMethod(id: 'wallet', balance: 12.00),
     ApplePayPaymentMethod(id: 'apple'),
   ];
 
@@ -115,7 +123,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _TotalHeader(amount: widget.totalAmount),
-                  const _Divider(),
+                  // const _Divider(),
+                  const Gap(AppSizes.spaceBtwSections),
                   Text(
                     AppTexts.paymentMethodLabel,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -176,7 +185,7 @@ class _TotalHeader extends StatelessWidget {
         Text(
           '€${amount.toStringAsFixed(2)}',
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
-            color: AppColors.textPrimary,
+            color: AppColors.primary,
             fontWeight: FontWeight.w800,
             height: 1,
           ),
@@ -215,102 +224,112 @@ class _MethodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = selected ? AppColors.primary : AppColors.lightGrey;
-    final iconBg = selected
-        ? AppColors.primary.withValues(alpha: 0.12)
-        : AppColors.lightGrey;
-
-    return Opacity(
-      opacity: enabled ? 1.0 : 0.55,
-      child: GestureDetector(
-        onTap: enabled ? onTap : null,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.all(AppSizes.md - 2),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
-            border: Border.all(color: borderColor, width: selected ? 1.8 : 1),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _MethodLeading(
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.all(AppSizes.md - 2),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.secondary : AppColors.accent,
+          borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
+          boxShadow: [CustomShadowStyle.customCircleShadows()],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _MethodLeading(method: method),
+            const Gap(AppSizes.md - 2),
+            Expanded(
+              child: _MethodInfo(
                 method: method,
-                iconBg: iconBg,
-                selected: selected,
+                totalAmount: totalAmount,
+                onDark: selected,
               ),
-              const Gap(AppSizes.md - 2),
-              Expanded(
-                child: _MethodInfo(
-                  method: method,
-                  totalAmount: totalAmount,
-                  enabled: enabled,
-                ),
-              ),
-              const Gap(AppSizes.sm),
-              AnimatedOpacity(
-                duration: const Duration(milliseconds: 150),
-                opacity: selected ? 1 : 0,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Iconsax.tick_square,
-                    size: 14,
-                    color: AppColors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+            const Gap(AppSizes.sm),
+            _RadioDot(selected: selected, color: AppColors.primary),
+          ],
         ),
       ),
     );
   }
 }
 
-class _MethodLeading extends StatelessWidget {
-  const _MethodLeading({
-    required this.method,
-    required this.iconBg,
-    required this.selected,
-  });
+class _RadioDot extends StatelessWidget {
+  const _RadioDot({required this.selected, required this.color});
 
-  final PaymentMethod method;
-  final Color iconBg;
   final bool selected;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = selected ? AppColors.primary : AppColors.secondary;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: selected ? color : Colors.transparent,
+        border: selected
+            ? null
+            : Border.all(color: AppColors.lightGrey, width: 2),
+      ),
+    );
+  }
+}
 
+class _MethodLeading extends StatelessWidget {
+  const _MethodLeading({required this.method});
+
+  final PaymentMethod method;
+
+  @override
+  Widget build(BuildContext context) {
     Widget child;
     switch (method) {
       case WalletPaymentMethod():
-        child = Icon(Iconsax.wallet_2, size: 20, color: iconColor);
+        child = const Icon(
+          Iconsax.wallet_2,
+          size: 22,
+          color: AppColors.secondary,
+        );
       case SavedCardPaymentMethod(:final brand):
         final asset = _brandAsset(brand);
         child = asset != null
             ? Padding(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(8),
                 child: Image.asset(asset, fit: BoxFit.contain),
               )
-            : Icon(Iconsax.card, size: 20, color: iconColor);
+            : const Icon(Iconsax.card, size: 22, color: AppColors.secondary);
+      case PayPalPaymentMethod():
+        child = Padding(
+          padding: const EdgeInsets.all(8),
+          child: Image.asset(AppImages.paypal, fit: BoxFit.contain),
+        );
       case ApplePayPaymentMethod():
       case GooglePayPaymentMethod():
-        child = Icon(Iconsax.mobile, size: 20, color: iconColor);
+        child = const Icon(
+          Iconsax.mobile,
+          size: 22,
+          color: AppColors.secondary,
+        );
     }
 
     return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppSizes.cardRadiusMd),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.black.withValues(alpha: 0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       clipBehavior: Clip.antiAlias,
       child: Center(child: child),
     );
@@ -332,78 +351,91 @@ class _MethodInfo extends StatelessWidget {
   const _MethodInfo({
     required this.method,
     required this.totalAmount,
-    required this.enabled,
+    required this.onDark,
   });
 
   final PaymentMethod method;
   final double totalAmount;
-  final bool enabled;
+  final bool onDark;
+
+  String _maskedCardNumber(String last4) => '•••• •••• •••• $last4';
+
+  String _label() {
+    switch (method) {
+      case WalletPaymentMethod():
+        return AppTexts.paymentWalletLabel;
+      case SavedCardPaymentMethod(:final brand):
+        return brand;
+      case PayPalPaymentMethod():
+        return AppTexts.paymentPayPalLabel;
+      case ApplePayPaymentMethod():
+        return AppTexts.paymentApplePayLabel;
+      case GooglePayPaymentMethod():
+        return AppTexts.paymentGooglePayLabel;
+    }
+  }
+
+  /// Returns (subtitle text, optional override colour for warnings)
+  (String, Color?) _subtitle() {
+    switch (method) {
+      case WalletPaymentMethod(:final balance):
+        if (balance >= totalAmount) {
+          return (
+            '${AppTexts.paymentWalletBalancePrefix} €${balance.toStringAsFixed(2)}',
+            null,
+          );
+        }
+        final shortfall = totalAmount - balance;
+        return (
+          '${AppTexts.paymentWalletInsufficientPrefix} €${shortfall.toStringAsFixed(2)}',
+          const Color(0xFFE53935),
+        );
+      case SavedCardPaymentMethod(:final last4):
+        return (_maskedCardNumber(last4), null);
+      case PayPalPaymentMethod(:final maskedEmail):
+        return (maskedEmail, null);
+      case ApplePayPaymentMethod():
+        return (AppTexts.paymentApplePayHint, null);
+      case GooglePayPaymentMethod():
+        return (AppTexts.paymentGooglePayHint, null);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle = Theme.of(context).textTheme.titleSmall?.copyWith(
-      fontWeight: FontWeight.w800,
-      color: AppColors.textPrimary,
-    );
-    final subStyle = Theme.of(
-      context,
-    ).textTheme.bodySmall?.copyWith(color: AppColors.grey);
+    final (subtitle, subtitleOverride) = _subtitle();
+    final titleColor = onDark ? AppColors.white : AppColors.textPrimary;
+    final subColor =
+        subtitleOverride ??
+        (onDark ? AppColors.white.withValues(alpha: 0.6) : AppColors.grey);
 
-    switch (method) {
-      case WalletPaymentMethod(:final balance):
-        final covers = balance >= totalAmount;
-        final afterPayment = balance - totalAmount;
-        final shortfall = totalAmount - balance;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(AppTexts.paymentWalletLabel, style: titleStyle),
-            const Gap(2),
-            Text(
-              '${AppTexts.paymentWalletBalancePrefix} €${balance.toStringAsFixed(2)}',
-              style: subStyle,
-            ),
-            const Gap(2),
-            if (covers)
-              Text(
-                '${AppTexts.paymentWalletAfterPrefix} €${afterPayment.toStringAsFixed(2)}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF2E7D32),
-                  fontWeight: FontWeight.w700,
-                ),
-              )
-            else
-              Text(
-                '${AppTexts.paymentWalletInsufficientPrefix} €${shortfall.toStringAsFixed(2)}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFFE53935),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-          ],
-        );
-      case SavedCardPaymentMethod(:final last4, :final expiry):
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '${AppTexts.paymentCardLabelPrefix} •••• $last4',
-              style: titleStyle,
-            ),
-            const Gap(2),
-            Text(
-              '${AppTexts.paymentCardExpiryPrefix} $expiry',
-              style: subStyle,
-            ),
-          ],
-        );
-      case ApplePayPaymentMethod():
-        return Text(AppTexts.paymentApplePayLabel, style: titleStyle);
-      case GooglePayPaymentMethod():
-        return Text(AppTexts.paymentGooglePayLabel, style: titleStyle);
-    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          _label(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: titleColor,
+            letterSpacing: 0.1,
+          ),
+        ),
+        const Gap(4),
+        Text(
+          subtitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: subColor,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -504,14 +536,9 @@ class _PayFooter extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.lightBackground,
-        border: Border(top: BorderSide(color: AppColors.lightGrey)),
+        border: Border(top: BorderSide(color: Colors.transparent)),
       ),
-      padding: const EdgeInsets.fromLTRB(
-        AppSizes.md,
-        AppSizes.md,
-        AppSizes.md,
-        AppSizes.md,
-      ),
+      padding: const EdgeInsets.all(AppSizes.md),
       child: SafeArea(
         top: false,
         child: SizedBox(

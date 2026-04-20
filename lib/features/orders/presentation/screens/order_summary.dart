@@ -48,8 +48,8 @@ class OrderSummaryScreen extends StatelessWidget {
         title: Text(
           AppTexts.checkoutTitle,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -57,12 +57,7 @@ class OrderSummaryScreen extends StatelessWidget {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                AppSizes.md,
-                AppSizes.md,
-                AppSizes.md,
-                AppSizes.md,
-              ),
+              padding: const EdgeInsets.all(AppSizes.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -105,13 +100,9 @@ class OrderSummaryScreen extends StatelessWidget {
                     deliveryFee: selection.fee,
                     serviceFee: _serviceFee,
                     total: total,
-                    isDelivery:
-                        selection.choice == FulfillmentChoice.delivery,
+                    isDelivery: selection.choice == FulfillmentChoice.delivery,
                   ),
                   const Gap(AppSizes.lg),
-
-                  const _ImpactBanner(),
-                  const Gap(AppSizes.md),
                 ],
               ),
             ),
@@ -310,9 +301,7 @@ class _FulfillmentSummary extends StatelessWidget {
       lines.add(deliveryDetails!.address.line1);
       final timing = deliveryDetails!.timing;
       if (timing == DeliveryTiming.asap) {
-        lines.add(
-          AppTexts.checkoutDeliveryAsapEta(options.deliveryMaxMinutes),
-        );
+        lines.add(AppTexts.checkoutDeliveryAsapEta(options.deliveryMaxMinutes));
       } else if (deliveryDetails!.scheduledAt != null) {
         lines.add(_formatScheduledLabel(deliveryDetails!.scheduledAt!));
       }
@@ -389,7 +378,7 @@ class _SellerSummary extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.md - 2),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.accent,
         borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
       ),
       child: Column(
@@ -462,31 +451,31 @@ class _SellerSummary extends StatelessWidget {
               ),
             ],
           ),
-          if (note.isNotEmpty) ...[
-            const Gap(AppSizes.md),
-            Text(
-              '${AppTexts.checkoutNoteForPrefix} ${seller.sellerName} :',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.grey),
-            ),
-            const Gap(4),
-            Text(
-              '"$note"',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textPrimary,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-          const Gap(AppSizes.sm),
-          Align(
-            alignment: Alignment.centerRight,
-            child: _EditPillLink(
-              label: AppTexts.checkoutEdit,
-              onTap: () => Get.back<void>(),
-            ),
-          ),
+          // if (note.isNotEmpty) ...[
+          //   const Gap(AppSizes.md),
+          //   Text(
+          //     '${AppTexts.checkoutNoteForPrefix} ${seller.sellerName} :',
+          //     style: Theme.of(
+          //       context,
+          //     ).textTheme.bodySmall?.copyWith(color: AppColors.grey),
+          //   ),
+          //   const Gap(4),
+          //   Text(
+          //     '"$note"',
+          //     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          //       color: AppColors.textPrimary,
+          //       fontStyle: FontStyle.italic,
+          //     ),
+          //   ),
+          // ],
+          // const Gap(AppSizes.sm),
+          // Align(
+          //   alignment: Alignment.centerRight,
+          //   child: _EditPillLink(
+          //     label: AppTexts.checkoutEdit,
+          //     onTap: () => Get.back<void>(),
+          //   ),
+          // ),
         ],
       ),
     );
@@ -545,7 +534,7 @@ class _PriceBreakdown extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSizes.md - 2),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.accent,
         borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
       ),
       child: Column(
@@ -553,10 +542,7 @@ class _PriceBreakdown extends StatelessWidget {
           _Row(label: AppTexts.checkoutPriceArticles, amount: subtotal),
           if (isDelivery) ...[
             const Gap(AppSizes.sm),
-            _Row(
-              label: AppTexts.checkoutPriceDelivery,
-              amount: deliveryFee,
-            ),
+            _Row(label: AppTexts.checkoutPriceDelivery, amount: deliveryFee),
           ],
           const Gap(AppSizes.sm),
           _Row(label: AppTexts.checkoutPriceService, amount: serviceFee),
