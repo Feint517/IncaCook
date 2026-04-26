@@ -11,7 +11,7 @@ class TermsAndConditionsCheckBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = SignupController.instance;
-    final dark = DeviceUtils.isDarkMode(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         SizedBox(

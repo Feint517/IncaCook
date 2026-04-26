@@ -8,15 +8,15 @@ class CustomElevatedButtonTheme {
   static final lightElevatedButtonTheme = ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
       elevation: 0,
-      foregroundColor: Colors.white, //?text color of the button
+      foregroundColor: AppColors.white, //?text color of the button
       backgroundColor: AppColors.primary,
-      disabledForegroundColor: Colors.grey,
-      disabledBackgroundColor: Colors.grey,
+      disabledForegroundColor: AppColors.grey,
+      disabledBackgroundColor: AppColors.grey,
       side: const BorderSide(color: AppColors.primary),
       padding: const EdgeInsets.symmetric(vertical: 18),
       textStyle: const TextStyle(
         fontSize: 16,
-        color: Colors.white,
+        color: AppColors.white,
         fontWeight: FontWeight.w600,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
@@ -27,15 +27,15 @@ class CustomElevatedButtonTheme {
   static final darkElevatedButtonTheme = ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
       elevation: 0,
-      foregroundColor: Colors.white,
+      foregroundColor: AppColors.white,
       backgroundColor: AppColors.primary,
-      disabledForegroundColor: Colors.grey,
-      disabledBackgroundColor: Colors.grey,
+      disabledForegroundColor: AppColors.grey,
+      disabledBackgroundColor: AppColors.grey,
       side: const BorderSide(color: AppColors.primary),
       padding: const EdgeInsets.symmetric(vertical: 18),
       textStyle: const TextStyle(
         fontSize: 16,
-        color: Colors.white,
+        color: AppColors.white,
         fontWeight: FontWeight.w600,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),

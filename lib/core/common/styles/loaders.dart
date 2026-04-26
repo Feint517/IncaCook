@@ -19,7 +19,7 @@ class CustomLoaders {
           margin: const EdgeInsets.symmetric(horizontal: 30),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(30),
-            color: DeviceUtils.isDarkMode(Get.context!)
+            color: Theme.of(Get.context!).brightness == Brightness.dark
                 ? AppColors.darkGrey.withValues(alpha: 0.9)
                 : AppColors.grey.withValues(alpha: 0.9),
           ),

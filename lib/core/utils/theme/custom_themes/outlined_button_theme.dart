@@ -7,11 +7,11 @@ class CustomOutlinedButtonTheme {
   static final lightOutlinedButtonTheme = OutlinedButtonThemeData(
     style: OutlinedButton.styleFrom(
       elevation: 0,
-      foregroundColor: Colors.black,
+      foregroundColor: AppColors.black,
       side: const BorderSide(color: AppColors.primary),
       textStyle: const TextStyle(
         fontSize: 16,
-        color: Colors.black,
+        color: AppColors.black,
         fontWeight: FontWeight.w600,
       ),
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
@@ -22,11 +22,11 @@ class CustomOutlinedButtonTheme {
   static final darkOutlinedButtonTheme = OutlinedButtonThemeData(
     style: OutlinedButton.styleFrom(
       elevation: 0,
-      foregroundColor: Colors.white,
+      foregroundColor: AppColors.white,
       side: const BorderSide(color: AppColors.primary),
       textStyle: const TextStyle(
         fontSize: 16,
-        color: Colors.white,
+        color: AppColors.white,
         fontWeight: FontWeight.w600,
       ),
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),

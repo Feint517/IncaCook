@@ -11,7 +11,7 @@ class UserTypeDotNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = UserTypeSelectionController.instance;
-    final dark = DeviceUtils.isDarkMode(context);
+    final dark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSizes.spaceBtwItems),

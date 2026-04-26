@@ -3,7 +3,6 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:homemade/core/common/widgets/loaders/animation_loader.dart';
 import 'package:homemade/core/constants/colors.dart';
-import 'package:homemade/core/utils/device/device_utility.dart';
 
 class CustomFullscreenLoader {
   static void openLoadingDialog(String text, String animation) {
@@ -13,7 +12,7 @@ class CustomFullscreenLoader {
       builder: (_) => PopScope(
         canPop: false,
         child: Container(
-          color: DeviceUtils.isDarkMode(Get.context!)
+          color: Theme.of(Get.context!).brightness == Brightness.dark
               ? AppColors.darkBackground
               : AppColors.white,
           width: double.infinity,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:homemade/app.dart';
+import 'package:homemade/core/controllers/theme_controller.dart';
 
 void main() async {
   //* add widgets bindings
@@ -10,6 +12,8 @@ void main() async {
 
   //* init local storage
   await GetStorage.init();
+
+  Get.put(ThemeController());
 
   //* await native splash
   //FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
