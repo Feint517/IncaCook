@@ -6,11 +6,33 @@ import 'package:homemade/core/constants/animations.dart';
 import 'package:homemade/core/constants/sizes.dart';
 import 'package:homemade/core/constants/text_strings.dart';
 import 'package:homemade/features/authentication/controllers/user_type_selection_controller.dart';
-import 'package:homemade/features/authentication/presentation/widgets/user_type_dot_navigation.dart';
-import 'package:homemade/features/authentication/presentation/widgets/user_type_page.dart';
+import 'package:homemade/features/authentication/domain/user_type.dart';
+import 'package:homemade/features/authentication/presentation/widgets/user_type_card.dart';
 
 class UserTypeSelectionScreen extends StatelessWidget {
   const UserTypeSelectionScreen({super.key});
+
+  static const Map<
+    UserType,
+    ({String animation, String title, String subtitle})
+  >
+  _options = {
+    UserType.client: (
+      animation: AppAnimations.userTypeClient,
+      title: AppTexts.userTypeClientTitle,
+      subtitle: AppTexts.userTypeClientSubtitle,
+    ),
+    UserType.seller: (
+      animation: AppAnimations.userTypeSeller,
+      title: AppTexts.userTypeSellerTitle,
+      subtitle: AppTexts.userTypeSellerSubtitle,
+    ),
+    UserType.delivery: (
+      animation: AppAnimations.userTypeDelivery,
+      title: AppTexts.userTypeDeliveryTitle,
+      subtitle: AppTexts.userTypeDeliverySubtitle,
+    ),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -34,56 +56,88 @@ class UserTypeSelectionScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const Gap(AppSizes.sm),
-                  Text(
-                    AppTexts.userTypeSubHeading,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    textAlign: TextAlign.center,
-                  ),
+                  // Text(
+                  //   AppTexts.userTypeSubHeading,
+                  //   style: Theme.of(context).textTheme.bodyMedium,
+                  //   textAlign: TextAlign.center,
+                  // ),
                 ],
               ),
             ),
 
-            //* horizontal pages
+            const Gap(AppSizes.spaceBtwSections),
+
+            //* user type grid
             Expanded(
-              child: PageView(
-                controller: controller.pageController,
-                onPageChanged: controller.updatePageIndicator,
-                children: const [
-                  UserTypePage(
-                    animation: AppAnimations.userTypeClient,
-                    title: AppTexts.userTypeClientTitle,
-                    subtitle: AppTexts.userTypeClientSubtitle,
-                  ),
-                  UserTypePage(
-                    animation: AppAnimations.userTypeSeller,
-                    title: AppTexts.userTypeSellerTitle,
-                    subtitle: AppTexts.userTypeSellerSubtitle,
-                  ),
-                  UserTypePage(
-                    animation: AppAnimations.userTypeDelivery,
-                    title: AppTexts.userTypeDeliveryTitle,
-                    subtitle: AppTexts.userTypeDeliverySubtitle,
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.defaultSpace,
+                ),
+                child: Obx(() {
+                  final selected = controller.selectedUserType.value;
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      const gap = AppSizes.gridViewSpacing;
+                      const aspect = 0.78;
+                      final cardWidth = (constraints.maxWidth - gap) / 2;
+                      final cardHeight = cardWidth / aspect;
+
+                      return SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: gap,
+                          runSpacing: gap,
+                          children: [
+                            for (final type
+                                in UserTypeSelectionController.userTypes)
+                              SizedBox(
+                                width: cardWidth,
+                                height: cardHeight,
+                                child: UserTypeCard(
+                                  animation: _options[type]!.animation,
+                                  title: _options[type]!.title,
+                                  selected: selected == type,
+                                  onTap: () => controller.selectUserType(type),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                }),
               ),
             ),
 
-            //* dot indicator
-            const UserTypeDotNavigation(),
+            const Gap(AppSizes.spaceBtwItems),
+            Obx(
+              () => controller.selectedUserType.value == null
+                  ? const SizedBox.shrink()
+                  : Text(
+                      _options[controller.selectedUserType.value]!.subtitle,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+            ),
 
             //* continue button
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSizes.defaultSpace,
-                AppSizes.sm,
+                AppSizes.spaceBtwItems,
                 AppSizes.defaultSpace,
                 AppSizes.defaultSpace,
               ),
               child: SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: controller.continueToSignup,
-                  child: const Text(AppTexts.sayContinue),
+                child: Obx(
+                  () => ElevatedButton(
+                    onPressed: controller.selectedUserType.value == null
+                        ? null
+                        : controller.continueToSignup,
+                    child: const Text(AppTexts.sayContinue),
+                  ),
                 ),
               ),
             ),

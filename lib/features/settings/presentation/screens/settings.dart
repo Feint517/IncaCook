@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:gap/gap.dart';
+import 'package:homemade/features/settings/domain/setting_menu_item.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:homemade/core/common/widgets/appbar/appbar.dart';
 import 'package:homemade/core/common/widgets/custon_shapes/container/circular_container.dart';
@@ -8,11 +9,10 @@ import 'package:homemade/core/constants/sizes.dart';
 import 'package:homemade/core/constants/text_strings.dart';
 import 'package:homemade/core/widgets/decor/decor_blob.dart';
 import 'package:homemade/features/orders/domain/saved_address.dart';
-import 'package:homemade/features/profile/domain/Setting_menu_item.dart';
-import 'package:homemade/features/profile/presentation/widgets/profile_menu_card.dart';
-import 'package:homemade/features/profile/presentation/widgets/profile_user_card.dart';
-import 'package:homemade/features/profile/presentation/widgets/appearance_sheet.dart';
-import 'package:homemade/features/profile/presentation/widgets/saved_addresses_sheet.dart';
+import 'package:homemade/features/settings/presentation/widgets/profile_menu_card.dart';
+import 'package:homemade/features/settings/presentation/widgets/profile_user_card.dart';
+import 'package:homemade/features/settings/presentation/widgets/appearance_sheet.dart';
+import 'package:homemade/features/settings/presentation/widgets/saved_addresses_sheet.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});

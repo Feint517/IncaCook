@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:homemade/features/authentication/domain/user_type.dart';
 import 'package:homemade/features/authentication/presentation/screens/signup.dart';
@@ -6,31 +5,19 @@ import 'package:homemade/features/authentication/presentation/screens/signup.dar
 class UserTypeSelectionController extends GetxController {
   static UserTypeSelectionController get instance => Get.find();
 
-  final pageController = PageController();
-  final Rx<int> currentPageIndex = 0.obs;
+  final Rxn<UserType> selectedUserType = Rxn<UserType>();
 
-  static const List<UserType> pageOrder = [
+  static const List<UserType> userTypes = [
     UserType.client,
     UserType.seller,
     UserType.delivery,
   ];
 
-  UserType get selectedUserType => pageOrder[currentPageIndex.value];
-
-  void updatePageIndicator(int index) => currentPageIndex.value = index;
-
-  void dotNavigationClick(int index) {
-    currentPageIndex.value = index;
-    pageController.jumpToPage(index);
-  }
+  void selectUserType(UserType type) => selectedUserType.value = type;
 
   void continueToSignup() {
-    Get.to(() => SignupScreen(userType: selectedUserType));
-  }
-
-  @override
-  void onClose() {
-    pageController.dispose();
-    super.onClose();
+    final type = selectedUserType.value;
+    if (type == null) return;
+    Get.to(() => SignupScreen(userType: type));
   }
 }
