@@ -4,7 +4,7 @@ import 'package:homemade/core/constants/image_strings.dart';
 import 'package:homemade/core/constants/sizes.dart';
 import 'package:homemade/core/constants/text_strings.dart';
 import 'package:homemade/core/enums/food_enums.dart';
-import 'package:homemade/features/home/presentation/widget/category_pill.dart';
+import 'package:homemade/features/client/presentation/widget/category_pill.dart';
 
 class CategoriesRow extends StatelessWidget {
   const CategoriesRow({
@@ -38,7 +38,9 @@ class CategoriesRow extends StatelessWidget {
     ];
 
     return SizedBox(
-      height: 48,
+      //* scales with system text size so pill content never clips when the
+      //* user has accessibility text scale > 1.0×.
+      height: MediaQuery.textScalerOf(context).scale(48),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),

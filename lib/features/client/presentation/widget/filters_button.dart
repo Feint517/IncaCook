@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:homemade/core/utils/theme/theme_extensions.dart';
 import 'package:homemade/core/widgets/effects/frosted_surface.dart';
-import 'package:homemade/features/home/controllers/filter_controller.dart';
-import 'package:homemade/features/home/presentation/widget/filters_sheet.dart';
+import 'package:homemade/features/client/controllers/filter_controller.dart';
+import 'package:homemade/features/client/presentation/widget/filters_sheet.dart';
 
 class FiltersButton extends StatelessWidget {
   const FiltersButton({super.key});

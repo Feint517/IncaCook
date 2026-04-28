@@ -1,7 +1,7 @@
 name: homemade
 description: "A new Flutter project."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.11.5
@@ -29,14 +29,13 @@ dependencies:
   json_annotation: ^4.11.0
   freezed: ^3.2.5
   logger: ^2.7.0
-  flutter_screenutil: ^5.9.3
   visibility_detector: ^0.4.0+2
   intl: ^0.20.2
   vector_math: ^2.2.0
   cached_network_image: ^3.4.1
   smooth_page_indicator: ^2.0.1
-  flutter_map: ^8.3.0
-  latlong2: ^0.9.1
+  mapbox_maps_flutter: ^2.22.0
+  geolocator: ^13.0.0
   rename_app: ^1.6.5
   flutter_launcher_icons: ^0.14.4
 

@@ -19,7 +19,7 @@ import 'package:homemade/features/catalog/presentation/widgets/product_title_pri
 import 'package:homemade/features/catalog/presentation/widgets/seller_card.dart';
 import 'package:homemade/core/enums/food_enums.dart';
 import 'package:homemade/core/enums/order_enums.dart';
-import 'package:homemade/features/home/domain/food_listing.dart';
+import 'package:homemade/features/client/domain/food_listing.dart';
 import 'package:homemade/features/orders/domain/order_customization.dart';
 import 'package:homemade/features/orders/domain/product_add_on.dart';
 import 'package:homemade/features/orders/presentation/widgets/order_customize_sheet.dart';

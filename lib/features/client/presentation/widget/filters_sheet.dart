@@ -7,7 +7,7 @@ import 'package:homemade/core/enums/food_enums.dart';
 import 'package:homemade/core/utils/popups/blurred_modal_sheet.dart';
 import 'package:homemade/core/utils/theme/theme_extensions.dart';
 import 'package:homemade/core/widgets/misc/drag_handle.dart';
-import 'package:homemade/features/home/controllers/filter_controller.dart';
+import 'package:homemade/features/client/controllers/filter_controller.dart';
 
 class FiltersSheet extends StatelessWidget {
   const FiltersSheet({super.key});

@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:homemade/features/cart/domain/cart_item.dart';
-import 'package:homemade/features/home/domain/food_listing.dart';
+import 'package:homemade/features/client/domain/food_listing.dart';
 import 'package:homemade/features/orders/domain/order_customization.dart';
 
 /// Session-scoped cart state. Items are locked to a single seller: trying to

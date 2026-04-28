@@ -4,10 +4,12 @@ import 'package:iconsax/iconsax.dart';
 import 'package:homemade/core/common/widgets/appbar/appbar.dart';
 import 'package:homemade/core/constants/sizes.dart';
 import 'package:homemade/core/constants/text_strings.dart';
+import 'package:homemade/core/utils/popups/blurred_modal_sheet.dart';
 import 'package:homemade/core/utils/theme/theme_extensions.dart';
 import 'package:homemade/features/orders/domain/delivery_details.dart';
 import 'package:homemade/features/orders/domain/saved_address.dart';
 import 'package:homemade/features/orders/presentation/widgets/address_card.dart';
+import 'package:homemade/features/orders/presentation/widgets/address_search_sheet.dart';
 
 class DeliveryAddressScreen extends StatefulWidget {
   const DeliveryAddressScreen({super.key});
@@ -18,20 +20,20 @@ class DeliveryAddressScreen extends StatefulWidget {
 
 class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
   //? demo addresses — swap for CRUD against a real source later
-  static const List<SavedAddress> _addresses = [
-    SavedAddress(
+  final List<SavedAddress> _addresses = [
+    const SavedAddress(
       id: 'home',
       type: SavedAddressType.home,
       line1: '12 Rue de la Roquette',
       line2: '75011 Paris',
     ),
-    SavedAddress(
+    const SavedAddress(
       id: 'work',
       type: SavedAddressType.work,
       line1: '45 Avenue de la République',
       line2: '75011 Paris',
     ),
-    SavedAddress(
+    const SavedAddress(
       id: 'family',
       type: SavedAddressType.other,
       customLabel: 'Famille',
@@ -41,7 +43,9 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
     ),
   ];
 
-  String? _selectedId = _addresses.isNotEmpty ? _addresses.first.id : null;
+  late String? _selectedId = _addresses.isNotEmpty
+      ? _addresses.first.id
+      : null;
   final TextEditingController _instructionsController = TextEditingController();
   final DeliveryTiming _timing = DeliveryTiming.asap;
   final DateTime _scheduledAt = DateTime.now().add(
@@ -68,6 +72,19 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
     if (sel == null) return false;
     if (!sel.inRange) return false;
     return true;
+  }
+
+  Future<void> _openAddressSearch() async {
+    final picked = await showBlurredModalBottomSheet<SavedAddress>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const AddressSearchSheet(),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _addresses.add(picked);
+      _selectedId = picked.id;
+    });
   }
 
   void _confirm() {
@@ -124,7 +141,7 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
                               ),
                         ),
                         IconButton(
-                          onPressed: () {},
+                          onPressed: _openAddressSearch,
                           icon: const Icon(Icons.add),
                         ),
                       ],

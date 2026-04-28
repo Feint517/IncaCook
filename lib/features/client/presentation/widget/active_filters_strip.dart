@@ -3,7 +3,7 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:homemade/core/constants/sizes.dart';
 import 'package:homemade/core/constants/text_strings.dart';
-import 'package:homemade/features/home/controllers/filter_controller.dart';
+import 'package:homemade/features/client/controllers/filter_controller.dart';
 
 class ActiveFiltersStrip extends StatelessWidget {
   const ActiveFiltersStrip({super.key});

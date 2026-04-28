@@ -1,6 +1,6 @@
-import 'package:latlong2/latlong.dart';
 import 'package:homemade/core/enums/food_enums.dart';
-import 'package:homemade/features/home/domain/food_listing.dart';
+import 'package:homemade/core/services/map/models/map_route.dart';
+import 'package:homemade/features/client/domain/food_listing.dart';
 import 'package:homemade/features/seller/domain/seller_rating.dart';
 
 class SellerProfile {
@@ -65,7 +65,7 @@ class SellerProfile {
   final Map<int, double> ratingDistribution;
   final List<SentimentTag> sentimentTags;
   final List<SellerReview> recentReviews;
-  final LatLng location;
+  final MapPoint location;
   final double deliveryRadiusKm;
   final String availabilitySchedule;
   final String? promoText;

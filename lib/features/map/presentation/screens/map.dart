@@ -1,16 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:homemade/core/common/widgets/appbar/appbar.dart';
 import 'package:homemade/core/constants/image_strings.dart';
 import 'package:homemade/core/constants/sizes.dart';
 import 'package:homemade/core/enums/food_enums.dart';
 import 'package:homemade/core/enums/order_enums.dart';
 import 'package:homemade/core/utils/popups/blurred_modal_sheet.dart';
+import 'package:homemade/core/utils/theme/theme_extensions.dart';
 import 'package:homemade/features/catalog/presentation/screens/product_detail.dart';
-import 'package:homemade/features/home/domain/food_listing.dart';
+import 'package:homemade/features/client/domain/food_listing.dart';
 import 'package:homemade/features/map/presentation/widget/center_on_user_button.dart';
 import 'package:homemade/features/map/presentation/widget/map_filter_bar.dart';
 import 'package:homemade/features/map/presentation/widget/map_listing_sheet.dart';
@@ -25,11 +27,23 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   //? static demo user location — swap for geolocator lookup later
-  static final LatLng _userLocation = LatLng(48.8566, 2.3522);
+  static final Position _userLocation = Position(2.3522, 48.8566);
   static const double _initialZoom = 14;
   static const Duration _urgentWindow = Duration(hours: 2, minutes: 30);
 
-  final MapController _mapController = MapController();
+  static const double _pinWidth = 84;
+  static const double _pinHeight = 72;
+  static const double _userDotSize = 44;
+
+  MapboxMap? _map;
+
+  //* Bumped on every projection request; results from stale generations are
+  //* dropped to avoid jitter when many camera events fire in quick succession.
+  int _projectionGen = 0;
+
+  //* Latest projected screen positions, indexed against [_visibleEntries].
+  List<ScreenCoordinate?> _pinScreenCoords = const [];
+  ScreenCoordinate? _userScreenCoord;
 
   MapFilter _selectedFilter = MapFilter.all;
   String? _selectedId;
@@ -40,7 +54,7 @@ class _MapScreenState extends State<MapScreen> {
     final now = DateTime.now();
     return [
       _MapEntry(
-        position: LatLng(48.8580, 2.3530),
+        position: Position(2.3530, 48.8580),
         listing: FoodListing(
           id: 'm1',
           name: 'Tajine poulet olives',
@@ -59,7 +73,7 @@ class _MapScreenState extends State<MapScreen> {
         ),
       ),
       _MapEntry(
-        position: LatLng(48.8610, 2.3490),
+        position: Position(2.3490, 48.8610),
         listing: FoodListing(
           id: 'm2',
           name: 'Lasagne maison',
@@ -77,7 +91,7 @@ class _MapScreenState extends State<MapScreen> {
         ),
       ),
       _MapEntry(
-        position: LatLng(48.8550, 2.3580),
+        position: Position(2.3580, 48.8550),
         listing: FoodListing(
           id: 'm3',
           name: 'Buddha bowl végé',
@@ -96,7 +110,7 @@ class _MapScreenState extends State<MapScreen> {
         ),
       ),
       _MapEntry(
-        position: LatLng(48.8540, 2.3460),
+        position: Position(2.3460, 48.8540),
         listing: FoodListing(
           id: 'm4',
           name: 'Soupe de légumes',
@@ -113,7 +127,7 @@ class _MapScreenState extends State<MapScreen> {
         ),
       ),
       _MapEntry(
-        position: LatLng(48.8620, 2.3560),
+        position: Position(2.3560, 48.8620),
         listing: FoodListing(
           id: 'm5',
           name: 'Quiche lorraine',
@@ -130,7 +144,7 @@ class _MapScreenState extends State<MapScreen> {
         ),
       ),
       _MapEntry(
-        position: LatLng(48.8595, 2.3440),
+        position: Position(2.3440, 48.8595),
         listing: FoodListing(
           id: 'm6',
           name: 'Tarte aux pommes',
@@ -170,13 +184,61 @@ class _MapScreenState extends State<MapScreen> {
   List<_MapEntry> get _visibleEntries =>
       _entries.where(_matchesFilter).toList();
 
+  Future<void> _onMapCreated(MapboxMap map) async {
+    _map = map;
+    await map.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+    await map.setBounds(CameraBoundsOptions(minZoom: 11.0, maxZoom: 18.0));
+    await _refreshScreenCoords();
+  }
+
+  void _onCameraChange(CameraChangedEventData _) {
+    unawaited(_refreshScreenCoords());
+  }
+
+  Future<void> _refreshScreenCoords() async {
+    if (_map == null) return;
+    final gen = ++_projectionGen;
+    final visible = _visibleEntries;
+
+    final pinPoints = visible
+        .map((e) => Point(coordinates: e.position))
+        .toList();
+    final userPoint = Point(coordinates: _userLocation);
+
+    final results = await _map!.pixelsForCoordinates([
+      ...pinPoints,
+      userPoint,
+    ]);
+    if (gen != _projectionGen || !mounted) return;
+
+    setState(() {
+      _pinScreenCoords = results.sublist(0, visible.length);
+      _userScreenCoord = results.last;
+    });
+  }
+
   void _centerOnUser() {
-    _mapController.move(_userLocation, _initialZoom);
+    _map?.flyTo(
+      CameraOptions(
+        center: Point(coordinates: _userLocation),
+        zoom: _initialZoom,
+      ),
+      MapAnimationOptions(duration: 600),
+    );
+  }
+
+  Future<void> _flyToCurrentZoom(Position pos) async {
+    if (_map == null) return;
+    final state = await _map!.getCameraState();
+    await _map!.flyTo(
+      CameraOptions(center: Point(coordinates: pos), zoom: state.zoom),
+      MapAnimationOptions(duration: 400),
+    );
   }
 
   void _openSheetFor(_MapEntry entry) {
     setState(() => _selectedId = entry.listing.id);
-    _mapController.move(entry.position, _mapController.camera.zoom);
+    unawaited(_flyToCurrentZoom(entry.position));
 
     showBlurredModalBottomSheet<void>(
       context: context,
@@ -193,64 +255,58 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final visible = _visibleEntries;
+    final styleUri = context.isDark ? MapboxStyles.DARK : MapboxStyles.LIGHT;
 
     return Scaffold(
       body: Stack(
         children: [
           //* full-screen map
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _userLocation,
-              initialZoom: _initialZoom,
-              minZoom: 11,
-              maxZoom: 18,
-              interactionOptions: const InteractionOptions(
-                flags:
-                    InteractiveFlag.pinchZoom |
-                    InteractiveFlag.drag |
-                    InteractiveFlag.doubleTapZoom,
-              ),
+          MapWidget(
+            styleUri: styleUri,
+            cameraOptions: CameraOptions(
+              center: Point(coordinates: _userLocation),
+              zoom: _initialZoom,
             ),
-            children: [
-              TileLayer(
-                //? swap to a Mapbox styleUrl once a token is wired
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.vinted.v2',
-                maxZoom: 19,
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: _userLocation,
-                    width: 44,
-                    height: 44,
-                    child: const _UserLocationDot(),
-                  ),
-                  for (final entry in visible)
-                    Marker(
-                      point: entry.position,
-                      width: 84,
-                      height: 72,
-                      alignment: Alignment.topCenter,
-                      child: MapPin(
-                        listing: entry.listing,
-                        isSelected: _selectedId == entry.listing.id,
-                        isUrgent: _isUrgent(entry),
-                        onTap: () => _openSheetFor(entry),
-                      ),
-                    ),
-                ],
-              ),
-            ],
+            onMapCreated: _onMapCreated,
+            onCameraChangeListener: _onCameraChange,
           ),
+
+          //* user location dot — anchored at the projected screen point
+          if (_userScreenCoord != null)
+            Positioned(
+              left: _userScreenCoord!.x - _userDotSize / 2,
+              top: _userScreenCoord!.y - _userDotSize / 2,
+              width: _userDotSize,
+              height: _userDotSize,
+              child: const _UserLocationDot(),
+            ),
+
+          //* food pins — top-center anchored at the projected screen point,
+          //* matching the original flutter_map alignment.
+          for (var i = 0; i < visible.length; i++)
+            if (i < _pinScreenCoords.length && _pinScreenCoords[i] != null)
+              Positioned(
+                left: _pinScreenCoords[i]!.x - _pinWidth / 2,
+                top: _pinScreenCoords[i]!.y,
+                width: _pinWidth,
+                height: _pinHeight,
+                child: MapPin(
+                  listing: visible[i].listing,
+                  isSelected: _selectedId == visible[i].listing.id,
+                  isUrgent: _isUrgent(visible[i]),
+                  onTap: () => _openSheetFor(visible[i]),
+                ),
+              ),
 
           //* top: back button + filter bar
           Align(
             alignment: Alignment.topCenter,
             child: _TopSection(
               selectedFilter: _selectedFilter,
-              onFilterSelect: (f) => setState(() => _selectedFilter = f),
+              onFilterSelect: (f) {
+                setState(() => _selectedFilter = f);
+                unawaited(_refreshScreenCoords());
+              },
             ),
           ),
 
@@ -291,7 +347,7 @@ class _TopSection extends StatelessWidget {
 class _MapEntry {
   const _MapEntry({required this.position, required this.listing});
 
-  final LatLng position;
+  final Position position;
   final FoodListing listing;
 }
 

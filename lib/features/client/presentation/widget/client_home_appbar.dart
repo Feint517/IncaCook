@@ -9,8 +9,8 @@ import 'package:homemade/features/cart/presentation/screens/my_cart.dart';
 import 'package:homemade/features/cart/presentation/widgets/cart_badge.dart';
 import 'package:homemade/features/map/presentation/screens/map.dart';
 
-class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const HomeAppBar({super.key});
+class ClientHomeAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const ClientHomeAppBar({super.key});
 
   @override
   Widget build(BuildContext context) {

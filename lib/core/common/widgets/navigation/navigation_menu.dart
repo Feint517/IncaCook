@@ -1,32 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
-import 'package:iconsax/iconsax.dart';
+import 'package:homemade/core/common/widgets/navigation/nav_tab.dart';
 import 'package:homemade/core/common/widgets/navigation/navigation_controller.dart';
 import 'package:homemade/core/constants/sizes.dart';
 import 'package:homemade/core/utils/device/device_utility.dart';
 import 'package:homemade/core/utils/theme/theme_extensions.dart';
 import 'package:homemade/core/widgets/effects/frosted_surface.dart';
 
-class NavigationMenu extends GetView<NavigationController> {
-  const NavigationMenu({super.key});
+class NavigationMenu extends StatelessWidget {
+  const NavigationMenu({super.key, required this.tabs});
 
-  static const List<_NavItemSpec> _items = [
-    _NavItemSpec(icon: Iconsax.home, label: 'Accueil'),
-    // _NavItemSpec(icon: Iconsax.add, label: 'Publier'),
-    _NavItemSpec(icon: Iconsax.message, label: 'Messages'),
-    _NavItemSpec(icon: Iconsax.user, label: 'Profil'),
-  ];
+  final List<NavTab> tabs;
 
   @override
   Widget build(BuildContext context) {
-    Get.put(NavigationController());
+    final controller = Get.put(NavigationController(tabs: tabs));
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
-      body: Obx(() => controller.screens[controller.selectedIndex.value]),
+      body: Obx(() => controller.tabs[controller.selectedIndex.value].screen),
       bottomNavigationBar: Padding(
         padding: EdgeInsets.fromLTRB(
           AppSizes.md,
@@ -53,11 +48,11 @@ class NavigationMenu extends GetView<NavigationController> {
               padding: const EdgeInsets.all(6),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(_items.length, (index) {
-                  final spec = _items[index];
+                children: List.generate(controller.tabs.length, (index) {
+                  final tab = controller.tabs[index];
                   return _NavItem(
-                    icon: spec.icon,
-                    label: spec.label,
+                    icon: tab.icon,
+                    label: tab.label,
                     selected: controller.selectedIndex.value == index,
                     onTap: () => controller.selectedIndex.value = index,
                   );
@@ -69,13 +64,6 @@ class NavigationMenu extends GetView<NavigationController> {
       ),
     );
   }
-}
-
-class _NavItemSpec {
-  const _NavItemSpec({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
 }
 
 class _NavItem extends StatelessWidget {

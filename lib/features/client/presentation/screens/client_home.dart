@@ -6,30 +6,30 @@ import 'package:homemade/core/constants/sizes.dart';
 import 'package:homemade/core/constants/text_strings.dart';
 import 'package:homemade/core/utils/device/device_utility.dart';
 import 'package:homemade/features/catalog/presentation/screens/product_detail.dart';
-import 'package:homemade/features/home/controllers/filter_controller.dart';
-import 'package:homemade/features/home/data/home_mock_data.dart';
-import 'package:homemade/features/home/domain/food_listing.dart';
-import 'package:homemade/features/home/domain/kitchen.dart';
-import 'package:homemade/features/home/presentation/widget/active_filters_strip.dart';
-import 'package:homemade/features/home/presentation/widget/categories_row.dart';
-import 'package:homemade/features/home/presentation/widget/filters_button.dart';
-import 'package:homemade/features/home/presentation/widget/food_listing_card.dart';
+import 'package:homemade/features/client/controllers/filter_controller.dart';
+import 'package:homemade/features/client/data/client_mock_data.dart';
+import 'package:homemade/features/client/domain/food_listing.dart';
+import 'package:homemade/features/client/domain/kitchen.dart';
+import 'package:homemade/features/client/presentation/widget/active_filters_strip.dart';
+import 'package:homemade/features/client/presentation/widget/categories_row.dart';
+import 'package:homemade/features/client/presentation/widget/filters_button.dart';
+import 'package:homemade/features/client/presentation/widget/food_listing_card.dart';
 import 'package:homemade/core/widgets/decor/decor_blob.dart';
-import 'package:homemade/features/home/presentation/widget/home_appbar.dart';
-import 'package:homemade/features/home/presentation/widget/home_search_bar.dart';
-import 'package:homemade/features/home/presentation/widget/home_section.dart';
-import 'package:homemade/features/home/presentation/widget/kitchen_card.dart';
+import 'package:homemade/features/client/presentation/widget/client_home_appbar.dart';
+import 'package:homemade/features/client/presentation/widget/client_home_search_bar.dart';
+import 'package:homemade/features/client/presentation/widget/client_home_section.dart';
+import 'package:homemade/features/client/presentation/widget/kitchen_card.dart';
 import 'package:homemade/features/seller/data/seller_mock_data.dart';
 import 'package:homemade/features/seller/presentation/screens/seller_profile2.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class ClientHomeScreen extends StatefulWidget {
+  const ClientHomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<ClientHomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<ClientHomeScreen> {
   final FilterController _filter = FilterController.instance;
   final ScrollController _scrollController = ScrollController();
 
@@ -39,10 +39,10 @@ class _HomeScreenState extends State<HomeScreen> {
   //* changes scroll direction.
   bool _appBarVisible = true;
 
-  late final List<FoodListing> _listings = HomeMockData.listings();
-  late final List<Kitchen> _kitchens = HomeMockData.kitchens();
+  late final List<FoodListing> _listings = ClientMockData.listings();
+  late final List<Kitchen> _kitchens = ClientMockData.kitchens();
   late final List<FoodListing> _solidarityListings =
-      HomeMockData.solidarityListings();
+      ClientMockData.solidarityListings();
 
   @override
   void initState() {
@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
           offset: _appBarVisible ? Offset.zero : const Offset(0, -1),
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
-          child: const HomeAppBar(),
+          child: const ClientHomeAppBar(),
         ),
       ),
       body: Stack(
@@ -117,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
                   child: Row(
                     children: const [
-                      Expanded(child: HomeSearchBar()),
+                      Expanded(child: ClientHomeSearchBar()),
                       Gap(AppSizes.sm),
                       FiltersButton(),
                     ],
@@ -141,8 +141,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 //* food near you (filtered)
                 Obx(() {
                   final filtered = _filter.apply(_listings);
-                  return HomeSection(
-                    title: AppTexts.homeSectionFoodNearYou,
+                  return ClientHomeSection(
+                    title: AppTexts.clientHomeSectionFoodNearYou,
                     height: DeviceUtils.getScreenHeight(context) * 0.4,
                     children: [
                       for (final listing in filtered)
@@ -157,8 +157,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 // const Gap(AppSizes.spaceBtwItems),
 
                 //* kitchens near you
-                HomeSection(
-                  title: AppTexts.homeSectionKitchensNearYou,
+                ClientHomeSection(
+                  title: AppTexts.clientHomeSectionKitchensNearYou,
                   height: DeviceUtils.getScreenHeight(context) * 0.4,
                   children: [
                     for (final kitchen in _kitchens)
@@ -176,8 +176,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 //* partages solidaires (free food)
-                HomeSection(
-                  title: AppTexts.homeSectionSolidarity,
+                ClientHomeSection(
+                  title: AppTexts.clientHomeSectionSolidarity,
                   height: DeviceUtils.getScreenHeight(context) * 0.4,
                   children: [
                     for (final listing in _solidarityListings)

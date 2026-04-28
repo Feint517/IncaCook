@@ -8,6 +8,7 @@ import 'package:homemade/core/constants/text_strings.dart';
 import 'package:homemade/core/utils/validators/validators.dart';
 import 'package:homemade/features/authentication/controllers/signup_controller.dart';
 import 'package:homemade/features/authentication/domain/user_type.dart';
+import 'package:homemade/features/client/presentation/client_nav_tabs.dart';
 
 class SignupForm extends StatelessWidget {
   const SignupForm({super.key, required this.userType});
@@ -202,7 +203,8 @@ class SignupForm extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => Get.to(() => const NavigationMenu()),
+              onPressed: () =>
+                  Get.to(() => const NavigationMenu(tabs: kClientNavTabs)),
               child: const Text(AppTexts.createAccount),
             ),
           ),

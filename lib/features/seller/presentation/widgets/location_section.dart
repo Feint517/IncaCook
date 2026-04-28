@@ -1,13 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:gap/gap.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:homemade/core/common/styles/shadows_styles.dart';
 import 'package:homemade/core/constants/sizes.dart';
 import 'package:homemade/core/constants/text_strings.dart';
+import 'package:homemade/core/services/map/models/map_route.dart';
+import 'package:homemade/core/utils/theme/theme_extensions.dart';
 
-class LocationSection extends StatelessWidget {
+class LocationSection extends StatefulWidget {
   const LocationSection({
     super.key,
     required this.neighborhood,
@@ -15,10 +18,46 @@ class LocationSection extends StatelessWidget {
   });
 
   final String neighborhood;
-  final LatLng profileLocation;
+  final MapPoint profileLocation;
+
+  @override
+  State<LocationSection> createState() => _LocationSectionState();
+}
+
+class _LocationSectionState extends State<LocationSection> {
+  static const double _pinSize = 32;
+
+  MapboxMap? _map;
+  ScreenCoordinate? _pinScreenCoord;
+
+  Future<void> _onMapCreated(MapboxMap map) async {
+    _map = map;
+    await map.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
+    await _projectPin();
+  }
+
+  void _onCameraChange(CameraChangedEventData _) {
+    unawaited(_projectPin());
+  }
+
+  Future<void> _projectPin() async {
+    if (_map == null) return;
+    final coord = await _map!.pixelForCoordinate(
+      Point(
+        coordinates: Position(
+          widget.profileLocation.lng,
+          widget.profileLocation.lat,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _pinScreenCoord = coord);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final styleUri = context.isDark ? MapboxStyles.DARK : MapboxStyles.LIGHT;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -35,35 +74,34 @@ class LocationSection extends StatelessWidget {
               boxShadow: [CustomShadowStyle.customCircleShadows()],
             ),
             child: IgnorePointer(
-              child: FlutterMap(
-                options: MapOptions(
-                  initialCenter: profileLocation,
-                  initialZoom: 14,
-                  interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.none,
-                  ),
-                ),
+              child: Stack(
                 children: [
-                  TileLayer(
-                    urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.vinted.v2',
-                    maxZoom: 19,
-                  ),
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: profileLocation,
-                        width: 40,
-                        height: 40,
-                        child: const Icon(
-                          Iconsax.location5,
-                          size: 32,
-                          color: Color(0xFFE8823B),
+                  MapWidget(
+                    styleUri: styleUri,
+                    cameraOptions: CameraOptions(
+                      center: Point(
+                        coordinates: Position(
+                          widget.profileLocation.lng,
+                          widget.profileLocation.lat,
                         ),
                       ),
-                    ],
+                      zoom: 14.0,
+                    ),
+                    onMapCreated: _onMapCreated,
+                    onCameraChangeListener: _onCameraChange,
                   ),
+                  if (_pinScreenCoord != null)
+                    Positioned(
+                      left: _pinScreenCoord!.x - _pinSize / 2,
+                      top: _pinScreenCoord!.y - _pinSize,
+                      width: _pinSize,
+                      height: _pinSize,
+                      child: const Icon(
+                        Iconsax.location5,
+                        size: _pinSize,
+                        color: Color(0xFFE8823B),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -79,7 +117,7 @@ class LocationSection extends StatelessWidget {
             ),
             const Gap(6),
             Text(
-              neighborhood,
+              widget.neighborhood,
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),

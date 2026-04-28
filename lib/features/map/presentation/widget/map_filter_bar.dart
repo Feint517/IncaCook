@@ -4,7 +4,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:homemade/core/constants/image_strings.dart';
 import 'package:homemade/core/constants/sizes.dart';
 import 'package:homemade/core/constants/text_strings.dart';
-import 'package:homemade/features/home/presentation/widget/category_pill.dart';
+import 'package:homemade/features/client/presentation/widget/category_pill.dart';
 
 enum MapFilter { all, social, traiteur, restaurant, urgent }
 

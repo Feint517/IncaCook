@@ -96,8 +96,8 @@ class AppTexts {
       "Félicitations, vous pouvez maintenant commencer à explorer l'application";
 
   //* home appbar title
-  static const String homeAppbarTitle = "Bonjour";
-  static const String homeAppbarSubtitle =
+  static const String clientHomeAppbarTitle = "Bonjour";
+  static const String clientHomeAppbarSubtitle =
       "Vous vous sentez bien aujourd'hui ?";
 
   //* profile screen
@@ -252,7 +252,7 @@ class AppTexts {
   static const String productReview3Time = "Il y a 1 semaine";
 
   //* home — shared
-  static const String homeSearchHint = "Chercher un plat, un traiteur...";
+  static const String clientHomeSearchHint = "Chercher un plat, un traiteur...";
 
   //* home — category tabs (compact pill labels)
   static const String homeCategoryAll = "Tout";
@@ -266,9 +266,9 @@ class AppTexts {
   static const String homeCategoryRestaurant = "Sauve Ton Panier";
 
   //* home — section titles
-  static const String homeSectionFoodNearYou = "Plats près de toi";
-  static const String homeSectionKitchensNearYou = "Cuisines près de toi";
-  static const String homeSectionSolidarity = "Partages solidaires";
+  static const String clientHomeSectionFoodNearYou = "Plats près de toi";
+  static const String clientHomeSectionKitchensNearYou = "Cuisines près de toi";
+  static const String clientHomeSectionSolidarity = "Partages solidaires";
 
   //* home — kitchen card labels
   static const String kitchenFreeDelivery = "Livraison gratuite";

@@ -1,4 +1,5 @@
 import 'package:homemade/core/constants/image_strings.dart';
+import 'package:homemade/core/services/map/models/map_route.dart';
 import 'package:homemade/features/cart/domain/cart_item.dart';
 import 'package:homemade/features/orders/domain/delivery_details.dart';
 import 'package:homemade/features/orders/domain/fulfillment_options.dart';
@@ -100,6 +101,7 @@ class OrderMockData {
           type: SavedAddressType.home,
           line1: '12 rue Saint-Sabin',
           line2: '75011 Paris, France',
+          coordinate: MapPoint(lng: 2.3719, lat: 48.8587),
         ),
         instructions: 'Code 1234, 3e étage gauche. Sonnez fort.',
         timing: DeliveryTiming.asap,

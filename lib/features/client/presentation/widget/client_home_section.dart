@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:homemade/core/constants/sizes.dart';
-import 'package:homemade/features/home/presentation/widget/section_dots.dart';
+import 'package:homemade/features/client/presentation/widget/section_dots.dart';
 
-class HomeSection extends StatefulWidget {
-  const HomeSection({
+class ClientHomeSection extends StatefulWidget {
+  const ClientHomeSection({
     super.key,
     required this.title,
     required this.children,
@@ -18,10 +18,10 @@ class HomeSection extends StatefulWidget {
   final double viewportFraction;
 
   @override
-  State<HomeSection> createState() => _HomeSectionState();
+  State<ClientHomeSection> createState() => _HomeSectionState();
 }
 
-class _HomeSectionState extends State<HomeSection> {
+class _HomeSectionState extends State<ClientHomeSection> {
   late final PageController _pageController;
   int _currentPage = 0;
 

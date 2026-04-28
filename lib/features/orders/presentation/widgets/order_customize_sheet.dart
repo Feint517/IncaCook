@@ -8,7 +8,7 @@ import 'package:homemade/core/constants/sizes.dart';
 import 'package:homemade/core/constants/text_strings.dart';
 import 'package:homemade/core/utils/popups/blurred_modal_sheet.dart';
 import 'package:homemade/core/utils/theme/theme_extensions.dart';
-import 'package:homemade/features/home/domain/food_listing.dart';
+import 'package:homemade/features/client/domain/food_listing.dart';
 import 'package:homemade/features/orders/domain/order_customization.dart';
 import 'package:homemade/features/orders/domain/product_add_on.dart';
 

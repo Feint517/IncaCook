@@ -9,6 +9,7 @@ import 'package:homemade/core/utils/validators/validators.dart';
 import 'package:homemade/features/authentication/controllers/login_controller.dart';
 import 'package:homemade/features/authentication/presentation/screens/forget_password.dart';
 import 'package:homemade/features/authentication/presentation/screens/user_type_selection.dart';
+import 'package:homemade/features/client/presentation/client_nav_tabs.dart';
 
 class LoginForm extends StatelessWidget {
   const LoginForm({super.key});
@@ -133,7 +134,8 @@ class LoginForm extends StatelessWidget {
             SizedBox(
               width: double.infinity, //? to make the sized button full width
               child: ElevatedButton(
-                onPressed: () => Get.offAll(() => const NavigationMenu()),
+                onPressed: () =>
+                    Get.offAll(() => const NavigationMenu(tabs: kClientNavTabs)),
                 child: const Text(AppTexts.signIn),
               ),
             ),

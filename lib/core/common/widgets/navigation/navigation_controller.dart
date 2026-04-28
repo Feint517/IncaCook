@@ -1,15 +1,9 @@
 import 'package:get/get.dart';
-import 'package:homemade/features/chat/presentation/screens/chat_list.dart';
-import 'package:homemade/features/home/presentation/screens/home.dart';
-import 'package:homemade/features/settings/presentation/screens/settings.dart';
+import 'package:homemade/core/common/widgets/navigation/nav_tab.dart';
 
 class NavigationController extends GetxController {
-  final Rx<int> selectedIndex = 0.obs;
+  NavigationController({required this.tabs});
 
-  final screens = [
-    const HomeScreen(),
-    // const Center(child: Text("Cart Screen")),
-    const ChatListScreen(),
-    const SettingsScreen(),
-  ];
+  final List<NavTab> tabs;
+  final Rx<int> selectedIndex = 0.obs;
 }

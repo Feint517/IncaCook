@@ -12,7 +12,7 @@ import 'package:homemade/core/utils/theme/theme_extensions.dart';
 import 'package:homemade/core/constants/text_strings.dart';
 import 'package:homemade/features/cart/controllers/cart_controller.dart';
 import 'package:homemade/features/cart/domain/cart_item.dart';
-import 'package:homemade/features/home/domain/food_listing.dart';
+import 'package:homemade/features/client/domain/food_listing.dart';
 import 'package:homemade/features/orders/domain/delivery_details.dart';
 import 'package:homemade/features/orders/domain/fulfillment_options.dart';
 import 'package:homemade/features/orders/presentation/screens/order_tracking.dart';

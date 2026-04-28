@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:homemade/core/enums/food_enums.dart';
 import 'package:homemade/core/utils/theme/brand_colors.dart';
-import 'package:homemade/features/home/domain/food_listing.dart';
+import 'package:homemade/features/client/domain/food_listing.dart';
 
 //? category-to-color mapping local to the map feature — semantic markers,
 //? not app-wide tokens

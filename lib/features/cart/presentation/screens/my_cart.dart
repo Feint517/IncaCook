@@ -10,7 +10,7 @@ import 'package:homemade/features/cart/presentation/widgets/cart_footer.dart';
 import 'package:homemade/features/cart/presentation/widgets/cart_item_card_dismissible.dart';
 import 'package:homemade/features/cart/presentation/widgets/empty_cart_state.dart';
 import 'package:homemade/core/enums/order_enums.dart';
-import 'package:homemade/features/home/domain/food_listing.dart';
+import 'package:homemade/features/client/domain/food_listing.dart';
 import 'package:homemade/features/orders/domain/delivery_details.dart';
 import 'package:homemade/features/orders/domain/fulfillment_options.dart';
 import 'package:homemade/features/orders/presentation/screens/delivery_address.dart';

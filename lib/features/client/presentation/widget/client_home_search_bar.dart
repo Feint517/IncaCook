@@ -3,8 +3,8 @@ import 'package:iconsax/iconsax.dart';
 import 'package:homemade/core/constants/text_strings.dart';
 import 'package:homemade/core/widgets/effects/frosted_surface.dart';
 
-class HomeSearchBar extends StatelessWidget {
-  const HomeSearchBar({super.key, this.onTap, this.onChanged});
+class ClientHomeSearchBar extends StatelessWidget {
+  const ClientHomeSearchBar({super.key, this.onTap, this.onChanged});
 
   final VoidCallback? onTap;
   final ValueChanged<String>? onChanged;
@@ -24,7 +24,7 @@ class HomeSearchBar extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyMedium,
             decoration: InputDecoration(
               isCollapsed: true,
-              hintText: AppTexts.homeSearchHint,
+              hintText: AppTexts.clientHomeSearchHint,
               hintStyle: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),

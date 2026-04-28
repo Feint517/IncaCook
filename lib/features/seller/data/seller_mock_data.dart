@@ -1,9 +1,9 @@
-import 'package:latlong2/latlong.dart';
 import 'package:homemade/core/constants/image_strings.dart';
 import 'package:homemade/core/constants/text_strings.dart';
 import 'package:homemade/core/enums/food_enums.dart';
 import 'package:homemade/core/enums/order_enums.dart';
-import 'package:homemade/features/home/domain/food_listing.dart';
+import 'package:homemade/core/services/map/models/map_route.dart';
+import 'package:homemade/features/client/domain/food_listing.dart';
 import 'package:homemade/features/seller/domain/seller_rating.dart';
 import 'package:homemade/features/seller/domain/seller_profile.dart';
 
@@ -135,7 +135,7 @@ class SellerMockData {
           helpfulCount: 12,
         ),
       ],
-      location: const LatLng(48.8532, 2.3692),
+      location: const MapPoint(lng: 2.3692, lat: 48.8532),
       deliveryRadiusKm: 3,
       availabilitySchedule: 'Lun–Sam · 18h–22h',
     );

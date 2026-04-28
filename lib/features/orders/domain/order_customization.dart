@@ -1,4 +1,4 @@
-import 'package:homemade/features/home/domain/food_listing.dart';
+import 'package:homemade/features/client/domain/food_listing.dart';
 import 'package:homemade/features/orders/domain/product_add_on.dart';
 
 class OrderCustomization {

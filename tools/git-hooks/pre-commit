@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Block commits that contain a Mapbox secret token.
+#
+# Mapbox secret tokens (sk.…) are downloads-scope credentials used at build
+# time to fetch the native SDK. They must live in ~/.netrc / ~/.gradle but
+# never enter the repo. GitGuardian flags them as the #1 leaked-token pattern.
+#
+# Install: ln -sf ../../tools/git-hooks/pre-commit .git/hooks/pre-commit
+
+set -e
+
+if git diff --cached -U0 -- ':!tools/git-hooks/pre-commit' \
+  | grep -E 'sk\.[A-Za-z0-9._-]{60,}' >/dev/null; then
+  echo "ERROR: a Mapbox secret token (sk.…) was found in your staged changes."
+  echo "Move it to ~/.netrc (iOS) or ~/.gradle/gradle.properties (Android)"
+  echo "and stage your changes again."
+  exit 1
+fi

@@ -3,19 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:homemade/core/common/widgets/misc/price_display.dart';
 import 'package:homemade/core/constants/text_strings.dart';
-import 'package:homemade/features/home/domain/food_listing.dart';
+import 'package:homemade/features/client/domain/food_listing.dart';
 
 class FoodListingCard extends StatelessWidget {
-  const FoodListingCard({
-    super.key,
-    required this.listing,
-    this.onTap,
-    this.height = 290,
-  });
+  const FoodListingCard({super.key, required this.listing, this.onTap});
 
   final FoodListing listing;
   final VoidCallback? onTap;
-  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +19,7 @@ class FoodListingCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: SizedBox(
-        height: height,
+      child: SizedBox.expand(
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: Stack(

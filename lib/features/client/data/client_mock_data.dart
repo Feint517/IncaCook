@@ -1,11 +1,11 @@
 import 'package:homemade/core/constants/image_strings.dart';
 import 'package:homemade/core/enums/food_enums.dart';
 import 'package:homemade/core/enums/order_enums.dart';
-import 'package:homemade/features/home/domain/food_listing.dart';
-import 'package:homemade/features/home/domain/kitchen.dart';
+import 'package:homemade/features/client/domain/food_listing.dart';
+import 'package:homemade/features/client/domain/kitchen.dart';
 
-class HomeMockData {
-  HomeMockData._();
+class ClientMockData {
+  ClientMockData._();
 
   static List<FoodListing> listings() {
     final now = DateTime.now();
