@@ -26,18 +26,10 @@ class LoginForm extends StatelessWidget {
       required IconData prefixIcon,
       Widget? suffixIcon,
     }) {
-      const border = OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(48.0)),
-        borderSide: BorderSide.none,
-      );
       return InputDecoration(
-        filled: false,
         labelText: label,
-        prefixIcon: Icon(prefixIcon, color: scheme.primary),
+        prefixIcon: Icon(prefixIcon),
         suffixIcon: suffixIcon,
-        border: border,
-        enabledBorder: border,
-        focusedBorder: border,
       );
     }
 

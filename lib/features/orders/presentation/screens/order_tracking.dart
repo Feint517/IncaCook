@@ -47,10 +47,13 @@ class OrderTrackingScreen extends StatelessWidget {
   Widget _stageContent(OrderStage stage) {
     switch (stage) {
       case OrderStage.prepared:
+      case OrderStage.arrivedPickup:
         return const PreparingStageView();
       case OrderStage.onTheWay:
+      case OrderStage.arrivedDropoff:
         return const OnTheWayStageView();
       case OrderStage.delivered:
+      case OrderStage.failed:
         return const DeliveredStageView();
     }
   }

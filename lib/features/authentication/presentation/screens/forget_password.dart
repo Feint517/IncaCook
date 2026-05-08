@@ -5,6 +5,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:homemade/core/constants/sizes.dart';
 import 'package:homemade/core/constants/text_strings.dart';
 import 'package:homemade/core/utils/validators/validators.dart';
+import 'package:homemade/core/widgets/effects/frosted_surface.dart';
 import 'package:homemade/features/authentication/controllers/forget_password_contorller.dart';
 
 class ForgetPasswordScreen extends StatelessWidget {
@@ -36,12 +37,15 @@ class ForgetPasswordScreen extends StatelessWidget {
               //* text field
               Form(
                 key: controller.forgetPasswordFormKey,
-                child: TextFormField(
-                  controller: controller.email,
-                  validator: CustomValidator.validateEmail,
-                  decoration: const InputDecoration(
-                    labelText: AppTexts.email,
-                    prefixIcon: Icon(Iconsax.direct_right),
+                child: FrostedSurface(
+                  borderRadius: BorderRadius.circular(999),
+                  child: TextFormField(
+                    controller: controller.email,
+                    validator: CustomValidator.validateEmail,
+                    decoration: const InputDecoration(
+                      labelText: AppTexts.email,
+                      prefixIcon: Icon(Iconsax.direct_right),
+                    ),
                   ),
                 ),
               ),

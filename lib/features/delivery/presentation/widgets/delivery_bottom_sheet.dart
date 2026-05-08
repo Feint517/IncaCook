@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:get/get.dart';
 import 'package:homemade/core/constants/sizes.dart';
+import 'package:homemade/features/delivery/controllers/delivery_route_controller.dart';
 import 'package:homemade/features/delivery/presentation/widgets/delivery_nav_bar.dart';
 import 'package:homemade/features/delivery/presentation/widgets/delivery_settings_section.dart';
+import 'package:homemade/features/delivery/presentation/widgets/job_lifecycle_card.dart';
 import 'package:homemade/features/delivery/presentation/widgets/next_pickup_card.dart';
 import 'package:homemade/features/delivery/presentation/widgets/today_stats_card.dart';
 
@@ -119,26 +122,48 @@ class _DeliveryBottomSheetState extends State<DeliveryBottomSheet> {
                 //* position when the user switches.
                 child: ValueListenableBuilder<DeliveryNavTab>(
                   valueListenable: _selectedTab,
-                  builder: (context, tab, _) => ListView(
-                    key: ValueKey(tab),
-                    controller: scrollController,
-                    padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(context).padding.bottom,
-                    ),
-                    children: tab == DeliveryNavTab.drive
-                        ? const [
-                            Gap(AppSizes.xl),
-                            NextPickupCard(),
-                            Gap(AppSizes.lg),
-                            TodayStatsCard(),
-                            Gap(AppSizes.lg),
-                          ]
-                        : const [
-                            Gap(AppSizes.xl),
-                            DeliverySettingsSection(),
-                            Gap(AppSizes.lg),
-                          ],
-                  ),
+                  builder: (context, tab, _) {
+                    if (tab == DeliveryNavTab.settings) {
+                      return ListView(
+                        key: const ValueKey(DeliveryNavTab.settings),
+                        controller: scrollController,
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.of(context).padding.bottom,
+                        ),
+                        children: const [
+                          Gap(AppSizes.xl),
+                          DeliverySettingsSection(),
+                          Gap(AppSizes.lg),
+                        ],
+                      );
+                    }
+                    //* Drive tab: when a job is active, show the lifecycle
+                    //* card; otherwise the idle dashboard.
+                    return Obx(() {
+                      final hasJob = DeliveryRouteController
+                          .instance.currentJob.value != null;
+                      return ListView(
+                        key: ValueKey(hasJob),
+                        controller: scrollController,
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.of(context).padding.bottom,
+                        ),
+                        children: hasJob
+                            ? const [
+                                Gap(AppSizes.xl),
+                                JobLifecycleCard(),
+                                Gap(AppSizes.lg),
+                              ]
+                            : const [
+                                Gap(AppSizes.xl),
+                                NextPickupCard(),
+                                Gap(AppSizes.lg),
+                                TodayStatsCard(),
+                                Gap(AppSizes.lg),
+                              ],
+                      );
+                    });
+                  },
                 ),
               ),
             ),

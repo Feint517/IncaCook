@@ -639,6 +639,61 @@ class AppTexts {
   static const String deliveryDashboardOnlineLabel = "En ligne";
   static const String deliveryDashboardDeliveriesLabel = "Livraisons";
 
+  //* delivery — issue report sheet
+  static const String issueSheetTitle = "Signaler un problème";
+  static const String issueSheetSectionAbort = "Annuler la livraison";
+  static const String issueSheetSectionReport = "Signaler";
+  static const String issueSheetOtherInputTitle = "Décrire le problème";
+  static const String issueSheetOtherInputHint = "Expliquez ce qui s'est passé";
+  static const String issueSheetContinueCta = "Continuer";
+  static const String issueSheetConfirmTitle = "Êtes-vous sûr ?";
+  static const String issueSheetConfirmAbortSubtitle =
+      "Cette action annule la livraison.";
+  static const String issueSheetConfirmReportSubtitle =
+      "Le problème sera signalé.";
+  static const String issueSheetCancelCta = "Annuler";
+  static const String issueSheetConfirmCta = "Confirmer";
+  static const String issueSheetReportedToast = "Problème signalé";
+  static const String issueRestaurantClosed = "Restaurant fermé";
+  static const String issueOrderUnavailable = "Commande non disponible";
+  static const String issueOrderNotReady = "Commande pas prête";
+  static const String issueMissingItem = "Article manquant";
+  static const String issueCustomerUnreachable = "Client introuvable";
+  static const String issueWrongAddress = "Mauvaise adresse";
+  static const String issueCustomerRefused = "Client refuse la commande";
+  static const String issueVehicleProblem = "Problème de véhicule";
+  static const String issueOther = "Autre";
+
+  //* delivery — QR handoff sheet
+  static const String qrHandoffContinueCta = "Continuer";
+
+  //* delivery — job lifecycle card
+  static const String jobStageGoingToPickup = "Direction ramassage";
+  static const String jobStageAtPickup = "Au point de ramassage";
+  static const String jobStageGoingToDropoff = "Direction client";
+  static const String jobStageAtDropoff = "Chez le client";
+  static const String jobStageDelivered = "Livraison terminée";
+  static const String jobStageFailed = "Livraison échouée";
+  static const String jobCtaArrivedPickup = "Arrivé au ramassage";
+  static const String jobCtaPickedUp = "Commande récupérée";
+  static const String jobCtaArrivedDropoff = "Arrivé chez le client";
+  static const String jobCtaConfirmDelivery = "Confirmer la livraison";
+  static const String jobCtaFinish = "Terminé";
+  static const String jobReportIssue = "Signaler un problème";
+  static const String jobInstructionsLabel = "Instructions client";
+  static const String jobOrderNumberPrefix = "Commande";
+
+  //* delivery — incoming order modal
+  static const String incomingOrderTitle = "Nouvelle commande";
+  static const String incomingOrderPickupLabel = "Ramassage";
+  static const String incomingOrderDropoffLabel = "Livraison";
+  static const String incomingOrderDistanceSuffix = "km";
+  static const String incomingOrderEtaSuffix = "min";
+  static const String incomingOrderItemsSuffix = "articles";
+  static const String incomingOrderItemSuffix = "article";
+  static const String incomingOrderAcceptCta = "Accepter";
+  static const String incomingOrderDeclineCta = "Refuser";
+
   //* order — customize sheet
   static const String orderSheetQuantityLabel = "Quantité";
   static const String orderSheetPortionsAvailableSuffix =

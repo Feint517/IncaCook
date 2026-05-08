@@ -5,8 +5,8 @@ import 'package:homemade/core/services/location/location_service.dart';
 import 'package:homemade/core/services/map/mapbox_directions_client.dart';
 import 'package:homemade/core/services/map/models/map_route.dart';
 import 'package:homemade/core/utils/geo/distance.dart';
-import 'package:homemade/features/orders/data/order_mock_data.dart';
 import 'package:homemade/features/orders/domain/order_detail.dart';
+import 'package:homemade/features/orders/domain/order_stage.dart';
 
 /// Owns the active delivery's route state and the position-driven re-fetch
 /// logic. Created when the delivery screen mounts; auto-disposed when the
@@ -14,11 +14,37 @@ import 'package:homemade/features/orders/domain/order_detail.dart';
 class DeliveryRouteController extends GetxController {
   static DeliveryRouteController get instance => Get.find();
 
-  //* Mock active order — pickup + dropoff drive the markers and route.
-  final OrderDetail order = OrderMockData.demoOrder();
+  /// The job currently being executed. Null when the driver is idle (online
+  /// but no accepted order). Set via [acceptJob]; cleared via [clearJob].
+  final Rxn<OrderDetail> currentJob = Rxn<OrderDetail>();
 
-  MapPoint get pickup => order.seller.location;
-  MapPoint get dropoff => order.deliveryDetails!.address.coordinate!;
+  /// Where the driver is in the job lifecycle. Null while idle. Mutates via
+  /// [advanceStage]; reset on [clearJob].
+  final Rxn<OrderStage> currentStage = Rxn<OrderStage>();
+
+  OrderDetail? get order => currentJob.value;
+
+  MapPoint? get pickup => order?.seller.location;
+  MapPoint? get dropoff => order?.deliveryDetails?.address.coordinate;
+
+  /// The point the driver is currently navigating to, based on [currentStage].
+  /// Pre-pickup stages target [pickup]; post-pickup stages target [dropoff].
+  /// Null when idle or terminal.
+  MapPoint? get currentDestination {
+    if (order == null) return null;
+    switch (currentStage.value) {
+      case null:
+      case OrderStage.delivered:
+      case OrderStage.failed:
+        return null;
+      case OrderStage.prepared:
+      case OrderStage.arrivedPickup:
+        return pickup;
+      case OrderStage.onTheWay:
+      case OrderStage.arrivedDropoff:
+        return dropoff;
+    }
+  }
 
   /// Latest driver position from [LocationService], converted to a [MapPoint].
   /// Null until the location stream emits its first reading.
@@ -40,10 +66,46 @@ class DeliveryRouteController extends GetxController {
   bool _refetching = false;
   Worker? _positionWorker;
 
+  /// Sets the active job and triggers route bootstrap. Replaces any in-flight
+  /// job; callers should confirm before switching.
+  Future<void> acceptJob(OrderDetail job) async {
+    currentJob.value = job;
+    currentStage.value = OrderStage.prepared;
+    await bootstrap();
+  }
+
+  /// Advances the lifecycle to [next]. When the destination flips
+  /// (arrivedPickup → onTheWay), re-fetches the route to [currentDestination].
+  Future<void> advanceStage(OrderStage next) async {
+    final prev = currentStage.value;
+    currentStage.value = next;
+    final destinationFlipped =
+        prev == OrderStage.arrivedPickup && next == OrderStage.onTheWay;
+    if (destinationFlipped) {
+      final origin = currentDriverPosition;
+      if (origin != null) await _refetchRoute(origin);
+    }
+  }
+
+  /// Clears the active job, the rendered route, and stops the position watcher.
+  void clearJob() {
+    _positionWorker?.dispose();
+    _positionWorker = null;
+    LocationService.instance.stop();
+    route.value = null;
+    currentJob.value = null;
+    currentStage.value = null;
+    _offRouteHits = 0;
+  }
+
   /// Reads the driver's current position, fetches the initial route to
-  /// [dropoff], and starts streaming the live position so [_onPositionUpdate]
-  /// can detect off-route deviation.
+  /// [currentDestination], and starts streaming the live position so
+  /// [_onPositionUpdate] can detect off-route deviation. No-op when no job is
+  /// accepted.
   Future<void> bootstrap() async {
+    final destination = currentDestination;
+    if (destination == null) return;
+
     final pos = await LocationService.instance.getCurrent();
     if (pos == null) return;
 
@@ -51,7 +113,7 @@ class DeliveryRouteController extends GetxController {
     try {
       route.value = await Get.find<MapboxDirectionsClient>().getRoute(
         origin: origin,
-        destination: dropoff,
+        destination: destination,
       );
       await LocationService.instance.start();
       _startPositionWatcher();
@@ -86,11 +148,13 @@ class DeliveryRouteController extends GetxController {
   }
 
   Future<void> _refetchRoute(MapPoint origin) async {
+    final destination = currentDestination;
+    if (destination == null) return;
     _refetching = true;
     try {
       route.value = await Get.find<MapboxDirectionsClient>().getRoute(
         origin: origin,
-        destination: dropoff,
+        destination: destination,
       );
     } catch (_) {
       //? swallow — try again on the next off-route trip

@@ -25,7 +25,8 @@ class App extends StatelessWidget {
         darkTheme: CustomAppTheme.darkTheme,
         initialBinding: GeneralBindings(),
         // home: const NavigationMenu(tabs: kClientNavTabs),
-        home: const OnBoardingScreen(),
+        // home: const OnBoardingScreen(),
+        home: DeliveryHomeScreen(),
       ),
     );
   }

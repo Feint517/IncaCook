@@ -6,9 +6,12 @@ import 'package:homemade/core/services/map/models/map_route.dart';
 import 'package:homemade/core/utils/theme/theme_extensions.dart';
 import 'package:homemade/features/delivery/controllers/delivery_driver_controller.dart';
 import 'package:homemade/features/delivery/controllers/delivery_route_controller.dart';
+import 'package:homemade/features/delivery/controllers/incoming_order_controller.dart';
 import 'package:homemade/features/delivery/presentation/widgets/delivery_bottom_sheet.dart';
 import 'package:homemade/features/delivery/presentation/widgets/delivery_top_buttons.dart';
+import 'package:homemade/features/delivery/presentation/widgets/incoming_order_sheet.dart';
 import 'package:homemade/features/delivery/utils/delivery_map_painter.dart';
+import 'package:homemade/features/orders/domain/order_detail.dart';
 
 class DeliveryHomeScreen extends StatefulWidget {
   const DeliveryHomeScreen({super.key});
@@ -19,20 +22,45 @@ class DeliveryHomeScreen extends StatefulWidget {
 
 class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
   late final DeliveryRouteController _route;
+  late final IncomingOrderController _incoming;
   DeliveryMapPainter? _painter;
   Worker? _routeWorker;
+  Worker? _incomingWorker;
+  bool _modalOpen = false;
 
   @override
   void initState() {
     super.initState();
     _route = Get.put(DeliveryRouteController());
     Get.put(DeliveryDriverController());
+    _incoming = Get.put(IncomingOrderController());
+    _incomingWorker = ever<OrderDetail?>(
+      _incoming.pendingOrder,
+      _onPendingOrderChanged,
+    );
   }
 
   @override
   void dispose() {
     _routeWorker?.dispose();
+    _incomingWorker?.dispose();
     super.dispose();
+  }
+
+  Future<void> _onPendingOrderChanged(OrderDetail? order) async {
+    if (order == null || _modalOpen || !mounted) return;
+    _modalOpen = true;
+    try {
+      final accepted = await showIncomingOrderModal(context, order: order);
+      if (accepted == true) {
+        await _route.acceptJob(order);
+        _incoming.resolve(accepted: true);
+      } else {
+        _incoming.resolve(accepted: false);
+      }
+    } finally {
+      _modalOpen = false;
+    }
   }
 
   Future<void> _onMapCreated(MapboxMap map) async {
@@ -48,16 +76,15 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
     );
 
     _routeWorker = ever<MapRoute?>(_route.route, _onRouteChanged);
-    await _route.bootstrap();
+    //? bootstrap deferred to DeliveryRouteController.acceptJob — the screen
+    //? has no job until the driver accepts one.
   }
 
   Future<void> _onRouteChanged(MapRoute? route) async {
-    if (route == null) return;
-    await _painter?.renderRoute(
-      route,
-      pickup: _route.pickup,
-      dropoff: _route.dropoff,
-    );
+    final pickup = _route.pickup;
+    final dropoff = _route.dropoff;
+    if (route == null || pickup == null || dropoff == null) return;
+    await _painter?.renderRoute(route, pickup: pickup, dropoff: dropoff);
   }
 
   Future<void> _centerOnDriver() async {

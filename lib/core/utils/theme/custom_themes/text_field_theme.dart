@@ -5,11 +5,21 @@ import 'package:homemade/core/utils/theme/palette.dart';
 class CustomTextFormFieldTheme {
   CustomTextFormFieldTheme._();
 
+  //? fields are visually framed by FrostedSurface — the InputDecorator stays
+  //? borderless in resting/error states, and shows a brand-green pill border
+  //? on focus to confirm input is captured.
+  //? high radius keeps the focus outline pill-shaped regardless of the
+  //? wrapping FrostedSurface's exact radius (32, 48, 999, …).
+  static final OutlineInputBorder _focusedBorder = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(999),
+    borderSide: const BorderSide(width: 1.5, color: BrandColors.primary),
+  );
+
   static InputDecorationTheme lightInputDecorationTheme = InputDecorationTheme(
     errorMaxLines: 3,
     floatingLabelBehavior: FloatingLabelBehavior.never,
-    prefixIconColor: LightPalette.onSurfaceVariant,
-    suffixIconColor: LightPalette.onSurfaceVariant,
+    prefixIconColor: BrandColors.primary,
+    suffixIconColor: BrandColors.primary,
     labelStyle: const TextStyle().copyWith(
       fontSize: 14,
       color: LightPalette.onSurface,
@@ -19,33 +29,18 @@ class CustomTextFormFieldTheme {
       color: LightPalette.onSurfaceVariant,
     ),
     errorStyle: const TextStyle().copyWith(fontStyle: FontStyle.normal),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(40),
-      borderSide: const BorderSide(width: 1, color: LightPalette.outline),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(40),
-      borderSide: const BorderSide(width: 1, color: LightPalette.outline),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(40),
-      borderSide: const BorderSide(width: 1, color: LightPalette.onSurface),
-    ),
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(40),
-      borderSide: const BorderSide(width: 1, color: BrandColors.error),
-    ),
-    focusedErrorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(40),
-      borderSide: const BorderSide(width: 2, color: BrandColors.warning),
-    ),
+    border: InputBorder.none,
+    enabledBorder: InputBorder.none,
+    focusedBorder: _focusedBorder,
+    errorBorder: InputBorder.none,
+    focusedErrorBorder: _focusedBorder,
   );
 
   static InputDecorationTheme darkInputDecorationTheme = InputDecorationTheme(
     errorMaxLines: 3,
     floatingLabelBehavior: FloatingLabelBehavior.never,
-    prefixIconColor: DarkPalette.onSurfaceVariant,
-    suffixIconColor: DarkPalette.onSurfaceVariant,
+    prefixIconColor: BrandColors.primary,
+    suffixIconColor: BrandColors.primary,
     labelStyle: const TextStyle().copyWith(
       fontSize: 14,
       color: DarkPalette.onSurface,
@@ -55,25 +50,10 @@ class CustomTextFormFieldTheme {
       color: DarkPalette.onSurfaceVariant,
     ),
     errorStyle: const TextStyle().copyWith(fontStyle: FontStyle.normal),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(40),
-      borderSide: const BorderSide(width: 1, color: DarkPalette.outline),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(40),
-      borderSide: const BorderSide(width: 1, color: DarkPalette.outline),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(40),
-      borderSide: const BorderSide(width: 1, color: DarkPalette.onSurface),
-    ),
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(40),
-      borderSide: const BorderSide(width: 1, color: BrandColors.error),
-    ),
-    focusedErrorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(40),
-      borderSide: const BorderSide(width: 2, color: BrandColors.warning),
-    ),
+    border: InputBorder.none,
+    enabledBorder: InputBorder.none,
+    focusedBorder: _focusedBorder,
+    errorBorder: InputBorder.none,
+    focusedErrorBorder: _focusedBorder,
   );
 }

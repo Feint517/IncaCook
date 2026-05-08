@@ -79,15 +79,18 @@ class _StageHeader extends StatelessWidget {
 
     switch (stage) {
       case OrderStage.prepared:
+      case OrderStage.arrivedPickup:
         title = AppTexts.trackingPreparingTitle;
         subtitle = AppTexts.trackingPreparingSubtitle;
         break;
       case OrderStage.onTheWay:
+      case OrderStage.arrivedDropoff:
         title =
             '${AppTexts.trackingArrivingPrefix} $etaMinutes ${AppTexts.trackingMinutesSuffix}';
         subtitle = AppTexts.trackingArrivingSubtitle;
         break;
       case OrderStage.delivered:
+      case OrderStage.failed:
         title = AppTexts.trackingDeliveredTitle;
         subtitle = AppTexts.trackingDeliveredSubtitle;
         break;

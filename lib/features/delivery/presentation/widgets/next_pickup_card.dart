@@ -5,7 +5,9 @@ import 'package:iconsax/iconsax.dart';
 import 'package:homemade/core/constants/sizes.dart';
 import 'package:homemade/core/constants/text_strings.dart';
 import 'package:homemade/core/widgets/effects/frosted_surface.dart';
+import 'package:homemade/features/delivery/controllers/delivery_route_controller.dart';
 import 'package:homemade/features/delivery/data/delivery_driver_mock_data.dart';
+import 'package:homemade/features/orders/data/order_mock_data.dart';
 
 /// Hero card at the top of the Drive sheet — promotes the next scheduled
 /// pickup with seller, address, ETA + distance chips, and a primary
@@ -83,21 +85,11 @@ class NextPickupCard extends StatelessWidget {
               const Gap(AppSizes.md + 4),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () {},
-                  //* Defaults to `scheme.primary` / `onPrimary` — only the
-                  //* shape, padding, and weight need overriding.
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    textStyle: textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                child: ElevatedButton(
+                  onPressed: () => DeliveryRouteController.instance.acceptJob(
+                    OrderMockData.demoOrder(),
                   ),
-                  icon: const Icon(Iconsax.arrow_right_3, size: 18),
-                  label: const Text(AppTexts.deliveryDashboardNavigateCta),
+                  child: const Text(AppTexts.deliveryDashboardNavigateCta),
                 ),
               ),
             ],
