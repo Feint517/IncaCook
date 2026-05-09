@@ -1,13 +1,20 @@
-class ProductAddOn {
-  const ProductAddOn({
-    required this.id,
-    required this.label,
-    required this.priceDelta,
-    this.isSelectedByDefault = false,
-  });
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  final String id;
-  final String label;
-  final double priceDelta;
-  final bool isSelectedByDefault;
+part 'product_add_on.freezed.dart';
+part 'product_add_on.g.dart';
+
+/// Optional choice on a listing — extra topping, larger portion, etc.
+/// Selected add-ons attach to a [CartItem]; their [priceDelta] folds
+/// into the line's unit price.
+@freezed
+abstract class ProductAddOn with _$ProductAddOn {
+  const factory ProductAddOn({
+    required String id,
+    required String label,
+    required double priceDelta,
+    @Default(false) bool isSelectedByDefault,
+  }) = _ProductAddOn;
+
+  factory ProductAddOn.fromJson(Map<String, dynamic> json) =>
+      _$ProductAddOnFromJson(json);
 }

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:incacook/core/constants/text_strings.dart';
+
+part 'seller_rating.freezed.dart';
+part 'seller_rating.g.dart';
 
 /// How a [RatingCriterion]'s value is expressed and rendered.
 enum RatingValueType {
@@ -8,6 +12,7 @@ enum RatingValueType {
 
   const RatingValueType({required this.maxValue});
 
+  @JsonKey(includeFromJson: false, includeToJson: false)
   final double maxValue;
 
   /// Formats [value] for display next to the criterion label.
@@ -57,24 +62,29 @@ enum RatingCriterion {
     required this.valueType,
   });
 
+  @JsonKey(includeFromJson: false, includeToJson: false)
   final String label;
+  @JsonKey(includeFromJson: false, includeToJson: false)
   final Color color;
+  @JsonKey(includeFromJson: false, includeToJson: false)
   final RatingValueType valueType;
 }
 
 /// A seller's rating on a single [criterion]. [value] is on the criterion's
 /// own scale (0–100 for percent, 0–5 for score5). [sampleCount] is the
 /// number of verified orders (percent) or reviews (score5) backing it.
-class SellerRating {
-  const SellerRating({
-    required this.criterion,
-    required this.value,
-    required this.sampleCount,
-  });
+@freezed
+abstract class SellerRating with _$SellerRating {
+  const SellerRating._();
 
-  final RatingCriterion criterion;
-  final double value;
-  final int sampleCount;
+  const factory SellerRating({
+    required RatingCriterion criterion,
+    required double value,
+    required int sampleCount,
+  }) = _SellerRating;
+
+  factory SellerRating.fromJson(Map<String, dynamic> json) =>
+      _$SellerRatingFromJson(json);
 
   /// 0..1 fill ratio for the progress bar.
   double get fillRatio =>

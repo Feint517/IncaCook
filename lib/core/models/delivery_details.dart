@@ -1,17 +1,20 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:incacook/core/models/address.dart';
+
+part 'delivery_details.freezed.dart';
+part 'delivery_details.g.dart';
 
 enum DeliveryTiming { asap, scheduled }
 
-class DeliveryDetails {
-  const DeliveryDetails({
-    required this.address,
-    required this.instructions,
-    required this.timing,
-    this.scheduledAt,
-  });
+@freezed
+abstract class DeliveryDetails with _$DeliveryDetails {
+  const factory DeliveryDetails({
+    required Address address,
+    required String instructions,
+    required DeliveryTiming timing,
+    DateTime? scheduledAt,
+  }) = _DeliveryDetails;
 
-  final Address address;
-  final String instructions;
-  final DeliveryTiming timing;
-  final DateTime? scheduledAt;
+  factory DeliveryDetails.fromJson(Map<String, dynamic> json) =>
+      _$DeliveryDetailsFromJson(json);
 }

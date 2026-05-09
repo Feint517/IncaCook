@@ -1,18 +1,27 @@
-class MapPoint {
-  const MapPoint({required this.lng, required this.lat});
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  final double lng;
-  final double lat;
+part 'map_route.freezed.dart';
+part 'map_route.g.dart';
+
+@freezed
+abstract class MapPoint with _$MapPoint {
+  const factory MapPoint({
+    required double lng,
+    required double lat,
+  }) = _MapPoint;
+
+  factory MapPoint.fromJson(Map<String, dynamic> json) =>
+      _$MapPointFromJson(json);
 }
 
-class MapRoute {
-  const MapRoute({
-    required this.points,
-    required this.distanceMeters,
-    required this.durationSeconds,
-  });
+@freezed
+abstract class MapRoute with _$MapRoute {
+  const factory MapRoute({
+    required List<MapPoint> points,
+    required double distanceMeters,
+    required double durationSeconds,
+  }) = _MapRoute;
 
-  final List<MapPoint> points;
-  final double distanceMeters;
-  final double durationSeconds;
+  factory MapRoute.fromJson(Map<String, dynamic> json) =>
+      _$MapRouteFromJson(json);
 }

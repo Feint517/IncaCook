@@ -1,5 +1,9 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:incacook/core/enums/food_enums.dart';
 import 'package:incacook/core/enums/order_enums.dart';
+
+part 'food_listing.freezed.dart';
+part 'food_listing.g.dart';
 
 /// A dish offered for sale. Shared by buyer-facing screens (feed, product
 /// detail, cart) and seller-facing screens (dashboard product list).
@@ -13,92 +17,41 @@ import 'package:incacook/core/enums/order_enums.dart';
 ///   classification: faitMaison / traiteur / restaurant)
 /// - **Buyer-side aggregates** (denormalized for the feed; computed from
 ///   joins on the backend): distanceKm, rating, reviewCount
-class FoodListing {
-  const FoodListing({
-    required this.id,
-    required this.name,
-    required this.imageUrl,
-    required this.sellerName,
-    required this.category,
-    required this.price,
-    required this.portionsLeft,
-    required this.fulfillment,
-    required this.expiresAt,
-    this.distanceKm = 0,
-    this.rating = 0,
-    this.reviewCount = 0,
-    this.originalPrice,
-    this.discountPercent = 0,
-    this.prepMinutes,
-    this.isAvailable = true,
-    this.isVeg = false,
-    this.menuCategory,
-    this.dietaryTags = const [],
-    this.cuisineType,
-    this.dishType,
-    this.allergens = const [],
-    this.otherAllergens,
-  });
+@freezed
+abstract class FoodListing with _$FoodListing {
+  const factory FoodListing({
+    required String id,
+    required String name,
+    required String imageUrl,
+    required String sellerName,
+    required SellerCategory category,
+    required double price,
+    required int portionsLeft,
+    required Fulfillment fulfillment,
+    required DateTime expiresAt,
+    @Default(0) double distanceKm,
+    @Default(0) double rating,
+    @Default(0) int reviewCount,
+    double? originalPrice,
+    @Default(0) int discountPercent,
+    int? prepMinutes,
+    @Default(true) bool isAvailable,
+    @Default(false) bool isVeg,
 
-  final String id;
-  final String name;
-  final String imageUrl;
-  final String sellerName;
-  final SellerCategory category;
-  final double price;
-  final double? originalPrice;
-  final int portionsLeft;
-  final Fulfillment fulfillment;
-  final DateTime expiresAt;
+    /// Seller-defined sub-category (e.g. "Pizza mixte", "Plat du jour").
+    /// Free text. Independent of the platform-level [category].
+    String? menuCategory,
+    @Default(<DietaryTag>[]) List<DietaryTag> dietaryTags,
+    CuisineType? cuisineType,
+    DishType? dishType,
+    @Default(<Allergen>[]) List<Allergen> allergens,
 
-  /// Seller-defined sub-category (e.g. "Pizza mixte", "Plat du jour"). Free
-  /// text. Independent of the platform-level [category].
-  final String? menuCategory;
-  final int? prepMinutes;
-  final int discountPercent;
-  final bool isAvailable;
-  /// Vegetarian indicator. Distinct from [DietaryTag.vegan] (stricter):
-  /// vegetarian listings can contain dairy/eggs.
-  final bool isVeg;
+    /// Free-text "other" allergens not covered by [Allergen]'s 14
+    /// EU-mandated categories. Null/empty when the seller has nothing to
+    /// declare here.
+    String? otherAllergens,
+  }) = _FoodListing;
 
-  // Buyer-side aggregates — denormalized at fetch time.
-  final double distanceKm;
-  final double rating;
-  final int reviewCount;
-
-  final List<DietaryTag> dietaryTags;
-  final CuisineType? cuisineType;
-  final DishType? dishType;
-  final List<Allergen> allergens;
-  /// Free-text "other" allergens not covered by [Allergen]'s 14 EU-mandated
-  /// categories. Null/empty when the seller has nothing to declare here.
-  final String? otherAllergens;
-
-  FoodListing copyWith({bool? isAvailable, int? portionsLeft}) {
-    return FoodListing(
-      id: id,
-      name: name,
-      imageUrl: imageUrl,
-      sellerName: sellerName,
-      category: category,
-      price: price,
-      portionsLeft: portionsLeft ?? this.portionsLeft,
-      fulfillment: fulfillment,
-      expiresAt: expiresAt,
-      distanceKm: distanceKm,
-      rating: rating,
-      reviewCount: reviewCount,
-      originalPrice: originalPrice,
-      discountPercent: discountPercent,
-      prepMinutes: prepMinutes,
-      isAvailable: isAvailable ?? this.isAvailable,
-      isVeg: isVeg,
-      menuCategory: menuCategory,
-      dietaryTags: dietaryTags,
-      cuisineType: cuisineType,
-      dishType: dishType,
-      allergens: allergens,
-      otherAllergens: otherAllergens,
-    );
-  }
+  factory FoodListing.fromJson(Map<String, dynamic> json) =>
+      _$FoodListingFromJson(json);
 }

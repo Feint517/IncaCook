@@ -1,23 +1,25 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:incacook/core/enums/food_enums.dart';
 
-class ListingFilter {
-  const ListingFilter({
-    this.category,
-    this.cuisines = const {},
-    this.diets = const {},
-    this.dishTypes = const {},
-    this.allergensToExclude = const {},
-    this.maxDistanceKm,
-    this.inStockOnly = false,
-  });
+part 'listing_filter.freezed.dart';
+part 'listing_filter.g.dart';
 
-  final SellerCategory? category;
-  final Set<CuisineType> cuisines;
-  final Set<DietaryTag> diets;
-  final Set<DishType> dishTypes;
-  final Set<Allergen> allergensToExclude;
-  final double? maxDistanceKm;
-  final bool inStockOnly;
+@freezed
+abstract class ListingFilter with _$ListingFilter {
+  const ListingFilter._();
+
+  const factory ListingFilter({
+    SellerCategory? category,
+    @Default(<CuisineType>{}) Set<CuisineType> cuisines,
+    @Default(<DietaryTag>{}) Set<DietaryTag> diets,
+    @Default(<DishType>{}) Set<DishType> dishTypes,
+    @Default(<Allergen>{}) Set<Allergen> allergensToExclude,
+    double? maxDistanceKm,
+    @Default(false) bool inStockOnly,
+  }) = _ListingFilter;
+
+  factory ListingFilter.fromJson(Map<String, dynamic> json) =>
+      _$ListingFilterFromJson(json);
 
   static const double standardRadiusKm = 10.0;
 
@@ -35,27 +37,4 @@ class ListingFilter {
       allergensToExclude.isEmpty &&
       maxDistanceKm == null &&
       !inStockOnly;
-
-  ListingFilter copyWith({
-    SellerCategory? category,
-    bool clearCategory = false,
-    Set<CuisineType>? cuisines,
-    Set<DietaryTag>? diets,
-    Set<DishType>? dishTypes,
-    Set<Allergen>? allergensToExclude,
-    double? maxDistanceKm,
-    bool clearMaxDistance = false,
-    bool? inStockOnly,
-  }) {
-    return ListingFilter(
-      category: clearCategory ? null : (category ?? this.category),
-      cuisines: cuisines ?? this.cuisines,
-      diets: diets ?? this.diets,
-      dishTypes: dishTypes ?? this.dishTypes,
-      allergensToExclude: allergensToExclude ?? this.allergensToExclude,
-      maxDistanceKm:
-          clearMaxDistance ? null : (maxDistanceKm ?? this.maxDistanceKm),
-      inStockOnly: inStockOnly ?? this.inStockOnly,
-    );
-  }
 }

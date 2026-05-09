@@ -36,10 +36,8 @@ class FilterController extends GetxController {
         : f.maxDistanceKm;
     filter.value = f.copyWith(
       category: category,
-      clearCategory: category == null,
       dishTypes: validDishes,
       maxDistanceKm: clampedRadius,
-      clearMaxDistance: clampedRadius == null,
     );
   }
 
@@ -62,10 +60,7 @@ class FilterController extends GetxController {
   }
 
   void setMaxDistance(double? km) {
-    filter.value = filter.value.copyWith(
-      maxDistanceKm: km,
-      clearMaxDistance: km == null,
-    );
+    filter.value = filter.value.copyWith(maxDistanceKm: km);
   }
 
   void setInStockOnly(bool value) {
