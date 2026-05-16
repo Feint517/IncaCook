@@ -10,14 +10,14 @@ _ProductAddOn _$ProductAddOnFromJson(Map<String, dynamic> json) =>
     _ProductAddOn(
       id: json['id'] as String,
       label: json['label'] as String,
-      priceDelta: (json['price_delta'] as num).toDouble(),
-      isSelectedByDefault: json['is_selected_by_default'] as bool? ?? false,
+      priceDelta: (json['priceDelta'] as num).toDouble(),
+      isSelectedByDefault: json['isSelectedByDefault'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$ProductAddOnToJson(_ProductAddOn instance) =>
     <String, dynamic>{
       'id': instance.id,
       'label': instance.label,
-      'price_delta': instance.priceDelta,
-      'is_selected_by_default': instance.isSelectedByDefault,
+      'priceDelta': instance.priceDelta,
+      'isSelectedByDefault': instance.isSelectedByDefault,
     };

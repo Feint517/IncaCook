@@ -19,7 +19,9 @@ class SignupBottomBar extends GetView<SignupFlowController> {
   /// Approximate visible height: button (52) + vertical inner padding
   /// (12 + 16) + the [_bottomLift] gap below the bar. The system's bottom
   /// safe-area inset is added on top by the SafeArea inside [build], so
-  /// callers add only this constant.
+  /// callers add only this constant. Note: the inline error text above
+  /// the button only appears when a gate fails, so we don't reserve
+  /// extra space for it — the bar grows briefly when it shows.
   static const double reservedHeight = 92;
 
   /// Extra space below the frosted card so it doesn't sit flush against
@@ -51,51 +53,70 @@ class SignupBottomBar extends GetView<SignupFlowController> {
               AppSizes.md,
               12,
             ),
-            child: Row(
-          children: [
-            if (controller.canSkipCurrent) ...[
-              Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: OutlinedButton(
-                    onPressed: controller.isLoading.value
-                        ? null
-                        : controller.nextPage,
-                    child: const Text(AppTexts.signupSkipCta),
-                  ),
-                ),
-              ),
-              const Gap(AppSizes.sm),
-            ],
-            Expanded(
-              flex: controller.canSkipCurrent ? 1 : 2,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 150),
-                opacity: canGoNext ? 1.0 : 0.45,
-                child: SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: (canGoNext && !controller.isLoading.value)
-                        ? controller.nextPage
-                        : null,
-                    child: controller.isLoading.value
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(
-                            controller.isLastPage
-                                ? AppTexts.signupFinishCta
-                                : AppTexts.signupContinueCta,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (controller.submitError.value.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                    child: Text(
+                      controller.submitError.value,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.error,
+                            fontWeight: FontWeight.w600,
                           ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
+                ],
+                Row(
+                  children: [
+                    if (controller.canSkipCurrent) ...[
+                      Expanded(
+                        child: SizedBox(
+                          height: 52,
+                          child: OutlinedButton(
+                            onPressed: controller.isLoading.value
+                                ? null
+                                : controller.nextPage,
+                            child: const Text(AppTexts.signupSkipCta),
+                          ),
+                        ),
+                      ),
+                      const Gap(AppSizes.sm),
+                    ],
+                    Expanded(
+                      flex: controller.canSkipCurrent ? 1 : 2,
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 150),
+                        opacity: canGoNext ? 1.0 : 0.45,
+                        child: SizedBox(
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed:
+                                (canGoNext && !controller.isLoading.value)
+                                    ? controller.nextPage
+                                    : null,
+                            child: controller.isLoading.value
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    controller.isLastPage
+                                        ? AppTexts.signupFinishCta
+                                        : AppTexts.signupContinueCta,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ),
               ],
             ),
           ),

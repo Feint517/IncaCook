@@ -10,21 +10,21 @@ _DriverAccount _$DriverAccountFromJson(Map<String, dynamic> json) =>
     _DriverAccount(
       vehicleType: $enumDecodeNullable(
         _$DriverVehicleTypeEnumMap,
-        json['vehicle_type'],
+        json['vehicleType'],
       ),
-      dateOfBirth: json['date_of_birth'] as String?,
+      dateOfBirth: json['dateOfBirth'] as String?,
       zones:
           (json['zones'] as List<dynamic>?)?.map((e) => e as String).toList() ??
           const <String>[],
-      canDeliver: json['can_deliver'] as bool? ?? false,
+      canDeliver: json['canDeliver'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$DriverAccountToJson(_DriverAccount instance) =>
     <String, dynamic>{
-      'vehicle_type': ?_$DriverVehicleTypeEnumMap[instance.vehicleType],
-      'date_of_birth': ?instance.dateOfBirth,
+      'vehicleType': ?_$DriverVehicleTypeEnumMap[instance.vehicleType],
+      'dateOfBirth': ?instance.dateOfBirth,
       'zones': instance.zones,
-      'can_deliver': instance.canDeliver,
+      'canDeliver': instance.canDeliver,
     };
 
 const _$DriverVehicleTypeEnumMap = {

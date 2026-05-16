@@ -8,16 +8,16 @@ part of 'opening_hours.dart';
 
 _OpeningHoursRow _$OpeningHoursRowFromJson(Map<String, dynamic> json) =>
     _OpeningHoursRow(
-      dayOfWeek: $enumDecode(_$DayOfWeekEnumMap, json['day_of_week']),
-      startTime: json['start_time'] as String,
-      endTime: json['end_time'] as String,
+      dayOfWeek: $enumDecode(_$DayOfWeekEnumMap, json['dayOfWeek']),
+      startTime: json['startTime'] as String,
+      endTime: json['endTime'] as String,
     );
 
 Map<String, dynamic> _$OpeningHoursRowToJson(_OpeningHoursRow instance) =>
     <String, dynamic>{
-      'day_of_week': _$DayOfWeekEnumMap[instance.dayOfWeek]!,
-      'start_time': instance.startTime,
-      'end_time': instance.endTime,
+      'dayOfWeek': _$DayOfWeekEnumMap[instance.dayOfWeek]!,
+      'startTime': instance.startTime,
+      'endTime': instance.endTime,
     };
 
 const _$DayOfWeekEnumMap = {

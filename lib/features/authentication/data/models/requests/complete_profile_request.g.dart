@@ -9,21 +9,21 @@ part of 'complete_profile_request.dart';
 _CompleteProfileRequest _$CompleteProfileRequestFromJson(
   Map<String, dynamic> json,
 ) => _CompleteProfileRequest(
-  firstName: json['first_name'] as String,
-  lastName: json['last_name'] as String,
+  firstName: json['firstName'] as String,
+  lastName: json['lastName'] as String,
   role: $enumDecode(_$UserRoleEnumMap, json['role']),
-  acceptedCgu: json['accepted_cgu'] as bool,
-  acceptedCgv: json['accepted_cgv'] as bool,
+  acceptedCgu: json['acceptedCgu'] as bool,
+  acceptedCgv: json['acceptedCgv'] as bool,
 );
 
 Map<String, dynamic> _$CompleteProfileRequestToJson(
   _CompleteProfileRequest instance,
 ) => <String, dynamic>{
-  'first_name': instance.firstName,
-  'last_name': instance.lastName,
+  'firstName': instance.firstName,
+  'lastName': instance.lastName,
   'role': _$UserRoleEnumMap[instance.role]!,
-  'accepted_cgu': instance.acceptedCgu,
-  'accepted_cgv': instance.acceptedCgv,
+  'acceptedCgu': instance.acceptedCgu,
+  'acceptedCgv': instance.acceptedCgv,
 };
 
 const _$UserRoleEnumMap = {

@@ -15,18 +15,24 @@ For deeper specifications:
 
 | Environment | Base URL | Notes |
 |---|---|---|
-| Local — iOS simulator | `http://127.0.0.1:3000` | Simulator shares host loopback |
-| Local — Android emulator | `http://10.0.2.2:3000` | Emulator-only alias for host loopback |
-| Local — physical device on Wi-Fi | `http://<your-LAN-IP>:3000` | e.g. `http://192.168.1.42:3000` |
+| Local — iOS simulator | `http://127.0.0.1:3001` | Simulator shares host loopback |
+| Local — Android emulator | `http://10.0.2.2:3001` | Emulator-only alias for host loopback |
+| Local — physical device on Wi-Fi | `http://<your-LAN-IP>:3001` | e.g. `http://192.168.1.42:3001` |
 | Staging / Prod | TBD | Inject via `--dart-define` at build time |
 
 All routes are prefixed with `/v1/`. Versioning is via URI segment — when we
 ship breaking changes, we'll mount `/v2/` in parallel.
 
+> **Port 3001, not 3000.** The local backend listens on 3001 because the
+> UrbanFlow backend already binds 3000 on the shared dev machine
+> (see [`local-testing.md`](./local-testing.md)). Production will go
+> back to a normal hostname so this won't surface in built apps —
+> only the local-dev base URL needs to know.
+
 ```dart
 const apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'http://localhost:3000',
+  defaultValue: 'http://localhost:3001',
 );
 ```
 
@@ -157,6 +163,7 @@ All under `/v1/auth/*`. Public endpoints don't need an `Authorization` header.
 |---|---|---|---|---|
 | `POST /auth/signup` | public | `{ email, password }` | session | 201 |
 | `POST /auth/signin` | public | `{ email, password }` | session | 200 |
+| `POST /auth/google` | public | `{ idToken, nonce? }` | session | 200 |
 | `POST /auth/refresh` | public (refreshToken in body) | `{ refreshToken }` | session | 200 |
 | `POST /auth/signout?scope=local\|global` | Bearer | — | — | 204 |
 | `POST /auth/password/reset-request` | public | `{ email, redirectTo? }` | — | 204 |
@@ -282,6 +289,100 @@ class AuthInterceptor extends Interceptor {
   }
 }
 ```
+
+### Google Sign-In
+
+The app talks to Google **only through the native plugin** — no HTTP
+calls to Google from Dart. The plugin returns a Google ID token; we
+forward it to `POST /v1/auth/google` and get back the same
+`SessionResponse` shape as email signup.
+
+#### Client IDs
+
+| Where | Client ID type | Used for |
+|---|---|---|
+| `ios/Runner/Info.plist` (`GIDClientID`) | iOS | Native account picker on iOS |
+| Android — auto-detected from package + SHA-1 | Android | Native account picker on Android |
+| `serverClientId` parameter to `GoogleSignIn` | **Web** | The `aud` of the ID token Supabase validates |
+
+> **The Web client ID is the important one for this flow.** Both iOS
+> and Android must request the ID token with `serverClientId` = the
+> Web client ID so the resulting `aud` matches what our backend's
+> Supabase is configured to accept. If `serverClientId` is wrong (or
+> missing), `POST /v1/auth/google` returns 400 `Bad ID token` with an
+> audience mismatch.
+
+#### `pubspec.yaml`
+
+```yaml
+dependencies:
+  google_sign_in: ^6.2.1
+```
+
+#### iOS setup
+
+In `ios/Runner/Info.plist`, add:
+
+```xml
+<key>GIDClientID</key>
+<string>850527183709-vqsisaq8u8825lmfkd337l10lplqlalf.apps.googleusercontent.com</string>
+<key>CFBundleURLTypes</key>
+<array>
+  <dict>
+    <key>CFBundleURLSchemes</key>
+    <array>
+      <!-- The "REVERSED_CLIENT_ID" from the iOS GoogleService-Info.plist -->
+      <string>com.googleusercontent.apps.850527183709-vqsisaq8u8825lmfkd337l10lplqlalf</string>
+    </array>
+  </dict>
+</array>
+```
+
+Bundle ID is `com.progix.incacook`.
+
+#### Android setup
+
+No manifest changes. Android infers the OAuth client from the package
+name + signing SHA-1; make sure both are registered in the Google Cloud
+Android client. For debug builds, register the debug keystore SHA-1
+too (`./gradlew signingReport`).
+
+#### Dart usage
+
+```dart
+import 'package:google_sign_in/google_sign_in.dart';
+
+// Use the WEB client ID as serverClientId on BOTH platforms.
+final _googleSignIn = GoogleSignIn(
+  serverClientId:
+      '850527183709-ejcjec7majq565uo473n601ek9kj2ic5.apps.googleusercontent.com',
+  scopes: ['email', 'profile'],
+);
+
+Future<Session> signInWithGoogle() async {
+  final account = await _googleSignIn.signIn();
+  if (account == null) throw Exception('User cancelled');
+  final auth = await account.authentication;
+  final idToken = auth.idToken;
+  if (idToken == null) throw Exception('No ID token returned by Google');
+
+  final resp = await dio.post(
+    '/v1/auth/google',
+    data: {'idToken': idToken},
+  );
+  return Session.fromJson(resp.data['data']);
+}
+```
+
+After this returns, the flow is identical to email signup:
+- **First-time Google user** → no `User` row yet; the wizard sends the
+  user to the role-selection screen and POSTs `/v1/users` (Gate 2).
+- **Returning Google user** → `GET /v1/users/me/onboarding` decides
+  whether to drop them at the home screen or resume an unfinished
+  wizard step.
+- **Email-password user with the same Google email** → Supabase
+  auto-links the Google identity to the existing `auth.users` row; the
+  user lands on their existing `User` row with their existing role.
 
 ### Password reset deep link
 

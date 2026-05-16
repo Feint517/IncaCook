@@ -8,8 +8,8 @@ part of 'password_update_request.dart';
 
 _PasswordUpdateRequest _$PasswordUpdateRequestFromJson(
   Map<String, dynamic> json,
-) => _PasswordUpdateRequest(newPassword: json['new_password'] as String);
+) => _PasswordUpdateRequest(newPassword: json['newPassword'] as String);
 
 Map<String, dynamic> _$PasswordUpdateRequestToJson(
   _PasswordUpdateRequest instance,
-) => <String, dynamic>{'new_password': instance.newPassword};
+) => <String, dynamic>{'newPassword': instance.newPassword};

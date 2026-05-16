@@ -10,14 +10,14 @@ _CharterAcceptance _$CharterAcceptanceFromJson(Map<String, dynamic> json) =>
     _CharterAcceptance(
       charter: $enumDecode(_$CharterEnumMap, json['charter']),
       version: json['version'] as String,
-      acceptedAt: json['accepted_at'] as String,
+      acceptedAt: json['acceptedAt'] as String,
     );
 
 Map<String, dynamic> _$CharterAcceptanceToJson(_CharterAcceptance instance) =>
     <String, dynamic>{
       'charter': _$CharterEnumMap[instance.charter]!,
       'version': instance.version,
-      'accepted_at': instance.acceptedAt,
+      'acceptedAt': instance.acceptedAt,
     };
 
 const _$CharterEnumMap = {

@@ -44,7 +44,7 @@ Map<String, dynamic> _$SavedCardPaymentMethodToJson(
 PayPalPaymentMethod _$PayPalPaymentMethodFromJson(Map<String, dynamic> json) =>
     PayPalPaymentMethod(
       id: json['id'] as String,
-      maskedEmail: json['masked_email'] as String,
+      maskedEmail: json['maskedEmail'] as String,
       $type: json['kind'] as String?,
     );
 
@@ -52,7 +52,7 @@ Map<String, dynamic> _$PayPalPaymentMethodToJson(
   PayPalPaymentMethod instance,
 ) => <String, dynamic>{
   'id': instance.id,
-  'masked_email': instance.maskedEmail,
+  'maskedEmail': instance.maskedEmail,
   'kind': instance.$type,
 };
 

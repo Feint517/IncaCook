@@ -10,7 +10,7 @@ _BuyerPreferencesRequest _$BuyerPreferencesRequestFromJson(
   Map<String, dynamic> json,
 ) => _BuyerPreferencesRequest(
   dietaryTags:
-      (json['dietary_tags'] as List<dynamic>?)
+      (json['dietaryTags'] as List<dynamic>?)
           ?.map((e) => $enumDecode(_$DietaryTagEnumMap, e))
           .toList() ??
       const <DietaryTag>[],
@@ -24,7 +24,7 @@ _BuyerPreferencesRequest _$BuyerPreferencesRequestFromJson(
 Map<String, dynamic> _$BuyerPreferencesRequestToJson(
   _BuyerPreferencesRequest instance,
 ) => <String, dynamic>{
-  'dietary_tags': instance.dietaryTags
+  'dietaryTags': instance.dietaryTags
       .map((e) => _$DietaryTagEnumMap[e]!)
       .toList(),
   'allergens': instance.allergens.map((e) => _$AllergenEnumMap[e]!).toList(),

@@ -12,7 +12,7 @@ _SellerCuisinesRequest _$SellerCuisinesRequestFromJson(
   cuisines: (json['cuisines'] as List<dynamic>)
       .map((e) => $enumDecode(_$CuisineTypeEnumMap, e))
       .toList(),
-  dishTypes: (json['dish_types'] as List<dynamic>)
+  dishTypes: (json['dishTypes'] as List<dynamic>)
       .map((e) => $enumDecode(_$DishTypeEnumMap, e))
       .toList(),
 );
@@ -21,7 +21,7 @@ Map<String, dynamic> _$SellerCuisinesRequestToJson(
   _SellerCuisinesRequest instance,
 ) => <String, dynamic>{
   'cuisines': instance.cuisines.map((e) => _$CuisineTypeEnumMap[e]!).toList(),
-  'dish_types': instance.dishTypes.map((e) => _$DishTypeEnumMap[e]!).toList(),
+  'dishTypes': instance.dishTypes.map((e) => _$DishTypeEnumMap[e]!).toList(),
 };
 
 const _$CuisineTypeEnumMap = {

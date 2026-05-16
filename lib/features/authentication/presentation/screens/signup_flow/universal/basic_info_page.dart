@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:incacook/core/config/feature_flags.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/features/authentication/controllers/signup_flow_controller.dart';
@@ -57,7 +58,9 @@ class BasicInfoPage extends GetView<SignupFlowController> {
           const Gap(AppSizes.md),
           Obx(() => SignupTextField(
                 controller: controller.phoneTextController,
-                label: AppTexts.signupPhoneLabel,
+                label: FeatureFlags.useEmailOtpBypass
+                    ? AppTexts.signupPhoneLabelOptional
+                    : AppTexts.signupPhoneLabel,
                 hint: AppTexts.signupPhoneHint,
                 leadingIcon: Iconsax.call,
                 keyboardType: TextInputType.phone,

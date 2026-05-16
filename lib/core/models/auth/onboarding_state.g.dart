@@ -17,10 +17,10 @@ _OnboardingState _$OnboardingStateFromJson(Map<String, dynamic> json) =>
           const <String, OnboardingStatus>{},
       kycReviewState: $enumDecodeNullable(
         _$KycReviewStateEnumMap,
-        json['kyc_review_state'],
+        json['kycReviewState'],
       ),
-      canList: json['can_list'] as bool?,
-      canDeliver: json['can_deliver'] as bool?,
+      canList: json['canList'] as bool?,
+      canDeliver: json['canDeliver'] as bool?,
     );
 
 Map<String, dynamic> _$OnboardingStateToJson(_OnboardingState instance) =>
@@ -30,9 +30,9 @@ Map<String, dynamic> _$OnboardingStateToJson(_OnboardingState instance) =>
       'steps': instance.steps.map(
         (k, e) => MapEntry(k, _$OnboardingStatusEnumMap[e]!),
       ),
-      'kyc_review_state': ?_$KycReviewStateEnumMap[instance.kycReviewState],
-      'can_list': ?instance.canList,
-      'can_deliver': ?instance.canDeliver,
+      'kycReviewState': ?_$KycReviewStateEnumMap[instance.kycReviewState],
+      'canList': ?instance.canList,
+      'canDeliver': ?instance.canDeliver,
     };
 
 const _$UserRoleEnumMap = {

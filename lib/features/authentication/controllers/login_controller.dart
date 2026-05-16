@@ -3,28 +3,23 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
 import 'package:incacook/core/common/styles/loaders.dart';
-import 'package:incacook/core/common/widgets/navigation/navigation_menu.dart';
 import 'package:incacook/core/constants/animations.dart';
 import 'package:incacook/core/network/api_response.dart';
 import 'package:incacook/core/utils/helpers/network_manager.dart';
 import 'package:incacook/core/utils/popups/fullscreen_loader.dart';
 import 'package:incacook/features/authentication/data/models/requests/signin_request.dart';
-import 'package:incacook/features/authentication/data/models/user_role.dart';
 import 'package:incacook/features/authentication/data/repositories/auth_repository.dart';
-import 'package:incacook/features/authentication/data/repositories/users_repository.dart';
-import 'package:incacook/features/client/presentation/client_nav_tabs.dart';
-import 'package:incacook/features/delivery/presentation/screens/delivery_home.dart';
-import 'package:incacook/features/seller/presentation/seller_nav_tabs.dart';
+import 'package:incacook/features/authentication/services/post_auth_router.dart';
 
 class LoginController extends GetxController {
   LoginController({
     AuthRepository? authRepository,
-    UsersRepository? usersRepository,
-  }) : _authRepository = authRepository ?? Get.find<AuthRepository>(),
-       _usersRepository = usersRepository ?? Get.find<UsersRepository>();
+    PostAuthRouter? router,
+  })  : _authRepository = authRepository ?? Get.find<AuthRepository>(),
+        _router = router ?? Get.find<PostAuthRouter>();
 
   final AuthRepository _authRepository;
-  final UsersRepository _usersRepository;
+  final PostAuthRouter _router;
 
   // Form state.
   final localStorage = GetStorage();
@@ -63,11 +58,9 @@ class LoginController extends GetxController {
   /// Email + password sign-in.
   ///
   /// On success, persists tokens (via [AuthRepository.signin]'s side
-  /// effect), fetches the user's onboarding state, and routes:
-  ///   - `next == null` → the role's home screen
-  ///   - any non-null `next` (or onboarding endpoint errors, e.g. when
-  ///     the user has tokens but no IncaCook profile row yet) → the
-  ///     signup wizard, which picks up from wherever they left off.
+  /// effect) and hands off to [PostAuthRouter] for routing — same rules
+  /// as cold-start bootstrap, so a half-completed wizard is resumed
+  /// in-place instead of restarted from page 0.
   Future<void> emailAndPasswordSignIn() async {
     submitError.value = '';
     if (!(loginFormKey.currentState?.validate() ?? false)) return;
@@ -75,22 +68,20 @@ class LoginController extends GetxController {
     if (isLoading.value) return;
     isLoading.value = true;
 
+    var loaderShown = false;
     try {
-      //* start loading
       CustomFullscreenLoader.openLoadingDialog(
         'Logging in...',
         AppAnimations.loading,
       );
+      loaderShown = true;
 
-      //* check internet connection
       final isConnected = await NetworkManager.instance.isConnected();
       if (!isConnected) {
-        CustomFullscreenLoader.stopLoading();
-        isLoading.value = false;
+        // NetworkManager itself toasts; just bail before hitting the wire.
         return;
       }
 
-      //* login user using email and password authentication
       await _authRepository.signin(
         SigninRequest(
           email: email.text.trim(),
@@ -98,63 +89,29 @@ class LoginController extends GetxController {
         ),
       );
 
-      //* save data if remember me is selected
       if (rememberMe.value) {
         await localStorage.write(_kRememberEmail, email.text.trim());
       } else {
         await localStorage.remove(_kRememberEmail);
       }
 
-      //* route depending on the user's signup completion
-      await _routeAfterSignin();
-    } on ApiFailure catch (e) {
-      //* remove the loader
+      final decision = await _router.decide();
+      // Stop the loader before navigating so it doesn't outlive the route.
       CustomFullscreenLoader.stopLoading();
-
-      // §3.2: 401 → wrong credentials; the message is intentionally
-      // vague server-side ("invalid email or password") so we surface
-      // it as-is. Other failures surface the backend message verbatim.
+      loaderShown = false;
+      _router.navigateTo(decision);
+    } on ApiFailure catch (e) {
+      // §3.2: 401 → wrong credentials. Anything else → surface the
+      // backend message verbatim. We do NOT navigate on error — the
+      // user stays on the login screen and can retry.
       submitError.value = e.message;
-
-      //* show some generic error to the user
       CustomLoaders.errorSnackBar(title: 'Oh snap!', message: e.message);
     } catch (e) {
-      //* remove the loader
-      CustomFullscreenLoader.stopLoading();
       submitError.value = e.toString();
       CustomLoaders.errorSnackBar(title: 'Oh snap!', message: e.toString());
     } finally {
+      if (loaderShown) CustomFullscreenLoader.stopLoading();
       isLoading.value = false;
-    }
-  }
-
-  /// Decide where to drop the user post-signin. The onboarding endpoint
-  /// is the single source of truth — see `docs/signup-flow.md` §4.
-  Future<void> _routeAfterSignin() async {
-    try {
-      final state = await _usersRepository.fetchOnboarding();
-      CustomFullscreenLoader.stopLoading(); // stop loading before redirecting
-      if (state.next == null) {
-        _goToRoleHome(state.role);
-        return;
-      }
-    } catch (e) {
-      CustomFullscreenLoader.stopLoading(); // stop loading before redirecting
-      // No profile row yet (signed up but abandoned the wizard) —
-      // drop into /signup. Future: wire cold-start wizard resume so
-      // the wizard pages to the right step.
-    }
-    Get.offAllNamed<void>('/signup');
-  }
-
-  void _goToRoleHome(UserRole role) {
-    switch (role) {
-      case UserRole.buyer:
-        Get.offAll<void>(() => const NavigationMenu(tabs: kClientNavTabs));
-      case UserRole.seller:
-        Get.offAll<void>(() => const NavigationMenu(tabs: kSellerNavTabs));
-      case UserRole.driver:
-        Get.offAll<void>(() => const DeliveryHomeScreen());
     }
   }
 }

@@ -10,10 +10,10 @@ _CreateKycDocumentRequest _$CreateKycDocumentRequestFromJson(
   Map<String, dynamic> json,
 ) => _CreateKycDocumentRequest(
   type: $enumDecode(_$KycDocumentTypeEnumMap, json['type']),
-  fileUrl: json['file_url'] as String,
+  fileUrl: json['fileUrl'] as String,
   idDocumentType: $enumDecodeNullable(
     _$IdDocumentTypeEnumMap,
-    json['id_document_type'],
+    json['idDocumentType'],
   ),
 );
 
@@ -21,8 +21,8 @@ Map<String, dynamic> _$CreateKycDocumentRequestToJson(
   _CreateKycDocumentRequest instance,
 ) => <String, dynamic>{
   'type': _$KycDocumentTypeEnumMap[instance.type]!,
-  'file_url': instance.fileUrl,
-  'id_document_type': ?_$IdDocumentTypeEnumMap[instance.idDocumentType],
+  'fileUrl': instance.fileUrl,
+  'idDocumentType': ?_$IdDocumentTypeEnumMap[instance.idDocumentType],
 };
 
 const _$KycDocumentTypeEnumMap = {

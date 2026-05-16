@@ -9,11 +9,11 @@ part of 'kyc_document.dart';
 _KycDocument _$KycDocumentFromJson(Map<String, dynamic> json) => _KycDocument(
   id: json['id'] as String,
   type: $enumDecode(_$KycDocumentTypeEnumMap, json['type']),
-  fileUrl: json['file_url'] as String,
-  reviewState: $enumDecode(_$KycReviewStateEnumMap, json['review_state']),
-  rejectionReason: json['rejection_reason'] as String?,
-  submittedAt: json['submitted_at'] as String,
-  reviewedAt: json['reviewed_at'] as String?,
+  fileUrl: json['fileUrl'] as String,
+  reviewState: $enumDecode(_$KycReviewStateEnumMap, json['reviewState']),
+  rejectionReason: json['rejectionReason'] as String?,
+  submittedAt: json['submittedAt'] as String,
+  reviewedAt: json['reviewedAt'] as String?,
   metadata: json['metadata'] == null
       ? null
       : KycDocumentMetadata.fromJson(json['metadata'] as Map<String, dynamic>),
@@ -23,11 +23,11 @@ Map<String, dynamic> _$KycDocumentToJson(_KycDocument instance) =>
     <String, dynamic>{
       'id': instance.id,
       'type': _$KycDocumentTypeEnumMap[instance.type]!,
-      'file_url': instance.fileUrl,
-      'review_state': _$KycReviewStateEnumMap[instance.reviewState]!,
-      'rejection_reason': ?instance.rejectionReason,
-      'submitted_at': instance.submittedAt,
-      'reviewed_at': ?instance.reviewedAt,
+      'fileUrl': instance.fileUrl,
+      'reviewState': _$KycReviewStateEnumMap[instance.reviewState]!,
+      'rejectionReason': ?instance.rejectionReason,
+      'submittedAt': instance.submittedAt,
+      'reviewedAt': ?instance.reviewedAt,
       'metadata': ?instance.metadata?.toJson(),
     };
 
@@ -50,14 +50,14 @@ _KycDocumentMetadata _$KycDocumentMetadataFromJson(Map<String, dynamic> json) =>
     _KycDocumentMetadata(
       idDocumentType: $enumDecodeNullable(
         _$IdDocumentTypeEnumMap,
-        json['id_document_type'],
+        json['idDocumentType'],
       ),
     );
 
 Map<String, dynamic> _$KycDocumentMetadataToJson(
   _KycDocumentMetadata instance,
 ) => <String, dynamic>{
-  'id_document_type': ?_$IdDocumentTypeEnumMap[instance.idDocumentType],
+  'idDocumentType': ?_$IdDocumentTypeEnumMap[instance.idDocumentType],
 };
 
 const _$IdDocumentTypeEnumMap = {

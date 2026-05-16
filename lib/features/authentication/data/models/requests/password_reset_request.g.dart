@@ -10,12 +10,12 @@ _PasswordResetRequest _$PasswordResetRequestFromJson(
   Map<String, dynamic> json,
 ) => _PasswordResetRequest(
   email: json['email'] as String,
-  redirectTo: json['redirect_to'] as String?,
+  redirectTo: json['redirectTo'] as String?,
 );
 
 Map<String, dynamic> _$PasswordResetRequestToJson(
   _PasswordResetRequest instance,
 ) => <String, dynamic>{
   'email': instance.email,
-  'redirect_to': ?instance.redirectTo,
+  'redirectTo': ?instance.redirectTo,
 };

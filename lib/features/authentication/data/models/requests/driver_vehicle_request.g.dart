@@ -9,15 +9,15 @@ part of 'driver_vehicle_request.dart';
 _DriverVehicleRequest _$DriverVehicleRequestFromJson(
   Map<String, dynamic> json,
 ) => _DriverVehicleRequest(
-  vehicleType: $enumDecode(_$DriverVehicleTypeEnumMap, json['vehicle_type']),
-  dateOfBirth: json['date_of_birth'] as String?,
+  vehicleType: $enumDecode(_$DriverVehicleTypeEnumMap, json['vehicleType']),
+  dateOfBirth: json['dateOfBirth'] as String?,
 );
 
 Map<String, dynamic> _$DriverVehicleRequestToJson(
   _DriverVehicleRequest instance,
 ) => <String, dynamic>{
-  'vehicle_type': _$DriverVehicleTypeEnumMap[instance.vehicleType]!,
-  'date_of_birth': ?instance.dateOfBirth,
+  'vehicleType': _$DriverVehicleTypeEnumMap[instance.vehicleType]!,
+  'dateOfBirth': ?instance.dateOfBirth,
 };
 
 const _$DriverVehicleTypeEnumMap = {

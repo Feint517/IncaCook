@@ -20,17 +20,17 @@ _ListingFilter _$ListingFilterFromJson(Map<String, dynamic> json) =>
               .toSet() ??
           const <DietaryTag>{},
       dishTypes:
-          (json['dish_types'] as List<dynamic>?)
+          (json['dishTypes'] as List<dynamic>?)
               ?.map((e) => $enumDecode(_$DishTypeEnumMap, e))
               .toSet() ??
           const <DishType>{},
       allergensToExclude:
-          (json['allergens_to_exclude'] as List<dynamic>?)
+          (json['allergensToExclude'] as List<dynamic>?)
               ?.map((e) => $enumDecode(_$AllergenEnumMap, e))
               .toSet() ??
           const <Allergen>{},
-      maxDistanceKm: (json['max_distance_km'] as num?)?.toDouble(),
-      inStockOnly: json['in_stock_only'] as bool? ?? false,
+      maxDistanceKm: (json['maxDistanceKm'] as num?)?.toDouble(),
+      inStockOnly: json['inStockOnly'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$ListingFilterToJson(
@@ -39,12 +39,12 @@ Map<String, dynamic> _$ListingFilterToJson(
   'category': ?_$SellerCategoryEnumMap[instance.category],
   'cuisines': instance.cuisines.map((e) => _$CuisineTypeEnumMap[e]!).toList(),
   'diets': instance.diets.map((e) => _$DietaryTagEnumMap[e]!).toList(),
-  'dish_types': instance.dishTypes.map((e) => _$DishTypeEnumMap[e]!).toList(),
-  'allergens_to_exclude': instance.allergensToExclude
+  'dishTypes': instance.dishTypes.map((e) => _$DishTypeEnumMap[e]!).toList(),
+  'allergensToExclude': instance.allergensToExclude
       .map((e) => _$AllergenEnumMap[e]!)
       .toList(),
-  'max_distance_km': ?instance.maxDistanceKm,
-  'in_stock_only': instance.inStockOnly,
+  'maxDistanceKm': ?instance.maxDistanceKm,
+  'inStockOnly': instance.inStockOnly,
 };
 
 const _$SellerCategoryEnumMap = {

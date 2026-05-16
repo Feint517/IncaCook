@@ -1,3 +1,5 @@
+import 'package:incacook/features/authentication/data/models/user_role.dart';
+
 /// Stable identifier for each step in the signup flow. The page-list order
 /// is dynamic (depends on role / sub-type / vehicle), but a step's identity
 /// does not — so validation can switch on the step rather than the index.
@@ -29,4 +31,63 @@ enum SignupStep {
   driverDocuments,
   driverZone,
   driverCharter,
+}
+
+/// Maps `OnboardingState.next` (a backend step key like `kyc_id` or
+/// `addresses`) to the local [SignupStep] enum that drives the wizard's
+/// PageView. Used by the bootstrap splash when resuming a mid-signup
+/// user. Returns `null` for keys this client doesn't recognize so the
+/// caller can fall back to the first role-specific step.
+///
+/// Keys come from `docs/signup-flow.md` §4.3.
+SignupStep? signupStepFromOnboardingKey(String key, UserRole role) {
+  switch (role) {
+    case UserRole.buyer:
+      switch (key) {
+        case 'addresses':
+          return SignupStep.buyerAddress;
+        case 'preferences':
+          return SignupStep.buyerDietary;
+      }
+    case UserRole.seller:
+      switch (key) {
+        // The seller wizard pairs profile + DOB across two consecutive
+        // screens. Server-side `profile` requires displayName + photo +
+        // dob + category, so resuming at `profile` puts the user on the
+        // first of the two; `addresses` puts them on the second since
+        // it's where the pickup address PUT fires.
+        case 'profile':
+          return SignupStep.sellerProfile;
+        case 'addresses':
+          return SignupStep.sellerDobAddress;
+        case 'business':
+          return SignupStep.sellerBusinessInfo;
+        case 'cuisines':
+          return SignupStep.sellerCuisine;
+        case 'kyc_id':
+          return SignupStep.sellerKycId;
+        case 'kyc_selfie':
+          return SignupStep.sellerKycSelfie;
+        case 'charter':
+          return SignupStep.sellerCharter;
+      }
+    case UserRole.driver:
+      switch (key) {
+        case 'addresses':
+          return SignupStep.driverDobAddress;
+        case 'vehicle':
+          return SignupStep.driverVehicle;
+        case 'kyc_id':
+          return SignupStep.driverKycId;
+        case 'kyc_selfie':
+          return SignupStep.driverKycSelfie;
+        case 'documents':
+          return SignupStep.driverDocuments;
+        case 'zones':
+          return SignupStep.driverZone;
+        case 'charter':
+          return SignupStep.driverCharter;
+      }
+  }
+  return null;
 }

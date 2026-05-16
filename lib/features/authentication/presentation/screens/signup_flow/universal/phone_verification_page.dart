@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
+import 'package:incacook/core/config/feature_flags.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/features/authentication/controllers/signup_flow_controller.dart';
@@ -31,10 +32,14 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
     final controller = Get.find<SignupFlowController>();
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final useEmail = FeatureFlags.useEmailOtpBypass;
 
     return SignupStepLayout(
-      title: AppTexts.signupOtpTitle,
-      description: AppTexts.signupOtpSubtitle(_formatPhone(controller.phone.value)),
+      title: useEmail ? AppTexts.signupOtpEmailTitle : AppTexts.signupOtpTitle,
+      description: useEmail
+          ? AppTexts.signupOtpEmailSubtitle(
+              _formatEmail(controller.email.value))
+          : AppTexts.signupOtpSubtitle(_formatPhone(controller.phone.value)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -86,7 +91,9 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
                           await controller.requestOtp();
                           Get.snackbar(
                             AppTexts.signupOtpResentTitle,
-                            AppTexts.signupOtpResentBody,
+                            useEmail
+                                ? AppTexts.signupOtpEmailResentBody
+                                : AppTexts.signupOtpResentBody,
                             snackPosition: SnackPosition.TOP,
                           );
                         }
@@ -99,7 +106,9 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
                 ),
                 TextButton(
                   onPressed: controller.previousPage,
-                  child: const Text(AppTexts.signupOtpEditNumber),
+                  child: Text(useEmail
+                      ? AppTexts.signupOtpEmailEditAddress
+                      : AppTexts.signupOtpEditNumber),
                 ),
               ],
             );
@@ -135,5 +144,11 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
     final digits = raw.replaceAll(RegExp(r'\D'), '');
     if (digits.isEmpty) return AppTexts.signupOtpDefaultPhone;
     return '+33 $digits';
+  }
+
+  String _formatEmail(String raw) {
+    final v = raw.trim();
+    if (v.isEmpty) return AppTexts.signupOtpEmailDefaultDestination;
+    return v;
   }
 }

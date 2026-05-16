@@ -9,35 +9,35 @@ part of 'food_listing.dart';
 _FoodListing _$FoodListingFromJson(Map<String, dynamic> json) => _FoodListing(
   id: json['id'] as String,
   name: json['name'] as String,
-  imageUrl: json['image_url'] as String,
-  sellerName: json['seller_name'] as String,
+  imageUrl: json['imageUrl'] as String,
+  sellerName: json['sellerName'] as String,
   category: $enumDecode(_$SellerCategoryEnumMap, json['category']),
   price: (json['price'] as num).toDouble(),
-  portionsLeft: (json['portions_left'] as num).toInt(),
+  portionsLeft: (json['portionsLeft'] as num).toInt(),
   fulfillment: $enumDecode(_$FulfillmentEnumMap, json['fulfillment']),
-  expiresAt: DateTime.parse(json['expires_at'] as String),
-  distanceKm: (json['distance_km'] as num?)?.toDouble() ?? 0,
+  expiresAt: DateTime.parse(json['expiresAt'] as String),
+  distanceKm: (json['distanceKm'] as num?)?.toDouble() ?? 0,
   rating: (json['rating'] as num?)?.toDouble() ?? 0,
-  reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
-  originalPrice: (json['original_price'] as num?)?.toDouble(),
-  discountPercent: (json['discount_percent'] as num?)?.toInt() ?? 0,
-  prepMinutes: (json['prep_minutes'] as num?)?.toInt(),
-  isAvailable: json['is_available'] as bool? ?? true,
-  isVeg: json['is_veg'] as bool? ?? false,
-  menuCategory: json['menu_category'] as String?,
+  reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
+  originalPrice: (json['originalPrice'] as num?)?.toDouble(),
+  discountPercent: (json['discountPercent'] as num?)?.toInt() ?? 0,
+  prepMinutes: (json['prepMinutes'] as num?)?.toInt(),
+  isAvailable: json['isAvailable'] as bool? ?? true,
+  isVeg: json['isVeg'] as bool? ?? false,
+  menuCategory: json['menuCategory'] as String?,
   dietaryTags:
-      (json['dietary_tags'] as List<dynamic>?)
+      (json['dietaryTags'] as List<dynamic>?)
           ?.map((e) => $enumDecode(_$DietaryTagEnumMap, e))
           .toList() ??
       const <DietaryTag>[],
-  cuisineType: $enumDecodeNullable(_$CuisineTypeEnumMap, json['cuisine_type']),
-  dishType: $enumDecodeNullable(_$DishTypeEnumMap, json['dish_type']),
+  cuisineType: $enumDecodeNullable(_$CuisineTypeEnumMap, json['cuisineType']),
+  dishType: $enumDecodeNullable(_$DishTypeEnumMap, json['dishType']),
   allergens:
       (json['allergens'] as List<dynamic>?)
           ?.map((e) => $enumDecode(_$AllergenEnumMap, e))
           .toList() ??
       const <Allergen>[],
-  otherAllergens: json['other_allergens'] as String?,
+  otherAllergens: json['otherAllergens'] as String?,
 );
 
 Map<String, dynamic> _$FoodListingToJson(
@@ -45,29 +45,29 @@ Map<String, dynamic> _$FoodListingToJson(
 ) => <String, dynamic>{
   'id': instance.id,
   'name': instance.name,
-  'image_url': instance.imageUrl,
-  'seller_name': instance.sellerName,
+  'imageUrl': instance.imageUrl,
+  'sellerName': instance.sellerName,
   'category': _$SellerCategoryEnumMap[instance.category]!,
   'price': instance.price,
-  'portions_left': instance.portionsLeft,
+  'portionsLeft': instance.portionsLeft,
   'fulfillment': _$FulfillmentEnumMap[instance.fulfillment]!,
-  'expires_at': instance.expiresAt.toIso8601String(),
-  'distance_km': instance.distanceKm,
+  'expiresAt': instance.expiresAt.toIso8601String(),
+  'distanceKm': instance.distanceKm,
   'rating': instance.rating,
-  'review_count': instance.reviewCount,
-  'original_price': ?instance.originalPrice,
-  'discount_percent': instance.discountPercent,
-  'prep_minutes': ?instance.prepMinutes,
-  'is_available': instance.isAvailable,
-  'is_veg': instance.isVeg,
-  'menu_category': ?instance.menuCategory,
-  'dietary_tags': instance.dietaryTags
+  'reviewCount': instance.reviewCount,
+  'originalPrice': ?instance.originalPrice,
+  'discountPercent': instance.discountPercent,
+  'prepMinutes': ?instance.prepMinutes,
+  'isAvailable': instance.isAvailable,
+  'isVeg': instance.isVeg,
+  'menuCategory': ?instance.menuCategory,
+  'dietaryTags': instance.dietaryTags
       .map((e) => _$DietaryTagEnumMap[e]!)
       .toList(),
-  'cuisine_type': ?_$CuisineTypeEnumMap[instance.cuisineType],
-  'dish_type': ?_$DishTypeEnumMap[instance.dishType],
+  'cuisineType': ?_$CuisineTypeEnumMap[instance.cuisineType],
+  'dishType': ?_$DishTypeEnumMap[instance.dishType],
   'allergens': instance.allergens.map((e) => _$AllergenEnumMap[e]!).toList(),
-  'other_allergens': ?instance.otherAllergens,
+  'otherAllergens': ?instance.otherAllergens,
 };
 
 const _$SellerCategoryEnumMap = {

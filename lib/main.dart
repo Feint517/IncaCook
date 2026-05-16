@@ -13,6 +13,7 @@ import 'package:incacook/features/authentication/data/repositories/kyc_repositor
 import 'package:incacook/features/authentication/data/repositories/sellers_repository.dart';
 import 'package:incacook/features/authentication/data/repositories/uploads_repository.dart';
 import 'package:incacook/features/authentication/data/repositories/users_repository.dart';
+import 'package:incacook/features/authentication/services/post_auth_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
@@ -47,6 +48,7 @@ void main() async {
   Get.put<BuyersRepository>(BuyersRepository(), permanent: true);
   Get.put<SellersRepository>(SellersRepository(), permanent: true);
   Get.put<DriversRepository>(DriversRepository(), permanent: true);
+  Get.put<PostAuthRouter>(PostAuthRouter(), permanent: true);
 
   runApp(const App());
 }

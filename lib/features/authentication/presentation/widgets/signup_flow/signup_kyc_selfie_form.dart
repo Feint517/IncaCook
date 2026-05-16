@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
@@ -13,10 +14,12 @@ import 'package:incacook/features/authentication/data/services/upload_picker.dar
 
 /// Shared selfie capture used by both seller and driver KYC pages.
 ///
-/// Always camera-only — never accepts a gallery upload (fraud
-/// prevention). Selfie path lives on `controller.selfieUrl`; this
-/// widget keeps the locally-picked `File` for preview and surfaces
-/// upload errors inline.
+/// Camera-only in release — never accepts a gallery upload (fraud
+/// prevention). In debug builds we fall back to the gallery so the
+/// flow is testable on the iOS simulator / Android emulator, neither
+/// of which can access a real camera. Selfie path lives on
+/// `controller.selfieUrl`; this widget keeps the locally-picked `File`
+/// for preview and surfaces upload errors inline.
 class SignupKycSelfieForm extends StatefulWidget {
   const SignupKycSelfieForm({super.key});
 
@@ -38,7 +41,10 @@ class _SignupKycSelfieFormState extends State<SignupKycSelfieForm> {
     });
     try {
       final result = await pickAndUploadImage(
-        source: ImageSource.camera,
+        // Simulators / emulators have no camera; debug builds use the
+        // gallery so the KYC flow remains exercisable. Release stays
+        // strict camera-only for fraud prevention.
+        source: kDebugMode ? ImageSource.gallery : ImageSource.camera,
         purpose: UploadPurpose.kycDocument,
       );
       if (!mounted) return;

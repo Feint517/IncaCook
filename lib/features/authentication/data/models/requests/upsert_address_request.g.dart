@@ -9,15 +9,15 @@ part of 'upsert_address_request.dart';
 _UpsertAddressRequest _$UpsertAddressRequestFromJson(
   Map<String, dynamic> json,
 ) => _UpsertAddressRequest(
-  fullAddress: json['full_address'] as String,
+  fullAddress: json['fullAddress'] as String,
   city: json['city'] as String,
-  postalCode: json['postal_code'] as String,
+  postalCode: json['postalCode'] as String,
   type: $enumDecodeNullable(_$AddressTypeEnumMap, json['type']),
-  customLabel: json['custom_label'] as String?,
+  customLabel: json['customLabel'] as String?,
   apartment: json['apartment'] as String?,
   floor: json['floor'] as String?,
   digicode: json['digicode'] as String?,
-  deliveryNotes: json['delivery_notes'] as String?,
+  deliveryNotes: json['deliveryNotes'] as String?,
   lat: (json['lat'] as num?)?.toDouble(),
   lng: (json['lng'] as num?)?.toDouble(),
 );
@@ -25,15 +25,15 @@ _UpsertAddressRequest _$UpsertAddressRequestFromJson(
 Map<String, dynamic> _$UpsertAddressRequestToJson(
   _UpsertAddressRequest instance,
 ) => <String, dynamic>{
-  'full_address': instance.fullAddress,
+  'fullAddress': instance.fullAddress,
   'city': instance.city,
-  'postal_code': instance.postalCode,
+  'postalCode': instance.postalCode,
   'type': ?_$AddressTypeEnumMap[instance.type],
-  'custom_label': ?instance.customLabel,
+  'customLabel': ?instance.customLabel,
   'apartment': ?instance.apartment,
   'floor': ?instance.floor,
   'digicode': ?instance.digicode,
-  'delivery_notes': ?instance.deliveryNotes,
+  'deliveryNotes': ?instance.deliveryNotes,
   'lat': ?instance.lat,
   'lng': ?instance.lng,
 };

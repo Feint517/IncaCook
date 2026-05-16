@@ -18,6 +18,16 @@ format. The bodies shown below are what lives inside `data`.
 
 ## 1. What the user sees
 
+> **⚠️ Temporary — SMS provider unavailable.** Step #2 below (the
+> "Phone verification" screen) should currently collect a **6-digit
+> email code instead of an SMS code**. The app calls
+> `POST /v1/auth/email/request-otp` and `POST /v1/auth/email/verify`
+> (see §3.9 *Temporary email-OTP bypass*) in place of the phone
+> endpoints. The UI copy can stay "verify your account" — the channel
+> swap is invisible to the user beyond the destination of the code.
+> Phone number is **not** collected during this period. Revert step
+> #2 to the SMS endpoints (§3.8/§3.9) once SMS is back.
+
 The wizard is a single `PageView` driven by
 [`SignupFlowController`](../lib/features/authentication/controllers/signup_flow_controller.dart).
 The step list is computed dynamically from the chosen role / category /
@@ -29,8 +39,8 @@ Every signup starts with the same five screens:
 
 | # | Step | What's collected |
 |---|---|---|
-| 1 | Basic info | first name, last name, email, phone, password (with strength meter) |
-| 2 | Phone verification | 6-digit OTP |
+| 1 | Basic info | first name, last name, email, password (with strength meter); phone field hidden during the bypass |
+| 2 | Account verification | 6-digit code (currently emailed — see banner above; reverts to SMS when phone provider is back) |
 | 3 | Biometric setup | opt-in Face/Touch ID (device-local, never synced) |
 | 4 | Legal acceptance | CGU + CGV checkboxes |
 | 5 | Role selection | buyer / seller / driver |
@@ -168,6 +178,58 @@ Error cases:
 - `409` — email already registered
 - `400` — password too weak (`error.code` lives on the wire)
 - `429` — over rate limit
+
+### 3.1a `POST /v1/auth/google` — public
+
+Mobile-native Google Sign-In. The Flutter app uses the
+[`google_sign_in`](https://pub.dev/packages/google_sign_in) plugin to
+get a Google **ID token** from the OS-level account picker, then POSTs
+that token here. The backend exchanges it for a Supabase session via
+`signInWithIdToken`; the app never talks to Google over HTTP.
+
+```http
+POST /v1/auth/google                  Auth: public    Status: 200
+```
+```jsonc
+// request
+{
+  "idToken": "eyJhbGciOiJSUzI1NiIs...",   // from google_sign_in
+  "nonce": "raw-nonce-here"               // optional; only if the app
+                                          // generated a hashed nonce
+                                          // and embedded it in the ID
+                                          // token request
+}
+```
+
+Response: same `SessionResponse` as §3.1 (`accessToken`, `refreshToken`,
+`expiresAt`, `user`).
+
+Behavior:
+- **First sign-in for this Google account** — Supabase creates the
+  `auth.users` row with the Google identity attached. No `User` row in
+  our DB yet — the wizard must POST §3.3 (`POST /v1/users`) afterwards
+  to commit role + name + CGU, just like email signup.
+- **Existing email-password user with the same email** — Supabase
+  auto-links the Google identity to the existing `auth.users` row.
+  Subsequent Google sign-ins return that same user. Our `User` row is
+  reused; the user keeps their existing role / profile / data.
+- **Existing Google user signing in again** — returns a fresh session
+  for the existing row.
+
+Error cases:
+- `400` — `Bad ID token` (signature invalid, expired, or `aud` doesn't
+  match our Web client ID). Audience mismatch is the most common cause
+  during initial setup — make sure the app's `serverClientId` matches
+  the Google Cloud Web client ID we configured in Supabase.
+- `401` — token is well-formed but Google can no longer verify it
+  (revoked, account disabled).
+- `429` — rate-limited by Supabase.
+
+> The Google provider is enabled in
+> [`supabase/config.toml`](../supabase/config.toml)
+> `[auth.external.google]`. The Web client ID + secret are stored
+> in `.env.test` (local) via `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID`
+> and `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` — never commit them.
 
 ### 3.2 `POST /v1/auth/signin` — public
 
@@ -330,6 +392,38 @@ Response: same `SessionResponse` shape as §3.1 — `user.phone` and
 Error cases:
 - `401` — wrong code or expired OTP
 - `400` — phone format invalid
+
+#### Temporary email-OTP bypass
+
+While the SMS provider is unavailable, two parallel endpoints let the
+caller satisfy the `phoneVerified` gate with an email code instead of
+an SMS code. **Same effect as §3.8/§3.9** — on success `User.phoneVerified`
+is flipped to `true` — but no phone is captured (`User.phone` stays
+`NULL`). Delete these once SMS is back.
+
+```http
+POST /v1/auth/email/request-otp       Auth: bearer    Status: 204
+```
+No body. The destination email is the caller's own (resolved from the
+JWT), so a user can never trigger a code to someone else's inbox.
+Supabase emails a 6-digit code via the same template as magic-link
+sign-in. Locally, the email lands in Inbucket/Mailpit at
+http://127.0.0.1:54334 — no real send.
+
+```http
+POST /v1/auth/email/verify            Auth: bearer    Status: 200
+```
+```jsonc
+// request
+{ "code": "123456" }
+```
+Response: same `SessionResponse` shape as §3.1 with a fresh access /
+refresh token. `user.phone` and `user.phoneConfirmedAt` stay `null`.
+
+Error cases:
+- `401` — wrong code or expired OTP
+- `400` — caller's JWT has no email (shouldn't happen for email-password accounts)
+- `429` — Supabase email-send rate limit hit
 
 ---
 
@@ -643,7 +737,7 @@ Request:
 Response:
 ```jsonc
 {
-  "uploadUrl": "http://127.0.0.1:54321/storage/v1/object/upload/sign/avatars/<uid>/01K…?token=…",
+  "uploadUrl": "http://127.0.0.1:54331/storage/v1/object/upload/sign/avatars/<uid>/01K…?token=…",
   "token": "…",                                // included for completeness
   "path": "avatars/<supabaseId>/01K…",         // store this in the *Url field
   "bucket": "avatars"
@@ -877,9 +971,16 @@ End-to-end sequence the backend observes for a complete signup:
 
 ```
 1.  POST  /v1/auth/signup                          → row in auth.users (session returned)
+    │
+    └── Google path (same Gate 1 effect):
+        POST /v1/auth/google                       → row in auth.users (Google identity)
 2.  POST  /v1/users                                → row in User (Gate 2, role committed)
 3.  POST  /v1/auth/phone/request-otp               → Supabase sends SMS OTP
 4.  POST  /v1/auth/phone/verify                    → User.phone, User.phoneVerified set
+    │
+    └── temporary bypass while SMS is down:
+        POST /v1/auth/email/request-otp            → Supabase emails a 6-digit code
+        POST /v1/auth/email/verify                 → User.phoneVerified set (phone stays NULL)
 5.  POST  /v1/uploads (purpose=…)         ┐
     PUT   <signed url>                    │  Per-asset uploads. Each pair
                                           │  produces a `path` the client

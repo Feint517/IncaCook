@@ -9,17 +9,17 @@ part of 'seller_account.dart';
 _SellerAccount _$SellerAccountFromJson(Map<String, dynamic> json) =>
     _SellerAccount(
       category: $enumDecodeNullable(_$SellerCategoryEnumMap, json['category']),
-      displayName: json['display_name'] as String?,
+      displayName: json['displayName'] as String?,
       bio: json['bio'] as String?,
-      profilePhotoUrl: json['profile_photo_url'] as String?,
-      dateOfBirth: json['date_of_birth'] as String?,
+      profilePhotoUrl: json['profilePhotoUrl'] as String?,
+      dateOfBirth: json['dateOfBirth'] as String?,
       neighborhood: json['neighborhood'] as String?,
-      deliveryRadiusKm: (json['delivery_radius_km'] as num?)?.toInt(),
-      deliveryFeeCents: (json['delivery_fee_cents'] as num?)?.toInt(),
-      prepMinMinutes: (json['prep_min_minutes'] as num?)?.toInt(),
-      prepMaxMinutes: (json['prep_max_minutes'] as num?)?.toInt(),
-      hygieneCommitment: json['hygiene_commitment'] as bool?,
-      faitMaisonCommitment: json['fait_maison_commitment'] as bool?,
+      deliveryRadiusKm: (json['deliveryRadiusKm'] as num?)?.toInt(),
+      deliveryFeeCents: (json['deliveryFeeCents'] as num?)?.toInt(),
+      prepMinMinutes: (json['prepMinMinutes'] as num?)?.toInt(),
+      prepMaxMinutes: (json['prepMaxMinutes'] as num?)?.toInt(),
+      hygieneCommitment: json['hygieneCommitment'] as bool?,
+      faitMaisonCommitment: json['faitMaisonCommitment'] as bool?,
       business: json['business'] == null
           ? null
           : SellerBusinessRecord.fromJson(
@@ -31,32 +31,32 @@ _SellerAccount _$SellerAccountFromJson(Map<String, dynamic> json) =>
               .toList() ??
           const <CuisineType>[],
       dishTypes:
-          (json['dish_types'] as List<dynamic>?)
+          (json['dishTypes'] as List<dynamic>?)
               ?.map((e) => $enumDecode(_$DishTypeEnumMap, e))
               .toList() ??
           const <DishType>[],
-      canList: json['can_list'] as bool? ?? false,
+      canList: json['canList'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$SellerAccountToJson(
   _SellerAccount instance,
 ) => <String, dynamic>{
   'category': ?_$SellerCategoryEnumMap[instance.category],
-  'display_name': ?instance.displayName,
+  'displayName': ?instance.displayName,
   'bio': ?instance.bio,
-  'profile_photo_url': ?instance.profilePhotoUrl,
-  'date_of_birth': ?instance.dateOfBirth,
+  'profilePhotoUrl': ?instance.profilePhotoUrl,
+  'dateOfBirth': ?instance.dateOfBirth,
   'neighborhood': ?instance.neighborhood,
-  'delivery_radius_km': ?instance.deliveryRadiusKm,
-  'delivery_fee_cents': ?instance.deliveryFeeCents,
-  'prep_min_minutes': ?instance.prepMinMinutes,
-  'prep_max_minutes': ?instance.prepMaxMinutes,
-  'hygiene_commitment': ?instance.hygieneCommitment,
-  'fait_maison_commitment': ?instance.faitMaisonCommitment,
+  'deliveryRadiusKm': ?instance.deliveryRadiusKm,
+  'deliveryFeeCents': ?instance.deliveryFeeCents,
+  'prepMinMinutes': ?instance.prepMinMinutes,
+  'prepMaxMinutes': ?instance.prepMaxMinutes,
+  'hygieneCommitment': ?instance.hygieneCommitment,
+  'faitMaisonCommitment': ?instance.faitMaisonCommitment,
   'business': ?instance.business?.toJson(),
   'cuisines': instance.cuisines.map((e) => _$CuisineTypeEnumMap[e]!).toList(),
-  'dish_types': instance.dishTypes.map((e) => _$DishTypeEnumMap[e]!).toList(),
-  'can_list': instance.canList,
+  'dishTypes': instance.dishTypes.map((e) => _$DishTypeEnumMap[e]!).toList(),
+  'canList': instance.canList,
 };
 
 const _$SellerCategoryEnumMap = {
@@ -85,15 +85,15 @@ const _$DishTypeEnumMap = {
 _SellerBusinessRecord _$SellerBusinessRecordFromJson(
   Map<String, dynamic> json,
 ) => _SellerBusinessRecord(
-  userId: json['user_id'] as String,
-  businessName: json['business_name'] as String,
+  userId: json['userId'] as String,
+  businessName: json['businessName'] as String,
   siret: json['siret'] as String,
-  facadeUrl: json['facade_url'] as String?,
-  legalForm: json['legal_form'] as String?,
-  createdAt: json['created_at'] as String?,
-  updatedAt: json['updated_at'] as String?,
+  facadeUrl: json['facadeUrl'] as String?,
+  legalForm: json['legalForm'] as String?,
+  createdAt: json['createdAt'] as String?,
+  updatedAt: json['updatedAt'] as String?,
   openingHours:
-      (json['opening_hours'] as List<dynamic>?)
+      (json['openingHours'] as List<dynamic>?)
           ?.map((e) => OpeningHoursRow.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const <OpeningHoursRow>[],
@@ -102,12 +102,12 @@ _SellerBusinessRecord _$SellerBusinessRecordFromJson(
 Map<String, dynamic> _$SellerBusinessRecordToJson(
   _SellerBusinessRecord instance,
 ) => <String, dynamic>{
-  'user_id': instance.userId,
-  'business_name': instance.businessName,
+  'userId': instance.userId,
+  'businessName': instance.businessName,
   'siret': instance.siret,
-  'facade_url': ?instance.facadeUrl,
-  'legal_form': ?instance.legalForm,
-  'created_at': ?instance.createdAt,
-  'updated_at': ?instance.updatedAt,
-  'opening_hours': instance.openingHours.map((e) => e.toJson()).toList(),
+  'facadeUrl': ?instance.facadeUrl,
+  'legalForm': ?instance.legalForm,
+  'createdAt': ?instance.createdAt,
+  'updatedAt': ?instance.updatedAt,
+  'openingHours': instance.openingHours.map((e) => e.toJson()).toList(),
 };

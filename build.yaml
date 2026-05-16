@@ -1,15 +1,16 @@
 # build_runner configuration. Drives freezed + json_serializable codegen.
 #
-# `field_rename: snake` makes every camelCase Dart field serialize to its
-# snake_case JSON form (e.g. `fullAddress` -> `full_address`). Matches the
-# Postgres / Supabase column convention so the API layer is mapping-free.
+# JSON keys match the Dart field names verbatim (camelCase) because the
+# backend's `TransformInterceptor` already speaks camelCase on the wire —
+# see `docs/signup-flow.md` and `docs/flutter-integration.md` for the
+# envelope shape. Earlier versions of this file forced `field_rename:
+# snake`, which made every response field land as `null` on the client.
 
 targets:
   $default:
     builders:
       json_serializable:
         options:
-          field_rename: snake
           # Skip generating `toJson` for sealed-union sub-types unless they
           # opt in — keeps the union discriminator field tidy.
           explicit_to_json: true

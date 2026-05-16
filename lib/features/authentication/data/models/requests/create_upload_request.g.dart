@@ -9,14 +9,14 @@ part of 'create_upload_request.dart';
 _CreateUploadRequest _$CreateUploadRequestFromJson(Map<String, dynamic> json) =>
     _CreateUploadRequest(
       purpose: $enumDecode(_$UploadPurposeEnumMap, json['purpose']),
-      contentType: json['content_type'] as String?,
+      contentType: json['contentType'] as String?,
     );
 
 Map<String, dynamic> _$CreateUploadRequestToJson(
   _CreateUploadRequest instance,
 ) => <String, dynamic>{
   'purpose': _$UploadPurposeEnumMap[instance.purpose]!,
-  'content_type': ?instance.contentType,
+  'contentType': ?instance.contentType,
 };
 
 const _$UploadPurposeEnumMap = {

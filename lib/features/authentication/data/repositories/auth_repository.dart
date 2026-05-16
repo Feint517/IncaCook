@@ -116,6 +116,37 @@ class AuthRepository extends GetxService {
     return result.data;
   }
 
+  /// `POST /v1/auth/email/request-otp` (§3.9 *Temporary email-OTP bypass*) —
+  /// emails a 6-digit code to the caller's own email (resolved from the
+  /// JWT, so no body is sent). Used while the SMS provider is down to
+  /// satisfy the same `phoneVerified` gate as [requestPhoneOtp].
+  ///
+  /// Delete once SMS is restored.
+  Future<void> requestEmailOtp() async {
+    await _api.post<void>(
+      '${ApiConstants.apiPrefix}/auth/email/request-otp',
+      body: null,
+      decoder: (_) {},
+    );
+  }
+
+  /// `POST /v1/auth/email/verify` (§3.9 *Temporary email-OTP bypass*) —
+  /// confirms the email OTP and returns a fresh session. Tokens are
+  /// swapped in [TokenStorage] before the new [Session] is handed back.
+  /// On success `User.phoneVerified` is flipped to `true` server-side but
+  /// `User.phone` stays NULL (no phone was captured).
+  ///
+  /// Delete once SMS is restored.
+  Future<Session> verifyEmailOtp({required String code}) async {
+    final result = await _api.post<Session>(
+      '${ApiConstants.apiPrefix}/auth/email/verify',
+      body: <String, dynamic>{'code': code},
+      decoder: (json) => Session.fromJson(json! as Map<String, dynamic>),
+    );
+    await _persistSession(result.data);
+    return result.data;
+  }
+
   Future<void> _persistSession(Session s) {
     return _api.tokenStorage.writeTokens(
       accessToken: s.accessToken,

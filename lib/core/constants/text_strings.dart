@@ -121,6 +121,11 @@ class AppTexts {
   static const String settingsGetHelp = "Obtenir de l'aide";
   static const String settingsAboutApp = "À propos de l'application";
   static const String settingsLogout = "Se déconnecter";
+  static const String settingsLogoutConfirmTitle = "Se déconnecter";
+  static const String settingsLogoutConfirmBody =
+      "Tu devras te reconnecter pour accéder à ton compte.";
+  static const String settingsLogoutConfirmCancel = "Annuler";
+  static const String settingsLogoutConfirmAction = "Se déconnecter";
 
   //* Appearance sheet
   static const String appearanceSheetTitle = "Apparence";
@@ -716,6 +721,8 @@ class AppTexts {
   static const String signupEmailHint = "tu@exemple.com";
   static const String signupEmailError = "Email invalide";
   static const String signupPhoneLabel = "Numéro de téléphone";
+  static const String signupPhoneLabelOptional =
+      "Numéro de téléphone (optionnel)";
   static const String signupPhoneHint = "6 12 34 56 78";
   static const String signupPhoneHelper = "+33 — 9 chiffres après le préfixe";
   static const String signupPhoneError = "Format invalide";
@@ -745,6 +752,16 @@ class AppTexts {
   static String signupOtpSubtitle(String phone) =>
       "On t'envoie un code à 6 chiffres au $phone.";
   static String signupOtpResendIn(int seconds) => "Renvoyer dans ${seconds}s";
+
+  //* signup flow — email-OTP bypass variant (see FeatureFlags.useEmailOtpBypass).
+  //  Same step, different channel; copy can be removed when SMS is back.
+  static const String signupOtpEmailTitle = "Vérifie ton compte";
+  static const String signupOtpEmailDefaultDestination = "ton adresse";
+  static const String signupOtpEmailResentBody =
+      "On t'a renvoyé un nouveau code par email.";
+  static const String signupOtpEmailEditAddress = "Modifier l'adresse";
+  static String signupOtpEmailSubtitle(String email) =>
+      "On t'envoie un code à 6 chiffres à $email.";
 
   //* signup flow — biometric setup page
   static const String signupBiometricTitle = "Active la connexion rapide";

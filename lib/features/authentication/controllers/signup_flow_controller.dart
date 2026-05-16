@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:incacook/core/common/widgets/navigation/navigation_menu.dart';
+import 'package:incacook/core/config/feature_flags.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/enums/food_enums.dart';
 import 'package:incacook/core/models/address.dart';
@@ -90,6 +91,13 @@ class SignupFlowController extends GetxController {
   /// True once `POST /v1/auth/signup` has returned (we have a session).
   /// Guards `submitCompleteProfile` from being called without auth.
   final isSignedUp = false.obs;
+
+  /// When `true`, [steps] omits the universal preamble (basicInfo through
+  /// roleSelection). Set by [seedForResume] for users who abandoned the
+  /// wizard after Gate 2 — those rows are already committed server-side
+  /// and replaying them would 409 or overwrite. See `docs/signup-flow.md`
+  /// §4.5 for the cold-start resume contract.
+  final isResumeMode = false.obs;
 
   // ---------------------------------------------------------------------------
   // Step 0 — universal info
@@ -178,7 +186,11 @@ class SignupFlowController extends GetxController {
   final currentPage = 0.obs;
   final isLoading = false.obs;
   final charterScrolledToBottom = false.obs;
-  late final PageController pageController = PageController();
+  // `late final` so [seedForResume] gets to write [currentPage] before
+  // the PageController materializes — that way the PageView opens
+  // directly on the resumed step instead of animating through page 0.
+  late final PageController pageController =
+      PageController(initialPage: currentPage.value);
 
   // ---------------------------------------------------------------------------
   // Lifecycle
@@ -237,13 +249,24 @@ class SignupFlowController extends GetxController {
   // Step list — the source of truth for page ordering.
   // ---------------------------------------------------------------------------
   List<SignupStep> get steps {
-    final list = <SignupStep>[
-      SignupStep.basicInfo,
-      SignupStep.phoneVerification,
-      SignupStep.biometricSetup,
-      SignupStep.legalAcceptance,
-      SignupStep.roleSelection,
-    ];
+    final list = <SignupStep>[];
+    // Universal preamble. Skipped when resuming a mid-signup user since
+    // those rows (auth.users, User, charters) are already committed.
+    // When [isSignedUp] alone is true (PostAuthNoProfile case — auth row
+    // exists but Gate 2 was never reached), basicInfo is dropped so the
+    // user doesn't re-enter Gate 1 data, but OTP/biometric/legal/role
+    // remain because Gate 2 still needs them.
+    if (!isResumeMode.value) {
+      if (!isSignedUp.value) {
+        list.add(SignupStep.basicInfo);
+      }
+      list.addAll([
+        SignupStep.phoneVerification,
+        SignupStep.biometricSetup,
+        SignupStep.legalAcceptance,
+        SignupStep.roleSelection,
+      ]);
+    }
 
     switch (role.value) {
       case UserRole.buyer:
@@ -255,18 +278,21 @@ class SignupFlowController extends GetxController {
       case UserRole.seller:
         list.add(SignupStep.sellerProfile);
         list.add(SignupStep.sellerDobAddress);
-        // The sub-type picker was removed from signup. Until the field
-        // is set elsewhere (admin tooling, preference screen), it stays
-        // null — which means the business-info step is skipped and the
-        // seller is treated as a generic professional downstream
-        // (auto-approval and SIRET collection both off).
-        if (sellerCategory.value != null &&
-            sellerCategory.value != SellerCategory.faitMaison) {
+        // The sub-type picker was removed from signup; null is treated
+        // as fait-maison (see [_putSellerProfile]). For fait-maison —
+        // explicit or defaulted — both `business` and the two KYC steps
+        // are skipped server-side (§4.3), and the upload endpoint hard-
+        // rejects KYC purposes with 403 "Fait-maison sellers do not
+        // submit KYC". Mirror that here so the wizard never asks for
+        // documents it can't upload.
+        if (_isFaitMaisonSeller) {
+          list.add(SignupStep.sellerCuisine);
+        } else {
           list.add(SignupStep.sellerBusinessInfo);
+          list.add(SignupStep.sellerCuisine);
+          list.add(SignupStep.sellerKycId);
+          list.add(SignupStep.sellerKycSelfie);
         }
-        list.add(SignupStep.sellerCuisine);
-        list.add(SignupStep.sellerKycId);
-        list.add(SignupStep.sellerKycSelfie);
         list.add(SignupStep.sellerCharter);
       case UserRole.driver:
         list.addAll([
@@ -286,6 +312,14 @@ class SignupFlowController extends GetxController {
         break;
     }
     return list;
+  }
+
+  /// True when the seller is — or defaults to — fait-maison. Keep this
+  /// in sync with [_putSellerProfile]'s null-default: the steps list,
+  /// the upload gate, and the server's KYC bypass all key off it.
+  bool get _isFaitMaisonSeller {
+    final c = sellerCategory.value;
+    return c == null || c == SellerCategory.faitMaison;
   }
 
   int get totalPages => steps.length;
@@ -338,9 +372,15 @@ class SignupFlowController extends GetxController {
     return RegExp(r"^[a-zA-ZÀ-ÿ' \-]+$").hasMatch(v);
   }
 
+  /// True when the phone field can be left blank. During the
+  /// [FeatureFlags.useEmailOtpBypass] window we keep the field visible
+  /// but don't gate Continue on it — the OTP is sent to the user's
+  /// email instead and no phone number is captured server-side.
+  bool get _isPhoneOptional => FeatureFlags.useEmailOtpBypass;
+
   bool get isBasicInfoComplete =>
       isEmailValid &&
-      isPhoneValid &&
+      (_isPhoneOptional || isPhoneValid) &&
       isPasswordValid &&
       isPasswordConfirmed &&
       _isValidName(firstName.value) &&
@@ -607,12 +647,20 @@ class SignupFlowController extends GetxController {
   }
 
   Future<bool> _putSellerProfile() async {
-    final category = sellerCategory.value;
     final dob = dateOfBirth.value;
-    if (category == null || dob == null) {
+    if (dob == null) {
       submitError.value = 'Champs requis manquants';
       return false;
     }
+    // The wizard's category picker was removed (see [steps] for the
+    // rationale). Default to FAIT_MAISON when the user hasn't picked
+    // one — it's the only branch the rest of the wizard is wired for:
+    // [steps] already skips sellerBusinessInfo, the charter step
+    // collects `faitMaisonCommitment`, and KYC auto-approves
+    // server-side. TRAITEUR / RESTAURANT would leave the onboarding
+    // endpoint stuck on `business: incomplete` since the wizard has
+    // no business-info screen for them.
+    final category = sellerCategory.value ?? SellerCategory.faitMaison;
     return _runApiCall(() async {
       await _sellersRepository.setProfile(
         SellerProfileRequest(
@@ -931,6 +979,61 @@ class SignupFlowController extends GetxController {
     vehicleType.value = v;
   }
 
+  /// Marks the wizard as "already has a session, but no User row yet" —
+  /// the [PostAuthNoProfile] case from the post-auth router. Drops
+  /// basicInfo from [steps] so the user lands on phoneVerification and
+  /// advances through the rest of the preamble before Gate 2 commits.
+  void seedAsSignedIn() {
+    isSignedUp.value = true;
+  }
+
+  /// Seeds the wizard with a known role + jumps to a specific step,
+  /// hiding the universal preamble. Called by the bootstrap splash when
+  /// a stored session points at a half-completed signup.
+  ///
+  /// [startAt] is the [SignupStep] mapped from `OnboardingState.next`
+  /// via [signupStepFromOnboardingKey]. If the key is unknown (e.g.
+  /// server added a new step the client doesn't recognize yet), pass
+  /// `null` — the wizard will land on the first role-specific step and
+  /// the user can navigate from there.
+  ///
+  /// [sellerCategory] / [vehicleType] feed the [steps] getter's
+  /// branching so business-info (sellers) and vehicle-docs (drivers)
+  /// only appear when they actually apply.
+  void seedForResume({
+    required UserRole role,
+    SignupStep? startAt,
+    SellerCategory? sellerCategory,
+    DriverVehicleType? vehicleType,
+  }) {
+    this.role.value = role;
+    this.sellerCategory.value = sellerCategory;
+    this.vehicleType.value = vehicleType;
+    isSignedUp.value = true;
+    // The universal preamble was committed in the previous session.
+    // Mirror those flags so the gates in this controller don't re-fire.
+    acceptedCgu.value = true;
+    acceptedCgv.value = true;
+    phoneVerified.value = true;
+    isResumeMode.value = true;
+
+    final filtered = steps;
+    if (filtered.isEmpty) return;
+    var idx = 0;
+    if (startAt != null) {
+      final found = filtered.indexOf(startAt);
+      if (found >= 0) idx = found;
+    }
+    currentPage.value = idx;
+    // PageController isn't attached until the PageView renders, so jump
+    // on the next frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (pageController.hasClients) {
+        pageController.jumpToPage(idx);
+      }
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // OTP — backed by /v1/auth/phone/{request-otp,verify} (§3.8, §3.9).
   // ---------------------------------------------------------------------------
@@ -944,9 +1047,15 @@ class SignupFlowController extends GetxController {
   Future<void> requestOtp() async {
     otpError.value = '';
     try {
-      await _authRepository.requestPhoneOtp(
-        RequestOtpRequest(phone: _phoneE164),
-      );
+      if (FeatureFlags.useEmailOtpBypass) {
+        // §3.9 *Temporary email-OTP bypass* — destination is the
+        // caller's own email (resolved from the JWT), no body needed.
+        await _authRepository.requestEmailOtp();
+      } else {
+        await _authRepository.requestPhoneOtp(
+          RequestOtpRequest(phone: _phoneE164),
+        );
+      }
       _startResendCountdown();
     } on ApiFailure catch (e) {
       otpError.value = e.message;
@@ -971,12 +1080,17 @@ class SignupFlowController extends GetxController {
     otpVerifying.value = true;
     otpError.value = '';
     try {
-      // §3.9: the verify returns a fresh session with phoneConfirmedAt
-      // populated. AuthRepository swaps the tokens in flutter_secure_storage
-      // before returning, so subsequent requests carry the new bearer.
-      await _authRepository.verifyPhoneOtp(
-        VerifyOtpRequest(phone: _phoneE164, code: code),
-      );
+      // §3.9: both the phone-verify and email-verify variants return a
+      // fresh session with `phoneVerified` flipped server-side.
+      // AuthRepository swaps the tokens in flutter_secure_storage before
+      // returning, so subsequent requests carry the new bearer.
+      if (FeatureFlags.useEmailOtpBypass) {
+        await _authRepository.verifyEmailOtp(code: code);
+      } else {
+        await _authRepository.verifyPhoneOtp(
+          VerifyOtpRequest(phone: _phoneE164, code: code),
+        );
+      }
       phoneVerified.value = true;
       nextPage();
     } on ApiFailure catch (e) {

@@ -8,24 +8,24 @@ part of 'fulfillment_options.dart';
 
 _FulfillmentOptions _$FulfillmentOptionsFromJson(Map<String, dynamic> json) =>
     _FulfillmentOptions(
-      deliveryAvailable: json['delivery_available'] as bool,
-      deliveryMinMinutes: (json['delivery_min_minutes'] as num).toInt(),
-      deliveryMaxMinutes: (json['delivery_max_minutes'] as num).toInt(),
-      deliveryFee: (json['delivery_fee'] as num).toDouble(),
-      pickupAvailable: json['pickup_available'] as bool,
-      pickupNeighborhood: json['pickup_neighborhood'] as String,
-      userHasAddress: json['user_has_address'] as bool? ?? true,
+      deliveryAvailable: json['deliveryAvailable'] as bool,
+      deliveryMinMinutes: (json['deliveryMinMinutes'] as num).toInt(),
+      deliveryMaxMinutes: (json['deliveryMaxMinutes'] as num).toInt(),
+      deliveryFee: (json['deliveryFee'] as num).toDouble(),
+      pickupAvailable: json['pickupAvailable'] as bool,
+      pickupNeighborhood: json['pickupNeighborhood'] as String,
+      userHasAddress: json['userHasAddress'] as bool? ?? true,
     );
 
 Map<String, dynamic> _$FulfillmentOptionsToJson(_FulfillmentOptions instance) =>
     <String, dynamic>{
-      'delivery_available': instance.deliveryAvailable,
-      'delivery_min_minutes': instance.deliveryMinMinutes,
-      'delivery_max_minutes': instance.deliveryMaxMinutes,
-      'delivery_fee': instance.deliveryFee,
-      'pickup_available': instance.pickupAvailable,
-      'pickup_neighborhood': instance.pickupNeighborhood,
-      'user_has_address': instance.userHasAddress,
+      'deliveryAvailable': instance.deliveryAvailable,
+      'deliveryMinMinutes': instance.deliveryMinMinutes,
+      'deliveryMaxMinutes': instance.deliveryMaxMinutes,
+      'deliveryFee': instance.deliveryFee,
+      'pickupAvailable': instance.pickupAvailable,
+      'pickupNeighborhood': instance.pickupNeighborhood,
+      'userHasAddress': instance.userHasAddress,
     };
 
 _FulfillmentSelection _$FulfillmentSelectionFromJson(

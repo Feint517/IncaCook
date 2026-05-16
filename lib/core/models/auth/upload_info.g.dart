@@ -7,7 +7,7 @@ part of 'upload_info.dart';
 // **************************************************************************
 
 _UploadInfo _$UploadInfoFromJson(Map<String, dynamic> json) => _UploadInfo(
-  uploadUrl: json['upload_url'] as String,
+  uploadUrl: json['uploadUrl'] as String,
   token: json['token'] as String,
   path: json['path'] as String,
   bucket: json['bucket'] as String,
@@ -15,7 +15,7 @@ _UploadInfo _$UploadInfoFromJson(Map<String, dynamic> json) => _UploadInfo(
 
 Map<String, dynamic> _$UploadInfoToJson(_UploadInfo instance) =>
     <String, dynamic>{
-      'upload_url': instance.uploadUrl,
+      'uploadUrl': instance.uploadUrl,
       'token': instance.token,
       'path': instance.path,
       'bucket': instance.bucket,

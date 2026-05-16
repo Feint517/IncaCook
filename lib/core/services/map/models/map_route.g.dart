@@ -20,12 +20,12 @@ _MapRoute _$MapRouteFromJson(Map<String, dynamic> json) => _MapRoute(
   points: (json['points'] as List<dynamic>)
       .map((e) => MapPoint.fromJson(e as Map<String, dynamic>))
       .toList(),
-  distanceMeters: (json['distance_meters'] as num).toDouble(),
-  durationSeconds: (json['duration_seconds'] as num).toDouble(),
+  distanceMeters: (json['distanceMeters'] as num).toDouble(),
+  durationSeconds: (json['durationSeconds'] as num).toDouble(),
 );
 
 Map<String, dynamic> _$MapRouteToJson(_MapRoute instance) => <String, dynamic>{
   'points': instance.points.map((e) => e.toJson()).toList(),
-  'distance_meters': instance.distanceMeters,
-  'duration_seconds': instance.durationSeconds,
+  'distanceMeters': instance.distanceMeters,
+  'durationSeconds': instance.durationSeconds,
 };

@@ -9,6 +9,7 @@ import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/models/address.dart';
 import 'package:incacook/core/widgets/decor/decor_blob.dart';
+import 'package:incacook/features/authentication/services/sign_out_service.dart';
 import 'package:incacook/features/settings/presentation/widgets/profile_menu_card.dart';
 import 'package:incacook/features/settings/presentation/widgets/profile_user_card.dart';
 import 'package:incacook/features/settings/presentation/widgets/appearance_sheet.dart';
@@ -137,7 +138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         icon: Iconsax.logout,
         title: AppTexts.settingsLogout,
         showChevron: false,
-        onTap: () {},
+        onTap: () => SignOutService.promptAndSignOut(context),
       ),
     ];
 

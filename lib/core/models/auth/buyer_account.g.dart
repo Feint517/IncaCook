@@ -8,13 +8,13 @@ part of 'buyer_account.dart';
 
 _BuyerAccount _$BuyerAccountFromJson(Map<String, dynamic> json) =>
     _BuyerAccount(
-      defaultAddress: json['default_address'] == null
+      defaultAddress: json['defaultAddress'] == null
           ? null
           : AddressRecord.fromJson(
-              json['default_address'] as Map<String, dynamic>,
+              json['defaultAddress'] as Map<String, dynamic>,
             ),
       dietaryTags:
-          (json['dietary_tags'] as List<dynamic>?)
+          (json['dietaryTags'] as List<dynamic>?)
               ?.map((e) => $enumDecode(_$DietaryTagEnumMap, e))
               .toList() ??
           const <DietaryTag>[],
@@ -28,8 +28,8 @@ _BuyerAccount _$BuyerAccountFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$BuyerAccountToJson(
   _BuyerAccount instance,
 ) => <String, dynamic>{
-  'default_address': ?instance.defaultAddress?.toJson(),
-  'dietary_tags': instance.dietaryTags
+  'defaultAddress': ?instance.defaultAddress?.toJson(),
+  'dietaryTags': instance.dietaryTags
       .map((e) => _$DietaryTagEnumMap[e]!)
       .toList(),
   'allergens': instance.allergens.map((e) => _$AllergenEnumMap[e]!).toList(),

@@ -11,9 +11,9 @@ _DeliveryDetails _$DeliveryDetailsFromJson(Map<String, dynamic> json) =>
       address: Address.fromJson(json['address'] as Map<String, dynamic>),
       instructions: json['instructions'] as String,
       timing: $enumDecode(_$DeliveryTimingEnumMap, json['timing']),
-      scheduledAt: json['scheduled_at'] == null
+      scheduledAt: json['scheduledAt'] == null
           ? null
-          : DateTime.parse(json['scheduled_at'] as String),
+          : DateTime.parse(json['scheduledAt'] as String),
     );
 
 Map<String, dynamic> _$DeliveryDetailsToJson(_DeliveryDetails instance) =>
@@ -21,7 +21,7 @@ Map<String, dynamic> _$DeliveryDetailsToJson(_DeliveryDetails instance) =>
       'address': instance.address.toJson(),
       'instructions': instance.instructions,
       'timing': _$DeliveryTimingEnumMap[instance.timing]!,
-      'scheduled_at': ?instance.scheduledAt?.toIso8601String(),
+      'scheduledAt': ?instance.scheduledAt?.toIso8601String(),
     };
 
 const _$DeliveryTimingEnumMap = {
