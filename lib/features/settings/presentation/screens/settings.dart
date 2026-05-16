@@ -4,11 +4,11 @@ import 'package:gap/gap.dart';
 import 'package:incacook/features/settings/domain/setting_menu_item.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:incacook/core/common/widgets/appbar/appbar.dart';
-import 'package:incacook/core/common/widgets/custon_shapes/container/circular_container.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/models/address.dart';
 import 'package:incacook/core/widgets/decor/decor_blob.dart';
+import 'package:incacook/core/widgets/effects/frosted_surface.dart';
 import 'package:incacook/features/authentication/services/sign_out_service.dart';
 import 'package:incacook/features/settings/presentation/widgets/profile_menu_card.dart';
 import 'package:incacook/features/settings/presentation/widgets/profile_user_card.dart';
@@ -102,11 +102,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: AppTexts.settingsOrders,
         onTap: () {},
       ),
-      // SettingMenuItem(
-      //   icon: Iconsax.ticket_discount,
-      //   title: AppTexts.settingsVouchers,
-      //   onTap: () {},
-      // ),
       SettingMenuItem(
         icon: Iconsax.location,
         title: AppTexts.settingsAddresses,
@@ -161,13 +156,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             actions: [
               GestureDetector(
                 onTap: () {},
-                child: CustomCircularContainer(
-                  size: 44,
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  child: Icon(
-                    Iconsax.notification,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    size: 20,
+                behavior: HitTestBehavior.opaque,
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: FrostedSurface(
+                    shape: BoxShape.circle,
+                    child: Center(
+                      child: Icon(
+                        Iconsax.notification,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        size: 20,
+                      ),
+                    ),
                   ),
                 ),
               ),

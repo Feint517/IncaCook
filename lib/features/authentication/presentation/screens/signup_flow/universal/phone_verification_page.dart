@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
+import 'package:incacook/core/common/styles/loaders.dart';
 import 'package:incacook/core/config/feature_flags.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
+import 'package:incacook/core/controllers/user_controller.dart';
 import 'package:incacook/features/authentication/controllers/signup_flow_controller.dart';
 import 'package:incacook/features/authentication/presentation/widgets/signup_flow/signup_otp_field.dart';
 import 'package:incacook/features/authentication/presentation/widgets/signup_flow/signup_step_layout.dart';
@@ -30,26 +32,35 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<SignupFlowController>();
+    final userController = UserController.instance;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final useEmail = FeatureFlags.useEmailOtpBypass;
 
+    // Auth email comes from the Session captured server-side — same
+    // address Supabase will derive the OTP destination from. Fall back
+    // to the wizard's typed email if the auth call hasn't landed yet
+    // (shouldn't happen in normal flow, but defensive).
+    final destinationEmail =
+        userController.authEmail.value ?? controller.email.value;
+
     return SignupStepLayout(
       title: useEmail ? AppTexts.signupOtpEmailTitle : AppTexts.signupOtpTitle,
       description: useEmail
-          ? AppTexts.signupOtpEmailSubtitle(
-              _formatEmail(controller.email.value))
+          ? AppTexts.signupOtpEmailSubtitle(_formatEmail(destinationEmail))
           : AppTexts.signupOtpSubtitle(_formatPhone(controller.phone.value)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Obx(() => SignupOtpField(
-                onChanged: (v) => controller.otpCode.value = v,
-                onCompleted: controller.verifyOtp,
-                errorText: controller.otpError.value.isEmpty
-                    ? null
-                    : controller.otpError.value,
-              )),
+          Obx(
+            () => SignupOtpField(
+              onChanged: (v) => controller.otpCode.value = v,
+              onCompleted: controller.verifyOtp,
+              errorText: controller.otpError.value.isEmpty
+                  ? null
+                  : controller.otpError.value,
+            ),
+          ),
           const Gap(AppSizes.md),
           Obx(() {
             if (!controller.otpVerifying.value) {
@@ -89,12 +100,11 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
                   onPressed: canResend
                       ? () async {
                           await controller.requestOtp();
-                          Get.snackbar(
-                            AppTexts.signupOtpResentTitle,
-                            useEmail
+                          CustomLoaders.successSnackBar(
+                            title: AppTexts.signupOtpResentTitle,
+                            message: useEmail
                                 ? AppTexts.signupOtpEmailResentBody
                                 : AppTexts.signupOtpResentBody,
-                            snackPosition: SnackPosition.TOP,
                           );
                         }
                       : null,
@@ -106,35 +116,15 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
                 ),
                 TextButton(
                   onPressed: controller.previousPage,
-                  child: Text(useEmail
-                      ? AppTexts.signupOtpEmailEditAddress
-                      : AppTexts.signupOtpEditNumber),
+                  child: Text(
+                    useEmail
+                        ? AppTexts.signupOtpEmailEditAddress
+                        : AppTexts.signupOtpEditNumber,
+                  ),
                 ),
               ],
             );
           }),
-          const Gap(AppSizes.lg),
-          Container(
-            padding: const EdgeInsets.all(AppSizes.sm + 4),
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(AppSizes.borderRadiusLg),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.lightbulb_outline, size: 18, color: scheme.primary),
-                const Gap(AppSizes.sm),
-                Expanded(
-                  child: Text(
-                    AppTexts.signupOtpDemoHint,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

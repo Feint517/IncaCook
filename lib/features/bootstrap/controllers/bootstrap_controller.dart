@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
+import 'package:incacook/core/controllers/user_controller.dart';
 import 'package:incacook/core/network/api_response.dart';
 import 'package:incacook/core/network/token_storage.dart';
 import 'package:incacook/features/authentication/presentation/screens/welcome.dart';
@@ -51,6 +52,13 @@ class BootstrapController extends GetxController {
     if (!hasSession) {
       Get.offAll<void>(() => const WelcomeScreen());
       return;
+    }
+
+    // Rehydrate the in-memory auth email from storage before any screen
+    // can read it. Without this, the OTP page on the NoProfile path
+    // falls back to the wizard's debug seed after a hot restart.
+    if (Get.isRegistered<UserController>()) {
+      await UserController.instance.hydrateFromStorage();
     }
 
     try {

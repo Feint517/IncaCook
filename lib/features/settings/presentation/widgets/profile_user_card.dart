@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:incacook/core/common/widgets/custon_shapes/container/circular_image.dart';
 import 'package:incacook/core/constants/image_strings.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
+import 'package:incacook/core/controllers/user_controller.dart';
 import 'package:incacook/core/widgets/effects/frosted_surface.dart';
 
 class ProfileUserCard extends StatelessWidget {
@@ -23,6 +25,7 @@ class ProfileUserCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final userController = UserController.instance;
 
     return FrostedSurface(
       borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg * 1.5),
@@ -35,28 +38,35 @@ class ProfileUserCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          //* avatar
+          //* avatar — still the placeholder asset; `user.avatarPath` is
+          //  a storage path that needs to be resolved to a signed URL
+          //  via UploadsRepository before it can render. Wire when the
+          //  profile-edit flow lands.
           CustomCircularImage(image: AppImages.profilePic, size: 88),
           const Gap(AppSizes.md),
 
-          //* name
-          Text(
-            AppTexts.profileSampleName,
-            style: textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
+          //* name + email — bound to UserController. Empty string while
+          //  the post-auth flow is still hydrating so we don't flash
+          //  placeholder copy.
+          Obx(
+            () => Text(
+              userController.displayName,
+              style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
           ),
           const Gap(AppSizes.xs),
-
-          //* email
-          Text(
-            'arselene.test@gmail.com',
-            style: textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
+          Obx(
+            () => Text(
+              userController.email,
+              style: textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
             ),
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
           ),
           const Gap(AppSizes.lg),
 

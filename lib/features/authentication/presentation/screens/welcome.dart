@@ -7,6 +7,7 @@ import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/utils/theme/brand_colors.dart';
 import 'package:incacook/core/widgets/effects/frosted_surface.dart';
+import 'package:incacook/features/authentication/controllers/welcome_controller.dart';
 import 'package:incacook/features/authentication/presentation/screens/login.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -14,6 +15,7 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(WelcomeController());
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
@@ -94,10 +96,17 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                       const Gap(AppSizes.sm),
                       Expanded(
-                        child: _SocialPill(
-                          logo: AppImages.googleLogo,
-                          label: AppTexts.welcomeContinueWith,
-                          onTap: () {},
+                        // Obx so the pill flips to a spinner + disables
+                        // itself while the Google flow is in flight.
+                        child: Obx(
+                          () => _SocialPill(
+                            logo: AppImages.googleLogo,
+                            label: AppTexts.welcomeContinueWith,
+                            loading: controller.isGoogleLoading.value,
+                            onTap: controller.isGoogleLoading.value
+                                ? null
+                                : controller.signInWithGoogle,
+                          ),
                         ),
                       ),
                     ],
@@ -156,36 +165,53 @@ class _SocialPill extends StatelessWidget {
     required this.logo,
     required this.label,
     required this.onTap,
+    this.loading = false,
   });
 
   final String logo;
   final String label;
-  final VoidCallback onTap;
+  // Nullable: a null `onTap` disables the pill (used while [loading]
+  // so the user can't double-tap an in-flight Google sign-in).
+  final VoidCallback? onTap;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        height: 48,
-        child: FrostedSurface(
-          borderRadius: BorderRadius.circular(999),
-          border: const Border.fromBorderSide(BorderSide.none),
-          child: Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset(logo, height: 22, width: 22),
-                const Gap(AppSizes.sm),
-                Text(
-                  label,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
+    final scheme = Theme.of(context).colorScheme;
+    return Opacity(
+      opacity: onTap == null ? 0.6 : 1.0,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          height: 48,
+          child: FrostedSurface(
+            borderRadius: BorderRadius.circular(999),
+            border: const Border.fromBorderSide(BorderSide.none),
+            child: Center(
+              child: loading
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: scheme.onSurface,
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(logo, height: 22, width: 22),
+                        const Gap(AppSizes.sm),
+                        Text(
+                          label,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ],
+                    ),
             ),
           ),
         ),

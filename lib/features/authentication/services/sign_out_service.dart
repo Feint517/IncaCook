@@ -6,6 +6,8 @@ import 'package:get/get.dart';
 
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
+import 'package:incacook/core/controllers/user_controller.dart';
+import 'package:incacook/core/services/google_auth_service.dart';
 import 'package:incacook/core/utils/theme/theme_extensions.dart';
 import 'package:incacook/features/authentication/data/repositories/auth_repository.dart';
 import 'package:incacook/features/authentication/presentation/screens/welcome.dart';
@@ -35,6 +37,22 @@ class SignOutService {
     } catch (_) {
       // Swallow — token clearing already happened in the repo's finally.
       // We still want to navigate the user out.
+    }
+    // Also drop the Google plugin's cached account so the next sign-in
+    // shows the OS picker again. Best-effort — failures here shouldn't
+    // block the user from leaving the protected screens.
+    if (Get.isRegistered<GoogleAuthService>()) {
+      try {
+        await Get.find<GoogleAuthService>().signOut();
+      } catch (_) {
+        // ignore
+      }
+    }
+    // Drop the cached user before navigating so any settings/profile
+    // widget still in the disposing tree flips to `null` instead of
+    // briefly showing stale info.
+    if (Get.isRegistered<UserController>()) {
+      UserController.instance.clear();
     }
     // offAll wipes the navigator stack so the protected screens behind
     // the user can't be revisited via the back gesture.

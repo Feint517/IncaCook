@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:incacook/core/common/widgets/navigation/navigation_menu.dart';
+import 'package:incacook/core/controllers/user_controller.dart';
 import 'package:incacook/core/enums/food_enums.dart';
 import 'package:incacook/core/models/auth/onboarding_state.dart';
 import 'package:incacook/core/models/auth/user.dart';
@@ -84,6 +85,12 @@ class PostAuthRouter extends GetxService {
       ], eagerError: true);
       final onboarding = results[0] as OnboardingState;
       final me = results[1] as User;
+      // Single hydration point for the global UserController — every
+      // post-auth path goes through here, so the cache is always fresh
+      // when widgets first read it.
+      if (Get.isRegistered<UserController>()) {
+        UserController.instance.setUser(me);
+      }
       if (onboarding.next == null) {
         return PostAuthRoleHome(onboarding.role);
       }

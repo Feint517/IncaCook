@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide Response;
 
 import 'package:incacook/core/constants/api_constants.dart';
+import 'package:incacook/core/controllers/user_controller.dart';
 import 'package:incacook/core/models/auth/session.dart';
 import 'package:incacook/core/network/api_client.dart';
 import 'package:incacook/core/network/api_response.dart';
@@ -47,6 +48,30 @@ class AuthRepository extends GetxService {
     final result = await _api.post<Session>(
       '${ApiConstants.apiPrefix}/auth/signin',
       body: req.toJson(),
+      decoder: (json) => Session.fromJson(json! as Map<String, dynamic>),
+    );
+    await _persistSession(result.data);
+    return result.data;
+  }
+
+  /// `POST /v1/auth/google` (§3.1a) — exchanges a Google ID token (from
+  /// the `google_sign_in` plugin) for a session. Supabase auto-links to
+  /// an existing email-password account if one matches the Google
+  /// email, so a returning user keeps their `User` row + role.
+  ///
+  /// Pass [nonce] only if the call site embedded a hashed nonce in the
+  /// ID token request — the plain Dart `google_sign_in` flow doesn't,
+  /// so it's optional on every caller we have today.
+  Future<Session> signInWithGoogle({
+    required String idToken,
+    String? nonce,
+  }) async {
+    final result = await _api.post<Session>(
+      '${ApiConstants.apiPrefix}/auth/google',
+      body: <String, dynamic>{
+        'idToken': idToken,
+        'nonce': ?nonce,
+      },
       decoder: (json) => Session.fromJson(json! as Map<String, dynamic>),
     );
     await _persistSession(result.data);
@@ -147,11 +172,20 @@ class AuthRepository extends GetxService {
     return result.data;
   }
 
-  Future<void> _persistSession(Session s) {
-    return _api.tokenStorage.writeTokens(
+  Future<void> _persistSession(Session s) async {
+    // Mirror the auth email into the global cache. Useful for screens
+    // that need the address *before* Gate 2 lands a User row — most
+    // notably the OTP step, whose "we sent a code to …" copy needs to
+    // match the JWT the backend resolves the destination from. Also
+    // persisted to TokenStorage so the value survives hot restart.
+    if (Get.isRegistered<UserController>()) {
+      UserController.instance.setAuthEmail(s.user.email);
+    }
+    await _api.tokenStorage.writeTokens(
       accessToken: s.accessToken,
       refreshToken: s.refreshToken,
       expiresAt: s.expiresAt,
+      email: s.user.email,
     );
   }
 }

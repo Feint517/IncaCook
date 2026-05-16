@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:incacook/core/common/widgets/navigation/navigation_menu.dart';
 import 'package:incacook/core/config/feature_flags.dart';
 import 'package:incacook/core/constants/text_strings.dart';
+import 'package:incacook/core/controllers/user_controller.dart';
 import 'package:incacook/core/enums/food_enums.dart';
 import 'package:incacook/core/models/address.dart';
 import 'package:incacook/core/models/auth/address_record.dart';
@@ -902,7 +903,7 @@ class SignupFlowController extends GetxController {
     if (selectedRole == null) return false;
     isLoading.value = true;
     try {
-      await _usersRepository.completeProfile(
+      final created = await _usersRepository.completeProfile(
         CompleteProfileRequest(
           firstName: firstName.value,
           lastName: lastName.value,
@@ -911,6 +912,11 @@ class SignupFlowController extends GetxController {
           acceptedCgv: acceptedCgv.value,
         ),
       );
+      // Warm the global user cache so the wizard's exit-to-home doesn't
+      // briefly render placeholder name/email on the settings card.
+      if (Get.isRegistered<UserController>()) {
+        UserController.instance.setUser(created);
+      }
       return true;
     } on ApiFailure catch (e) {
       submitError.value = e.message;
