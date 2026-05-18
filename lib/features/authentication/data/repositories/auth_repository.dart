@@ -7,6 +7,7 @@ import 'package:incacook/core/models/auth/session.dart';
 import 'package:incacook/core/network/api_client.dart';
 import 'package:incacook/core/network/api_response.dart';
 import 'package:incacook/core/network/auth_interceptor.dart';
+import 'package:incacook/core/network/jwt_utils.dart';
 import 'package:incacook/features/authentication/data/models/requests/password_reset_request.dart';
 import 'package:incacook/features/authentication/data/models/requests/password_update_request.dart';
 import 'package:incacook/features/authentication/data/models/requests/request_otp_request.dart';
@@ -173,19 +174,51 @@ class AuthRepository extends GetxService {
   }
 
   Future<void> _persistSession(Session s) async {
-    // Mirror the auth email into the global cache. Useful for screens
-    // that need the address *before* Gate 2 lands a User row — most
-    // notably the OTP step, whose "we sent a code to …" copy needs to
-    // match the JWT the backend resolves the destination from. Also
-    // persisted to TokenStorage so the value survives hot restart.
+    // Decode the access token's `user_metadata` for OAuth name claims
+    // (Google → `given_name` / `family_name`). Stays null for email-
+    // password signups. Used by the signup wizard's NoProfile path to
+    // pre-fill Gate 2's body; without this, a first-time Google user
+    // reaches role selection with empty firstName/lastName and POST
+    // `/v1/users` returns 400.
+    final claims = decodeJwtPayload(s.accessToken);
+    final firstName = claims?.givenName ?? _firstOf(claims?.fullName);
+    final lastName = claims?.familyName ?? _restOf(claims?.fullName);
+
+    // Mirror the auth identity into the global cache. Useful for
+    // screens that need it *before* Gate 2 lands a User row — most
+    // notably the OTP step's "we sent a code to …" copy and the
+    // wizard's role-selection POST.
     if (Get.isRegistered<UserController>()) {
-      UserController.instance.setAuthEmail(s.user.email);
+      UserController.instance
+        ..setAuthEmail(s.user.email)
+        ..setAuthName(firstName: firstName, lastName: lastName);
     }
+    // Persist alongside the tokens so the same values survive hot
+    // restart — paired lifetime with the bearer.
     await _api.tokenStorage.writeTokens(
       accessToken: s.accessToken,
       refreshToken: s.refreshToken,
       expiresAt: s.expiresAt,
       email: s.user.email,
+      firstName: firstName,
+      lastName: lastName,
     );
+  }
+
+  /// Splits a `full_name` claim ("Arselene Doe") into its first word.
+  /// Used as a fallback when the provider only emits `name`, not
+  /// `given_name` / `family_name`.
+  static String? _firstOf(String? fullName) {
+    if (fullName == null || fullName.trim().isEmpty) return null;
+    final parts = fullName.trim().split(RegExp(r'\s+'));
+    return parts.first;
+  }
+
+  /// Mirror of [_firstOf] — everything after the first word.
+  static String? _restOf(String? fullName) {
+    if (fullName == null || fullName.trim().isEmpty) return null;
+    final parts = fullName.trim().split(RegExp(r'\s+'));
+    if (parts.length < 2) return null;
+    return parts.sublist(1).join(' ');
   }
 }

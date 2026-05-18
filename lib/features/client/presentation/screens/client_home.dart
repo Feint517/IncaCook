@@ -113,7 +113,7 @@ class _HomeScreenState extends State<ClientHomeScreen> {
                 //* search bar + Filtres button
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
-                  child: Expanded(child: ClientHomeSearchBar()),
+                  child: ClientHomeSearchBar(),
                 ),
                 const Gap(AppSizes.md + 2),
 

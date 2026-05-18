@@ -18,7 +18,6 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Get.put(BootstrapController());
-    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       body: Center(
         child: Column(
@@ -31,7 +30,7 @@ class SplashScreen extends StatelessWidget {
               height: 24,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: scheme.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ],

@@ -46,6 +46,16 @@ class UserController extends GetxController {
   /// resolve from the JWT.
   final RxnString authEmail = RxnString();
 
+  /// Name claims pulled from the access-token JWT's `user_metadata`.
+  /// Populated for OAuth sign-ins (Google sends `given_name` /
+  /// `family_name`) so the signup wizard can pre-fill Gate 2's body
+  /// for first-time NoProfile users — without this, the wizard reaches
+  /// role selection with empty strings and POST `/v1/users` returns
+  /// 400 from the length-≥2 validators. Stays null for email-password
+  /// signups (Supabase emits empty user_metadata).
+  final RxnString authFirstName = RxnString();
+  final RxnString authLastName = RxnString();
+
   /// Convenience getters so widgets don't have to null-check repeatedly.
   /// Empty strings (not `null`) so they can drop into `Text(...)` directly.
   String get displayName {
@@ -73,6 +83,16 @@ class UserController extends GetxController {
   /// auth call. Called from `AuthRepository._persistSession`.
   void setAuthEmail(String email) => authEmail.value = email;
 
+  /// Stores the OAuth-provider name claims (when present). Null /
+  /// empty values are normalized to `null` so callers can use a single
+  /// `value != null && value.isNotEmpty`-style check.
+  void setAuthName({String? firstName, String? lastName}) {
+    authFirstName.value =
+        (firstName != null && firstName.isNotEmpty) ? firstName : null;
+    authLastName.value =
+        (lastName != null && lastName.isNotEmpty) ? lastName : null;
+  }
+
   /// Reads the persisted auth email from [TokenStorage] and seeds
   /// [authEmail]. Called once on cold start from `BootstrapController`
   /// so the value survives hot restart / app relaunch — without this,
@@ -83,9 +103,15 @@ class UserController extends GetxController {
   /// beat us to it).
   Future<void> hydrateFromStorage() async {
     if (authEmail.value != null) return;
-    final stored = await _tokenStorage.readAuthEmail();
-    if (stored != null && stored.isNotEmpty) {
-      authEmail.value = stored;
+    final stored = await _tokenStorage.readAuthIdentity();
+    if (stored.email != null && stored.email!.isNotEmpty) {
+      authEmail.value = stored.email;
+    }
+    if (stored.firstName != null && stored.firstName!.isNotEmpty) {
+      authFirstName.value = stored.firstName;
+    }
+    if (stored.lastName != null && stored.lastName!.isNotEmpty) {
+      authLastName.value = stored.lastName;
     }
   }
 
@@ -107,5 +133,7 @@ class UserController extends GetxController {
   void clear() {
     user.value = null;
     authEmail.value = null;
+    authFirstName.value = null;
+    authLastName.value = null;
   }
 }

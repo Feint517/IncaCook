@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pinput/pinput.dart';
 
-/// 6-box one-time-password input. Auto-advances on digit entry, supports
-/// paste, and emits the full code via [onCompleted] once all 6 are filled.
+/// 6-box one-time-password input.
+///
+/// Backed by [Pinput] — one hidden text field drives all six visible
+/// cells, which means the system keyboard never has to switch focus
+/// between sibling fields. The previous "6 separate `TextField`s" version
+/// flickered the iOS keyboard on every digit and occasionally stranded
+/// it on screen after completion; the single-field approach avoids both
+/// issues.
+///
+/// Public API ([onCompleted], [onChanged], [errorText], [length]) is
+/// unchanged so callers don't need updates.
 class SignupOtpField extends StatefulWidget {
   const SignupOtpField({
     super.key,
@@ -22,126 +32,73 @@ class SignupOtpField extends StatefulWidget {
 }
 
 class _SignupOtpFieldState extends State<SignupOtpField> {
-  late final List<TextEditingController> _controllers;
-  late final List<FocusNode> _focusNodes;
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
-    _controllers = List.generate(widget.length, (_) => TextEditingController());
-    _focusNodes = List.generate(widget.length, (_) => FocusNode());
+    _controller = TextEditingController();
+    _focusNode = FocusNode();
   }
 
   @override
   void dispose() {
-    for (final c in _controllers) {
-      c.dispose();
-    }
-    for (final f in _focusNodes) {
-      f.dispose();
-    }
+    _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
-  String get _currentCode => _controllers.map((c) => c.text).join();
-
-  void _emit() {
-    widget.onChanged?.call(_currentCode);
-    if (_currentCode.length == widget.length) {
-      widget.onCompleted(_currentCode);
-    }
-  }
-
-  void _onChanged(int index, String v) {
-    if (v.length > 1) {
-      // Paste path — distribute digits across the boxes.
-      final digits =
-          v.replaceAll(RegExp(r'\D'), '').split('').take(widget.length).toList();
-      for (var i = 0; i < widget.length; i++) {
-        _controllers[i].text = i < digits.length ? digits[i] : '';
-      }
-      final fillCount = digits.length.clamp(0, widget.length);
-      FocusScope.of(context).requestFocus(
-        _focusNodes[fillCount >= widget.length
-            ? widget.length - 1
-            : fillCount],
-      );
-      _emit();
-      return;
-    }
-    if (v.isNotEmpty && index < widget.length - 1) {
-      FocusScope.of(context).requestFocus(_focusNodes[index + 1]);
-    }
-    _emit();
-  }
-
-  void _onKey(int index, KeyEvent event) {
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.backspace &&
-        _controllers[index].text.isEmpty &&
-        index > 0) {
-      _controllers[index - 1].clear();
-      FocusScope.of(context).requestFocus(_focusNodes[index - 1]);
-      _emit();
-    }
+  void _handleCompleted(String code) {
+    // Drop the keyboard before handing off — otherwise the page transition
+    // that fires inside onCompleted (the wizard advances) can leave the
+    // numpad floating over the next screen on iOS.
+    _focusNode.unfocus();
+    widget.onCompleted(code);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final hasError =
-        widget.errorText != null && widget.errorText!.isNotEmpty;
+    final hasError = widget.errorText != null && widget.errorText!.isNotEmpty;
+
+    final defaultTheme = PinTheme(
+      width: 48,
+      height: 56,
+      textStyle: theme.textTheme.headlineSmall?.copyWith(
+        fontWeight: FontWeight.w600,
+      ),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.transparent, width: 1.5),
+      ),
+    );
+
     return Column(
       children: [
-        Row(
+        Pinput(
+          controller: _controller,
+          focusNode: _focusNode,
+          length: widget.length,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(widget.length, (i) {
-            return KeyboardListener(
-              focusNode: FocusNode(skipTraversal: true),
-              onKeyEvent: (event) => _onKey(i, event),
-              child: SizedBox(
-                width: 48,
-                height: 56,
-                child: TextField(
-                  controller: _controllers[i],
-                  focusNode: _focusNodes[i],
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  maxLength: 1,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                  ],
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                  onChanged: (v) => _onChanged(i, v),
-                  decoration: InputDecoration(
-                    counterText: '',
-                    filled: true,
-                    fillColor: scheme.surfaceContainerLow,
-                    contentPadding: EdgeInsets.zero,
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: hasError
-                            ? scheme.error
-                            : Colors.transparent,
-                        width: 1.5,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: hasError ? scheme.error : scheme.primary,
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
+          defaultPinTheme: defaultTheme,
+          focusedPinTheme: defaultTheme.copyDecorationWith(
+            border: Border.all(
+              color: hasError ? scheme.error : scheme.primary,
+              width: 1.5,
+            ),
+          ),
+          errorPinTheme: defaultTheme.copyDecorationWith(
+            border: Border.all(color: scheme.error, width: 1.5),
+          ),
+          forceErrorState: hasError,
+          onChanged: widget.onChanged,
+          onCompleted: _handleCompleted,
         ),
         if (hasError) ...[
           const SizedBox(height: 8),

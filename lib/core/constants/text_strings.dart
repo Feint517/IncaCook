@@ -720,6 +720,11 @@ class AppTexts {
   static const String signupEmailLabel = "Email";
   static const String signupEmailHint = "tu@exemple.com";
   static const String signupEmailError = "Email invalide";
+  //* signup flow — confirm-your-name step (NoProfile / OAuth path)
+  static const String signupCompleteNameTitle = "Comment t'appelles-tu ?";
+  static const String signupCompleteNameSubtitle =
+      "On a besoin de ton nom pour personnaliser ton compte.";
+
   static const String signupPhoneLabel = "Numéro de téléphone";
   static const String signupPhoneLabelOptional =
       "Numéro de téléphone (optionnel)";

@@ -3,6 +3,7 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:incacook/core/common/widgets/appbar/appbar.dart';
 import 'package:incacook/core/constants/sizes.dart';
+import 'package:incacook/core/utils/device/device_utility.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/widgets/effects/frosted_surface.dart';
 import 'package:incacook/features/authentication/controllers/signup_flow_controller.dart';
@@ -27,6 +28,7 @@ import 'package:incacook/features/authentication/presentation/screens/signup_flo
 import 'package:incacook/features/authentication/presentation/screens/signup_flow/seller/seller_profile_page.dart';
 import 'package:incacook/features/authentication/presentation/screens/signup_flow/universal/basic_info_page.dart';
 import 'package:incacook/features/authentication/presentation/screens/signup_flow/universal/biometric_setup_page.dart';
+import 'package:incacook/features/authentication/presentation/screens/signup_flow/universal/complete_name_page.dart';
 import 'package:incacook/features/authentication/presentation/screens/signup_flow/universal/legal_acceptance_page.dart';
 import 'package:incacook/features/authentication/presentation/screens/signup_flow/universal/phone_verification_page.dart';
 import 'package:incacook/features/authentication/presentation/widgets/signup_flow/signup_bottom_bar.dart';
@@ -48,6 +50,8 @@ class SignupShellScreen extends GetView<SignupFlowController> {
         return const BiometricSetupPage();
       case SignupStep.legalAcceptance:
         return const LegalAcceptancePage();
+      case SignupStep.completeName:
+        return const CompleteNamePage();
       case SignupStep.roleSelection:
         return const RoleSelectionPage();
       case SignupStep.buyerAddress:
@@ -112,6 +116,9 @@ class SignupShellScreen extends GetView<SignupFlowController> {
   }
 
   Future<void> _onBack(BuildContext context) async {
+    // After OTP verification the wizard is forward-only — guard both
+    // the appbar tap and the system back gesture here.
+    if (!controller.canGoBack) return;
     if (controller.isFirstPage) {
       if (await _confirmExit(context)) Get.back<void>();
     } else {
@@ -129,10 +136,20 @@ class SignupShellScreen extends GetView<SignupFlowController> {
       },
       child: Scaffold(
         resizeToAvoidBottomInset: true,
-        appBar: CustomAppBar(
-          showBackArrow: true,
-          leadingOnPressed: () => _onBack(context),
-          actions: const [_StepCounterBadge()],
+        // Reactive: the back arrow disappears the moment phone/email
+        // OTP verification flips [SignupFlowController.canGoBack].
+        // PreferredSize re-wraps the Obx as a PreferredSizeWidget so it
+        // satisfies Scaffold.appBar's contract; the inner CustomAppBar
+        // already reports the same height.
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(DeviceUtils.getAppBarHeight()),
+          child: Obx(
+            () => CustomAppBar(
+              showBackArrow: controller.canGoBack,
+              leadingOnPressed: () => _onBack(context),
+              actions: const [_StepCounterBadge()],
+            ),
+          ),
         ),
         // Stack lets the floating SignupBottomBar's frosted blur read
         // against PageView content scrolling underneath it.

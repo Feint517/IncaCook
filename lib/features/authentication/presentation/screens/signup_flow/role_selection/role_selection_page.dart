@@ -42,8 +42,6 @@ class RoleSelectionPage extends GetView<SignupFlowController> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return SignupStepLayout(
       title: AppTexts.userTypeHeading,
       scrollable: false,
@@ -115,7 +113,7 @@ class RoleSelectionPage extends GetView<SignupFlowController> {
                         _options[selected]!.subtitle,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: scheme.onSurfaceVariant,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),

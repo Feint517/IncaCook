@@ -1,7 +1,7 @@
 name: incacook
 description: "A new Flutter project."
 publish_to: 'none'
-version: 1.0.0+7
+version: 1.0.0+9
 
 environment:
   sdk: ^3.11.5
@@ -41,6 +41,7 @@ dependencies:
   ulid: ^2.0.0
   image_picker: ^1.1.2
   google_sign_in: ^6.2.1
+  pinput: ^6.0.2
 
 dev_dependencies:
   flutter_test:

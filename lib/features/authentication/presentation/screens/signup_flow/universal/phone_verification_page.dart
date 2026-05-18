@@ -33,8 +33,7 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
   Widget build(BuildContext context) {
     final controller = Get.find<SignupFlowController>();
     final userController = UserController.instance;
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final scheme = Theme.of(context).colorScheme;
     final useEmail = FeatureFlags.useEmailOtpBypass;
 
     // Auth email comes from the Session captured server-side — same

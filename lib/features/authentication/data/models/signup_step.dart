@@ -9,6 +9,11 @@ enum SignupStep {
   phoneVerification,
   biometricSetup,
   legalAcceptance,
+  // NoProfile-only — collects (or confirms) the user's name when
+  // basicInfo was skipped because we entered the wizard with a
+  // pre-existing auth identity (e.g. first-time Google sign-in).
+  // Pre-filled from the JWT's name claims when present.
+  completeName,
   // Role
   roleSelection,
   // Buyer

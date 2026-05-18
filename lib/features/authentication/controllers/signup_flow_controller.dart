@@ -205,29 +205,35 @@ class SignupFlowController extends GetxController {
     ever<SellerCategory?>(sellerCategory, (_) => currentPage.refresh());
     ever<DriverVehicleType?>(vehicleType, (_) => currentPage.refresh());
 
-    // In debug builds, prefill the basic-info form with random sample
-    // data so the validation gate passes without manual typing on every
-    // hot reload. Release builds start with empty fields.
-    final seed = kDebugMode ? _DevSeed.random() : _DevSeed.empty();
-    firstName.value = seed.firstName;
-    lastName.value = seed.lastName;
-    email.value = seed.email;
-    phone.value = seed.phone;
-    password.value = seed.password;
-    confirmPassword.value = seed.password;
+    // Debug seed: only apply for fresh entries. When the binding ran
+    // `seedAsSignedIn` / `seedForResume` first (NoProfile + resume
+    // paths), those flags are already true and our seed would clobber
+    // values we just pulled from UserController. The TextEditingControllers
+    // are always created — just initialized from whatever's currently
+    // in the Rx vars (debug seed, OAuth pre-fill, or empty).
+    final isPreSeeded = isSignedUp.value || isResumeMode.value;
+    if (!isPreSeeded) {
+      final seed = kDebugMode ? _DevSeed.random() : _DevSeed.empty();
+      firstName.value = seed.firstName;
+      lastName.value = seed.lastName;
+      email.value = seed.email;
+      phone.value = seed.phone;
+      password.value = seed.password;
+      confirmPassword.value = seed.password;
+    }
 
-    firstNameTextController = TextEditingController(text: seed.firstName)
+    firstNameTextController = TextEditingController(text: firstName.value)
       ..addListener(() => firstName.value = firstNameTextController.text);
-    lastNameTextController = TextEditingController(text: seed.lastName)
+    lastNameTextController = TextEditingController(text: lastName.value)
       ..addListener(() => lastName.value = lastNameTextController.text);
-    emailTextController = TextEditingController(text: seed.email)
+    emailTextController = TextEditingController(text: email.value)
       ..addListener(() => email.value = emailTextController.text.trim());
-    phoneTextController = TextEditingController(text: seed.phone)
+    phoneTextController = TextEditingController(text: phone.value)
       ..addListener(() => phone.value = phoneTextController.text);
-    passwordTextController = TextEditingController(text: seed.password)
+    passwordTextController = TextEditingController(text: password.value)
       ..addListener(() => password.value = passwordTextController.text);
     confirmPasswordTextController =
-        TextEditingController(text: seed.password)
+        TextEditingController(text: confirmPassword.value)
           ..addListener(
             () => confirmPassword.value = confirmPasswordTextController.text,
           );
@@ -265,8 +271,15 @@ class SignupFlowController extends GetxController {
         SignupStep.phoneVerification,
         SignupStep.biometricSetup,
         SignupStep.legalAcceptance,
-        SignupStep.roleSelection,
       ]);
+      // NoProfile path: basicInfo was skipped so the wizard hasn't
+      // seen a name yet. The JWT pre-fill may be incomplete (single-
+      // word Google accounts don't ship `family_name`), so we always
+      // confirm before Gate 2 fires.
+      if (isSignedUp.value) {
+        list.add(SignupStep.completeName);
+      }
+      list.add(SignupStep.roleSelection);
     }
 
     switch (role.value) {
@@ -330,6 +343,15 @@ class SignupFlowController extends GetxController {
   bool get isFirstPage => currentPage.value == 0;
 
   bool get isLastPage => currentPage.value >= steps.length - 1;
+
+  /// True when the user can navigate back from the current step.
+  ///
+  /// Locked once the OTP step succeeds. After that every earlier gate
+  /// has already committed something server-side and going back to the
+  /// OTP page would re-trigger a new code send — so the wizard becomes
+  /// strictly forward-only. The shell uses this to hide the appbar's
+  /// back arrow; the PopScope intercepts the system back gesture too.
+  bool get canGoBack => !phoneVerified.value;
 
   // ---------------------------------------------------------------------------
   // Validators (the per-step rules the bottom-bar checks).
@@ -430,6 +452,9 @@ class SignupFlowController extends GetxController {
         return true;
       case SignupStep.legalAcceptance:
         return acceptedCgu.value && acceptedCgv.value;
+      case SignupStep.completeName:
+        return _isValidName(firstName.value) &&
+            _isValidName(lastName.value);
       case SignupStep.roleSelection:
         return role.value != null;
       case SignupStep.buyerAddress:
@@ -568,6 +593,10 @@ class SignupFlowController extends GetxController {
       case SignupStep.legalAcceptance:
         // CGU/CGV are sent as flat booleans in Gate 2's body — no
         // separate call here.
+        return true;
+      case SignupStep.completeName:
+        // Names are sent as part of Gate 2's body on roleSelection —
+        // this step just collects/confirms them.
         return true;
       case SignupStep.roleSelection:
         return _submitCompleteProfile();
@@ -989,8 +1018,21 @@ class SignupFlowController extends GetxController {
   /// the [PostAuthNoProfile] case from the post-auth router. Drops
   /// basicInfo from [steps] so the user lands on phoneVerification and
   /// advances through the rest of the preamble before Gate 2 commits.
+  ///
+  /// Also pre-fills name fields from the OAuth provider's JWT claims
+  /// (populated in [UserController.authFirstName] / `authLastName` by
+  /// `AuthRepository._persistSession`). Without this, a first-time
+  /// Google user reaches role selection with empty first/last name
+  /// and POST `/v1/users` returns 400 from the length-≥2 validators.
   void seedAsSignedIn() {
     isSignedUp.value = true;
+    if (Get.isRegistered<UserController>()) {
+      final uc = UserController.instance;
+      final first = uc.authFirstName.value;
+      final last = uc.authLastName.value;
+      if (first != null && first.isNotEmpty) firstName.value = first;
+      if (last != null && last.isNotEmpty) lastName.value = last;
+    }
   }
 
   /// Seeds the wizard with a known role + jumps to a specific step,
