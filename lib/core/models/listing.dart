@@ -74,6 +74,11 @@ abstract class Listing with _$Listing {
     //* Buyer-feed-only fields — present on items from `GET /v1/listings`,
     //* absent on the detail and seller-dashboard responses.
     String? sellerName,
+    //* Seller's display name + profile photo (storage path), joined from
+    //* SellerProfile. Present on the buyer feed AND the detail read
+    //* (`GET /v1/listings/:id`) so the product-detail seller block can render
+    //* the real seller — never a mock. Null when the seller has no photo.
+    String? sellerAvatarUrl,
     double? distanceKm,
     bool? inRange,
     double? rating,

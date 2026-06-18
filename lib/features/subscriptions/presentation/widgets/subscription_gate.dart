@@ -19,8 +19,13 @@ class SubscriptionGate extends StatelessWidget {
   Widget build(BuildContext context) {
     final userCtrl = Get.find<UserController>();
     return Obx(() {
-      final active =
-          userCtrl.user.value?.sellerAccount?.subscriptionActive ?? false;
+      final seller = userCtrl.user.value?.sellerAccount;
+      // Date/status gate — NOT a fresh charge. The seller stays unlocked until
+      // their period end / trial end; the paywall returns only once it lapses.
+      final active = userCtrl.hasActiveSellerSubscription;
+      debugPrint('[SubscriptionGate] backend status=${seller?.subscriptionStatus ?? 'none'}');
+      debugPrint('[SubscriptionGate] expiresAt=${seller?.subscriptionCurrentPeriodEnd ?? 'null'}');
+      debugPrint('[SubscriptionGate] shouldShowPaywall=${!active}');
       return active ? child : const SubscriptionPaywallScreen();
     });
   }

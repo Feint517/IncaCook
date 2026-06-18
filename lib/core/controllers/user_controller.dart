@@ -64,9 +64,76 @@ class UserController extends GetxController {
     return '${u.firstName} ${u.lastName}'.trim();
   }
 
+  /// First name to greet the user with, in priority order:
+  /// firstName → full display name → seller display name → email prefix →
+  /// "vendeur". Never empty (so it drops straight into "Bonjour …").
+  String get greetingName {
+    final u = user.value;
+    final first = (u?.firstName ?? authFirstName.value ?? '').trim();
+    if (first.isNotEmpty) return first;
+    final full = displayName.trim();
+    if (full.isNotEmpty) return full;
+    final sellerName = (u?.sellerAccount?.displayName ?? '').trim();
+    if (sellerName.isNotEmpty) return sellerName;
+    final mail = (u?.email ?? authEmail.value ?? '').trim();
+    if (mail.contains('@')) return mail.split('@').first;
+    return 'vendeur';
+  }
+
+  /// Up to 2 uppercase initials for the avatar fallback (e.g. "GD" for
+  /// "Ghassen DF"). Falls back to the email's first letter, then "?".
+  String get initials {
+    final u = user.value;
+    final first = (u?.firstName ?? authFirstName.value ?? '').trim();
+    final last = (u?.lastName ?? authLastName.value ?? '').trim();
+    final letters =
+        ((first.isNotEmpty ? first[0] : '') + (last.isNotEmpty ? last[0] : ''))
+            .toUpperCase();
+    if (letters.isNotEmpty) return letters;
+    final mail = (u?.email ?? authEmail.value ?? '').trim();
+    if (mail.isNotEmpty) return mail[0].toUpperCase();
+    return '?';
+  }
+
   String get email => user.value?.email ?? '';
 
   bool get isSignedIn => user.value != null;
+
+  /// True once the driver finished Stripe Connect payout onboarding. Drives the
+  /// payout banner + the delivery-claim CTA. Reactive — bind inside [Obx].
+  bool get driverPayoutReady =>
+      user.value?.driverAccount?.stripeOnboardingCompleted ?? false;
+
+  /// Whether the connected driver may claim deliveries — mirrors the backend
+  /// claim gate (KYC APPROVED **and** payout onboarding complete). When false,
+  /// the offer's "Accepter" is disabled and a "set up payments" CTA is shown.
+  bool get canDriverClaim {
+    final d = user.value?.driverAccount;
+    if (d == null) return false;
+    return d.kycStatus.toUpperCase() == 'APPROVED' && d.stripeOnboardingCompleted;
+  }
+
+  /// Seller subscription gate — the single rule the app uses to decide whether
+  /// to show the paywall. True when the connected seller's plan is live by
+  /// **date/status** (never by re-charging on every login):
+  ///   * status is ACTIVE or TRIALING, AND
+  ///   * the period end is in the future — OR null, which only happens as the
+  ///     dev/test "+1 month" fallback the backend writes after activation.
+  ///
+  /// Mirrors the backend `isSubscriptionActive` rule (backend stays the source
+  /// of truth — this just reads the hydrated `/users/me` snapshot). Reactive:
+  /// bind inside an [Obx] so it re-evaluates when [user] is refreshed.
+  bool get hasActiveSellerSubscription {
+    final seller = user.value?.sellerAccount;
+    if (seller == null) return false;
+    final status = seller.subscriptionStatus.toUpperCase();
+    if (status != 'ACTIVE' && status != 'TRIALING') return false;
+    final iso = seller.subscriptionCurrentPeriodEnd;
+    if (iso == null || iso.isEmpty) return true; // dev/test fallback: no expiry
+    final expiresAt = DateTime.tryParse(iso);
+    if (expiresAt == null) return true;
+    return expiresAt.isAfter(DateTime.now());
+  }
 
   /// Replaces the cached user. Called by:
   ///   * `PostAuthRouter.decide()` after `/users/me`,

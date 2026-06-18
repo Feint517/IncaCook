@@ -42,7 +42,7 @@ class CartItemCardDismissible extends StatelessWidget {
         padding: const EdgeInsets.only(right: AppSizes.lg),
         child: const Icon(Iconsax.trash, color: Color(0xFFE53935), size: 28),
       ),
-      onDismissed: (_) => onDismissed,
+      onDismissed: (_) => onDismissed(),
       child: FrostedSurface(
         borderRadius: BorderRadius.circular(20),
         child: Column(

@@ -28,6 +28,10 @@ enum SignupStep {
   sellerKycId,
   sellerKycSelfie,
   sellerCharter,
+  // Seller — final step 10/10: choose the monthly RevenueCat subscription
+  // (App Store / Google Play). Mandatory: "Terminer" stays disabled until an
+  // active subscription / trial exists. Replaces payout setup for sellers.
+  sellerSubscription,
   // Driver
   driverDobAddress,
   driverVehicle,

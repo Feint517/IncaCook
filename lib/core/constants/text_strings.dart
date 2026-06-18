@@ -4,8 +4,60 @@ class AppTexts {
   static const String welcomeTagline = "Le goût de chez toi, près de chez toi";
   static const String welcomeSkip = "Passer";
   static const String welcomeContinueWith = "Continuer";
+  static const String welcomeContinueWithFacebook = "Continuer avec Facebook";
   static const String welcomeSignUpEmail = "S'inscrire avec e-mail";
   static const String welcomeAlreadyAccount = "Déjà un compte ?";
+
+  //* social auth — complete email step (OAuth identity returned no email)
+  static const String completeEmailTitle = "Ajoutez votre adresse e-mail";
+  static const String completeEmailSubtitle =
+      "Votre connexion n'a pas communiqué d'adresse e-mail. Ajoutez-en une "
+      "pour finaliser votre inscription.";
+  static const String completeEmailLabel = "Adresse e-mail";
+  static const String completeEmailSendCta = "Envoyer le code";
+  static const String completeEmailSendLinkCta = "Envoyer le lien de vérification";
+  static const String completeEmailLinkSent =
+      "Un lien de vérification a été envoyé à votre email. Cliquez sur le lien "
+      "pour continuer.";
+  static const String completeEmailVerifiedButton = "J'ai vérifié mon email";
+  static const String completeEmailVerifiedSuccess = "Email vérifié avec succès";
+  static const String completeEmailNotVerifiedYet =
+      "Pas encore vérifié. Ouvrez le lien reçu par email, puis revenez ici.";
+  static const String completeEmailHaveCode = "J'ai reçu un code à la place";
+  // Button states for the "open the link, then come back" flow.
+  static const String completeEmailWaiting = "En attente de vérification…";
+  static const String completeEmailContinueCta = "Continuer";
+  static const String completeEmailCheckNow = "Vérifier maintenant";
+  static const String completeEmailDetected =
+      "Email vérifié ✓ Appuyez sur « Continuer » pour finaliser.";
+  static const String completeEmailInvalid = "Adresse e-mail invalide.";
+  static const String completeEmailOtpTitle = "Vérifiez votre e-mail";
+  static const String completeEmailVerifyCta = "Vérifier";
+  static const String completeEmailResendCta = "Renvoyer le code";
+  static const String completeEmailChangeCta = "Modifier l'adresse";
+  static const String completeEmailError =
+      "Une erreur est survenue. Veuillez réessayer.";
+  static const String completeEmailInvalidCode = "Code invalide. Réessayez.";
+  static String completeEmailOtpSubtitle(String email) =>
+      "Entrez le code à 6 chiffres envoyé à $email.";
+
+  //* social auth — error copy
+  static const String googleSignInTitle = "Connexion Google";
+  static const String googleSignInError =
+      "Connexion Google impossible. Veuillez réessayer.";
+  static const String facebookSignInTitle = "Connexion Facebook";
+  static const String facebookSignInError =
+      "Connexion Facebook impossible. Veuillez réessayer.";
+  static const String facebookNoEmailError =
+      "Connexion Facebook impossible : Facebook n'a pas retourné d'adresse "
+      "e-mail. Vérifiez que le compte Facebook possède une adresse e-mail "
+      "confirmée.";
+
+  //* network — transport error copy
+  static const String serverUnreachableError =
+      "Connexion au serveur impossible. Vérifiez que le backend est lancé.";
+  static const String serverTimeoutError =
+      "Le serveur met trop de temps à répondre. Veuillez réessayer.";
 
   //* on boarding text
   static const String onBoardingTitle1 = "Découvrez des plats faits maison";
@@ -260,6 +312,8 @@ class AppTexts {
 
   //* seller (product page)
   static const String productSampleSellerName = "La Cuisine d'Alice";
+  // Neutral fallback when the real seller name is missing — never a mock name.
+  static const String productSellerFallbackName = "Cuisinier";
   static const double productSampleSellerRating = 4.8;
   static const int productSampleSellerOrdersCompleted = 1284;
   static const String productSellerOrdersSuffix = "commandes terminées";
@@ -596,7 +650,13 @@ class AppTexts {
   static const String cartOrderSummaryTitle = "Récapitulatif";
   static const String cartShippingLabel = "Livraison";
   static const String cartTotalLabel = "Total";
-  static const double cartShippingFee = 2.50;
+  // Flat delivery fee (5,00 €) — mirrors the backend DELIVERY_FEE_CENTS=500.
+  static const double cartShippingFee = 5.00;
+  // Platform buyer fee: 5% added on top of (subtotal + delivery). Mirrors the
+  // backend PLATFORM_BUYER_FEE_BPS=500. Backend is the source of truth; this
+  // matches its formula so the displayed total equals the Stripe charge.
+  static const double platformFeeRate = 0.05;
+  static const String cartPlatformFeeLabel = "Frais plateforme (5%)";
 
   static String cartDifferentSellerBody(String sellerName) =>
       "Tu as déjà un panier chez $sellerName. Veux-tu le vider et recommencer ?";
@@ -650,11 +710,19 @@ class AppTexts {
   static const String addProductFieldPrepMinutes = "Temps de préparation (min)";
   static const String addProductPriceCapNote =
       "Plafond : €4,50 pour Le Bon Fait Maison. Libre pour Traiteur et Restaurant.";
+  // Category-specific price notes (shown under the price field based on the
+  // connected seller's category).
+  static const String addProductPriceCapNoteFaitMaison =
+      "Plafond : 4,50 € pour Le Bon Fait Maison.";
+  static const String addProductPriceFreeNote =
+      "Prix libre pour cette catégorie.";
   static const String addProductPriceCapError =
       "Le prix d'un produit fait-maison ne peut pas dépasser €4,50.";
   static const String addProductFieldCategory = "Catégorie";
   static const String addProductCategoryAutoNote =
       "Reprise depuis votre profil de cuisinier.";
+  // Fallback when the seller's category can't be resolved from their profile.
+  static const String addProductCategoryUnavailable = "Catégorie indisponible";
   static const String addProductFieldCuisine = "Type de cuisine";
   static const String addProductFieldDiets = "Régime alimentaire";
   static const String addProductFieldDishType = "Type de plat";
@@ -760,6 +828,19 @@ class AppTexts {
   static const String incomingOrderItemSuffix = "article";
   static const String incomingOrderAcceptCta = "Accepter";
   static const String incomingOrderDeclineCta = "Refuser";
+  // Shown on the offer when the driver hasn't completed Stripe payout setup:
+  // the "Accepter" button is disabled and this CTA opens onboarding.
+  static const String incomingOrderPayoutRequired =
+      "Configurez vos paiements avant d'accepter des livraisons.";
+  static const String incomingOrderConfigurePaymentsCta = "Configurer mes paiements";
+  // Generic claim failure (e.g. another driver won the race, or a backend
+  // guard other than payout). Never surfaces the raw backend error.
+  static const String incomingOrderClaimFailed =
+      "Impossible d'accepter cette livraison. Réessayez.";
+  // Chat CTAs shared by the delivery + seller order surfaces.
+  static const String chatContactClientCta = "Contacter le client";
+  static const String chatContactSellerCta = "Contacter le vendeur";
+  static const String chatContactDriverCta = "Contacter le livreur";
 
   //* signup flow — shell + chrome
   static const String signupExitDialogTitle = "Quitter l'inscription ?";
@@ -811,6 +892,11 @@ class AppTexts {
   static const String signupOtpVerifying = "Vérification…";
   static const String signupOtpResendNow = "Renvoyer le code";
   static const String signupOtpEditNumber = "Modifier le numéro";
+  // Shown when the phone is already linked to another account: the OTP is
+  // blocked, so we invite the user to change the number instead of resending.
+  static const String signupOtpChangeNumber = "Changer de numéro";
+  static const String signupOtpPhoneAlreadyUsed =
+      "Ce numéro de téléphone est déjà utilisé.";
   static const String signupOtpResentTitle = "Code renvoyé";
   static const String signupOtpResentBody =
       "On t'a renvoyé un nouveau code par SMS.";
@@ -1040,6 +1126,42 @@ class AppTexts {
   static const String payoutGatingSnackbarDriver =
       "Tu peux accepter des courses, mais les paiements sont en attente.";
 
+  //* signup flow — seller subscription page (RevenueCat, step 10/10)
+  static const String signupSubscriptionTitle = "Choisissez votre abonnement";
+  static const String signupSubscriptionSubtitle =
+      "Activez votre abonnement mensuel pour publier vos plats, recevoir des "
+      "commandes et accéder aux outils vendeur IncaCook.";
+  static const String signupSubscriptionTrialNote =
+      "2 mois gratuits sont offerts pour toute nouvelle inscription.";
+  static const String signupSubscriptionSecureNote =
+      "Paiement sécurisé via l'App Store ou Google Play. IncaCook ne stocke "
+      "jamais vos informations de paiement.";
+  static const String signupSubscriptionSubscribeCta = "S'abonner maintenant";
+  static const String signupSubscriptionRestoreCta = "Restaurer mon abonnement";
+  static const String signupSubscriptionPlanStandard = "Standard";
+  static const String signupSubscriptionPlanPremium = "Premium";
+  static const String signupSubscriptionStandardCommission = "Commission 30%";
+  static const String signupSubscriptionPremiumCommission = "Commission réduite à 25%";
+  static const String signupSubscriptionPremiumPerkFeatured =
+      "3 mises à la une offertes / mois";
+  static const String signupSubscriptionPremiumPerkCommission =
+      "1 commission offerte / mois";
+  static const String signupSubscriptionSelectPlanError =
+      "Veuillez choisir une formule.";
+  static const String signupSubscriptionSuccess = "Abonnement activé !";
+  static const String signupSubscriptionRestoreNone =
+      "Aucun abonnement actif trouvé pour ce compte.";
+  static const String signupSubscriptionError =
+      "Abonnement impossible. Veuillez réessayer.";
+  static const String signupSubscriptionUnavailable =
+      "Abonnement indisponible. Vérifiez la configuration RevenueCat.";
+  static const String signupSubscriptionPerMonth = "/ mois";
+
+  //* seller paywall (shown post-login when subscription is inactive)
+  static const String paywallTitle = "Abonnement requis";
+  static const String paywallSubtitle =
+      "Pour vendre sur IncaCook, un abonnement mensuel actif est requis.";
+
   static const String signupDriverCharterTitle = "Charte du livreur";
   static const String signupDriverCharterSubtitle =
       "Engage-toi à suivre les règles de qualité.";
@@ -1052,6 +1174,9 @@ class AppTexts {
   static const String signupImagePickerCamera = "Prendre une photo";
   static const String signupImagePickerGallery = "Choisir depuis la galerie";
   static const String signupImagePickerRemove = "Supprimer";
+  // Shown when a picked image is still too large after compression/resize.
+  static const String imagePickerTooLarge =
+      "Image trop volumineuse. Veuillez choisir une image plus légère.";
 
   //* signup flow — address picker
   static const String signupAddressSearchHint = "Cherche une adresse…";

@@ -15,6 +15,28 @@ import 'package:incacook/features/authentication/data/models/requests/signin_req
 import 'package:incacook/features/authentication/data/models/requests/signup_request.dart';
 import 'package:incacook/features/authentication/data/models/requests/verify_otp_request.dart';
 
+/// Result of `POST /v1/auth/oauth/sync`. Drives post-OAuth routing:
+/// `needsEmail` → show the "complete email" step before onboarding.
+class OAuthSyncResult {
+  const OAuthSyncResult({
+    required this.profileExists,
+    required this.needsEmail,
+    this.email,
+  });
+
+  final bool profileExists;
+  final bool needsEmail;
+  final String? email;
+
+  factory OAuthSyncResult.fromJson(Map<String, dynamic> json) {
+    return OAuthSyncResult(
+      profileExists: json['profileExists'] as bool? ?? false,
+      needsEmail: json['needsEmail'] as bool? ?? false,
+      email: json['email'] as String?,
+    );
+  }
+}
+
 /// Repository for everything under `/v1/auth/*`.
 ///
 /// All session-creating methods (signup, signin) **also** persist the
@@ -55,27 +77,58 @@ class AuthRepository extends GetxService {
     return result.data;
   }
 
-  /// `POST /v1/auth/google` (§3.1a) — exchanges a Google ID token (from
-  /// the `google_sign_in` plugin) for a session. Supabase auto-links to
-  /// an existing email-password account if one matches the Google
-  /// email, so a returning user keeps their `User` row + role.
+  /// Persists a Supabase session obtained **client-side** by the social OAuth
+  /// handshake (Google or Facebook via supabase_flutter), so the rest of the
+  /// app sees it the same way it sees a backend-issued [Session].
   ///
-  /// Pass [nonce] only if the call site embedded a hashed nonce in the
-  /// ID token request — the plain Dart `google_sign_in` flow doesn't,
-  /// so it's optional on every caller we have today.
-  Future<Session> signInWithGoogle({
-    required String idToken,
-    String? nonce,
+  /// The hosted OAuth flow hands us raw tokens (no backend [Session]
+  /// envelope), so we mirror [_persistSession]'s behaviour — decode the access
+  /// token's `user_metadata` for name claims, hydrate [UserController], and
+  /// write the tokens to [TokenStorage]. From here the backend's
+  /// `/v1/auth/refresh` owns the lifecycle, identical to email login.
+  ///
+  /// Never logs the tokens.
+  Future<void> persistOAuthSession({
+    required String accessToken,
+    required String refreshToken,
+    required int expiresAt,
   }) async {
-    final result = await _api.post<Session>(
-      '${ApiConstants.apiPrefix}/auth/google',
-      body: <String, dynamic>{
-        'idToken': idToken,
-        'nonce': ?nonce,
-      },
-      decoder: (json) => Session.fromJson(json! as Map<String, dynamic>),
+    final claims = decodeJwtPayload(accessToken);
+    final email = claims?.email;
+    final firstName = claims?.givenName ?? _firstOf(claims?.fullName);
+    final lastName = claims?.familyName ?? _restOf(claims?.fullName);
+
+    if (Get.isRegistered<UserController>()) {
+      final users = UserController.instance;
+      if (email != null) users.setAuthEmail(email);
+      users.setAuthName(firstName: firstName, lastName: lastName);
+    }
+    await _api.tokenStorage.writeTokens(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      expiresAt: expiresAt,
+      email: email,
+      firstName: firstName,
+      lastName: lastName,
     );
-    await _persistSession(result.data);
+  }
+
+  /// `POST /v1/auth/oauth/sync` — provider-agnostic post-OAuth identity sync
+  /// (Google / Facebook via Supabase). The Supabase JWT (already persisted as
+  /// the bearer by [persistOAuthSession]) is validated server-side; the backend
+  /// returns the existing IncaCook profile or signals "no profile yet", and
+  /// rejects a duplicate email with a 409.
+  ///
+  /// Returns whether a profile exists and whether the OAuth identity needs an
+  /// email collected (`needsEmail` — e.g. Facebook returned none). A non-2xx
+  /// (e.g. duplicate-email 409) surfaces as [ApiFailure] for the caller to
+  /// toast. Never logs tokens.
+  Future<OAuthSyncResult> syncOAuthUser() async {
+    final result = await _api.post<OAuthSyncResult>(
+      '${ApiConstants.apiPrefix}/auth/oauth/sync',
+      body: null,
+      decoder: (json) => OAuthSyncResult.fromJson(json! as Map<String, dynamic>),
+    );
     return result.data;
   }
 
@@ -160,33 +213,57 @@ class AuthRepository extends GetxService {
     );
   }
 
-  /// `POST /v1/auth/email/request-otp` (§3.9 *Temporary email-OTP bypass*) —
-  /// emails a 6-digit code to the caller's own email (resolved from the
-  /// JWT, so no body is sent). Used while the SMS provider is down to
-  /// satisfy the same `phoneVerified` gate as [requestPhoneOtp].
-  ///
-  /// Delete once SMS is restored.
-  Future<void> requestEmailOtp() async {
+  /// `POST /v1/auth/email/attach` — attaches an (unconfirmed) email to the
+  /// current OAuth user via the backend admin, so the app can then send a
+  /// Supabase magic link itself (client-side `signInWithOtp`, keeping the PKCE
+  /// verifier in the app). Throws [ApiFailure] (e.g. 409 if the email is taken).
+  Future<void> attachEmail(String email) async {
     await _api.post<void>(
-      '${ApiConstants.apiPrefix}/auth/email/request-otp',
-      body: null,
+      '${ApiConstants.apiPrefix}/auth/email/attach',
+      body: <String, dynamic>{'email': email},
       decoder: (_) {},
     );
   }
 
-  /// `POST /v1/auth/email/verify` (§3.9 *Temporary email-OTP bypass*) —
-  /// confirms the email OTP and returns a fresh session. Tokens are
-  /// swapped in [TokenStorage] before the new [Session] is handed back.
-  /// On success `User.phoneVerified` is flipped to `true` server-side but
-  /// `User.phone` stays NULL (no phone was captured).
+  /// `POST /v1/auth/email/request-otp` — emails a 6-digit code.
   ///
-  /// Delete once SMS is restored.
-  Future<Session> verifyEmailOtp({required String code}) async {
+  /// Two uses:
+  ///   * email-OTP phone-verification bypass: no [email] (resolved from JWT);
+  ///   * OAuth "complete email" (Facebook returned none): pass the [email] the
+  ///     user entered — the backend attaches it to the account, then sends the
+  ///     code so verifying binds the address to this user.
+  Future<void> requestEmailOtp({String? email}) async {
+    final normalizedEmail = email?.trim();
+
+    await _api.post<void>(
+      '${ApiConstants.apiPrefix}/auth/email/request-otp',
+      body: <String, dynamic>{
+        if (normalizedEmail != null && normalizedEmail.isNotEmpty)
+          'email': normalizedEmail,
+      },
+      decoder: (_) {},
+    );
+  }
+
+  /// `POST /v1/auth/email/verify` — confirms the email OTP and returns a fresh
+  /// session (tokens swapped in [TokenStorage]). Pass the same [email] used for
+  /// the add-email request; omit it for the JWT-email bypass.
+  Future<Session> verifyEmailOtp({
+    required String code,
+    String? email,
+  }) async {
+    final normalizedEmail = email?.trim();
+
     final result = await _api.post<Session>(
       '${ApiConstants.apiPrefix}/auth/email/verify',
-      body: <String, dynamic>{'code': code},
+      body: <String, dynamic>{
+        'code': code.trim(),
+        if (normalizedEmail != null && normalizedEmail.isNotEmpty)
+          'email': normalizedEmail,
+      },
       decoder: (json) => Session.fromJson(json! as Map<String, dynamic>),
     );
+
     await _persistSession(result.data);
     return result.data;
   }

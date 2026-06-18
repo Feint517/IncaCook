@@ -25,6 +25,11 @@ class KitchenCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onToggleSaved;
 
+  /// Fixed image height — kept modest so the body always has room on small
+  /// screens (the card used to give the image 170px and let the rest grow
+  /// freely, overflowing the carousel viewport by ~81px).
+  static const double _imageHeight = 150;
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -35,13 +40,16 @@ class KitchenCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSizes.cardRadiusLg),
         ),
         clipBehavior: Clip.antiAlias,
+        // Fill the height the carousel assigns (its PageView gives a bounded
+        // viewport) instead of taking unbounded natural height — the fixed
+        // image + an Expanded body make a bottom overflow impossible.
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max,
           children: [
             //* image + overlays
             SizedBox(
-              height: 170,
+              height: _imageHeight,
               width: double.infinity,
               child: Stack(
                 fit: StackFit.expand,
@@ -76,80 +84,91 @@ class KitchenCard extends StatelessWidget {
               ),
             ),
 
-            //* body
-            Padding(
-              padding: const EdgeInsets.all(AppSizes.md),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
+            //* body (name + meta + tags) — absorbs the remaining height so the
+            //* column never exceeds the card. Texts are clamped to single
+            //* lines with ellipsis so a long name can't push content out.
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSizes.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                kitchen.name,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.w800),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      kitchen.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                    ),
+                                  ),
+                                  if (kitchen.isVerified) ...[
+                                    const Gap(6),
+                                    const Icon(
+                                      Iconsax.tick_circle5,
+                                      size: 16,
+                                      color: Color(0xFF2E7D32),
+                                    ),
+                                  ],
+                                ],
                               ),
-                            ),
-                            if (kitchen.isVerified) ...[
-                              const Gap(6),
-                              const Icon(
-                                Iconsax.tick_circle5,
-                                size: 16,
-                                color: Color(0xFF2E7D32),
+                              const Gap(AppSizes.sm),
+                              Wrap(
+                                spacing: AppSizes.sm + 2,
+                                runSpacing: 4,
+                                children: [
+                                  if (kitchen.hasFreeDelivery)
+                                    KitchenMetaItem(
+                                      icon: Iconsax.truck_fast,
+                                      label: AppTexts.kitchenFreeDelivery,
+                                    ),
+                                  KitchenMetaItem(
+                                    icon: Iconsax.clock,
+                                    label: kitchen.deliveryTime,
+                                  ),
+                                ],
                               ),
                             ],
-                          ],
+                          ),
                         ),
                         const Gap(AppSizes.sm),
-                        Wrap(
-                          spacing: AppSizes.sm + 2,
-                          runSpacing: 4,
-                          children: [
-                            if (kitchen.hasFreeDelivery)
-                              KitchenMetaItem(
-                                icon: Iconsax.truck_fast,
-                                label: AppTexts.kitchenFreeDelivery,
-                              ),
-                            KitchenMetaItem(
-                              icon: Iconsax.clock,
-                              label: kitchen.deliveryTime,
-                            ),
-                          ],
+                        CustomCircularImage(
+                          image: kitchen.chefImageUrl.startsWith('http')
+                              ? kitchen.chefImageUrl
+                              : AppImages.foodTest,
+                          isNetworkImage: kitchen.chefImageUrl.startsWith('http'),
                         ),
                       ],
                     ),
-                  ),
-                  const Gap(AppSizes.sm),
-                  CustomCircularImage(
-                    image: kitchen.chefImageUrl.startsWith('http')
-                        ? kitchen.chefImageUrl
-                        : AppImages.foodTest,
-                    isNetworkImage: kitchen.chefImageUrl.startsWith('http'),
-                  ),
-                ],
-              ),
-            ),
-
-            //* tags
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSizes.md,
-                0,
-                AppSizes.md,
-                AppSizes.md,
-              ),
-              child: Wrap(
-                spacing: AppSizes.sm,
-                runSpacing: AppSizes.sm,
-                children: kitchen.tags
-                    .map((t) => KitchenTagChip(label: t))
-                    .toList(),
+                    const Gap(AppSizes.sm),
+                    //* tags — clipped to whatever vertical room is left so a
+                    //* long tag list can't overflow the card bottom.
+                    Expanded(
+                      child: ClipRect(
+                        child: Wrap(
+                          spacing: AppSizes.sm,
+                          runSpacing: AppSizes.sm,
+                          children: kitchen.tags
+                              .map((t) => KitchenTagChip(label: t))
+                              .toList(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

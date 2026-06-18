@@ -39,6 +39,17 @@
 				<string>com.googleusercontent.apps.850527183709-vqsisaq8u8825lmfkd337l10lplqlalf</string>
 			</array>
 		</dict>
+		<!-- Supabase Facebook OAuth callback (incacook://auth/callback).
+		     supabase_flutter's deep-link observer catches this scheme to
+		     complete the session after the hosted Facebook login. -->
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.progix.incacook.oauth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>incacook</string>
+			</array>
+		</dict>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>

@@ -52,6 +52,26 @@ class ChatNavigator {
         orderId: orderId,
       );
 
+  /// SELLER_DRIVER thread — seller ↔ assigned driver, for coordinating pickup.
+  /// Created automatically when the driver claims the delivery; this just opens
+  /// it. The backend derives the counterpart from [orderId] (the seller doesn't
+  /// know the driver's user id and vice-versa) and rejects the call until a
+  /// driver is assigned (surfaced as a SnackBar). [myRole] is SELLER on the
+  /// seller side, DELIVERY on the driver side.
+  static Future<void> openSellerDriver({
+    required BuildContext context,
+    required String peerName,
+    required String orderId,
+    required ParticipantRole myRole,
+  }) =>
+      _open(
+        context: context,
+        type: ConversationType.sellerDriver,
+        peerName: peerName,
+        myRole: myRole,
+        orderId: orderId,
+      );
+
   static Future<void> _open({
     required BuildContext context,
     required ConversationType type,

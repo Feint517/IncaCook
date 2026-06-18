@@ -88,22 +88,32 @@ class WelcomeScreen extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: _SocialPill(
-                          logo: AppImages.facebookLogo,
-                          label: AppTexts.welcomeContinueWith,
-                          onTap: () {},
+                        // Obx so the pill flips to a spinner + disables itself
+                        // while the Facebook OAuth flow runs. Reads both flags
+                        // so it's also disabled while Google is in flight (no
+                        // simultaneous social logins).
+                        child: Obx(
+                          () => _SocialPill(
+                            logo: AppImages.facebookLogo,
+                            label: AppTexts.welcomeContinueWithFacebook,
+                            loading: controller.isFacebookLoading.value,
+                            onTap: controller.isAnySocialLoading
+                                ? null
+                                : controller.signInWithFacebook,
+                          ),
                         ),
                       ),
                       const Gap(AppSizes.sm),
                       Expanded(
-                        // Obx so the pill flips to a spinner + disables
-                        // itself while the Google flow is in flight.
+                        // Obx so the pill flips to a spinner + disables itself
+                        // while the Google flow runs (and while Facebook is in
+                        // flight — no simultaneous social logins).
                         child: Obx(
                           () => _SocialPill(
                             logo: AppImages.googleLogo,
                             label: AppTexts.welcomeContinueWith,
                             loading: controller.isGoogleLoading.value,
-                            onTap: controller.isGoogleLoading.value
+                            onTap: controller.isAnySocialLoading
                                 ? null
                                 : controller.signInWithGoogle,
                           ),
@@ -204,11 +214,18 @@ class _SocialPill extends StatelessWidget {
                       children: [
                         Image.asset(logo, height: 22, width: 22),
                         const Gap(AppSizes.sm),
-                        Text(
-                          label,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                        // Flexible + ellipsis so a longer provider label
+                        // ("Continuer avec Facebook") can't overflow the
+                        // half-width pill on narrow screens.
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
                         ),
                       ],
                     ),

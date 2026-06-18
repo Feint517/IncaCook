@@ -86,15 +86,27 @@ class _Card extends StatelessWidget {
               ],
               const Gap(AppSizes.md),
               _OrderMeta(job: job),
-              // Chat with the client (livreur ↔ buyer), scoped to this
-              // order. The server derives the buyer from the order id;
-              // hidden once the job reaches a terminal stage.
+              // Chat with the client (livreur ↔ buyer) and the seller
+              // (livreur ↔ vendeur), both scoped to this order. The server
+              // derives the counterpart from the order id; hidden once the
+              // job reaches a terminal stage.
               if (!spec.isTerminal) ...[
                 const Gap(AppSizes.md),
-                _ContactClientButton(
+                _ContactButton(
+                  label: AppTexts.chatContactClientCta,
                   onPressed: () => ChatNavigator.openBuyerDelivery(
                     context: context,
                     peerName: 'Client',
+                    orderId: job.id,
+                    myRole: ParticipantRole.delivery,
+                  ),
+                ),
+                const Gap(AppSizes.sm),
+                _ContactButton(
+                  label: AppTexts.chatContactSellerCta,
+                  onPressed: () => ChatNavigator.openSellerDriver(
+                    context: context,
+                    peerName: job.seller.name,
                     orderId: job.id,
                     myRole: ParticipantRole.delivery,
                   ),
@@ -477,9 +489,10 @@ class _PrimaryCta extends StatelessWidget {
   }
 }
 
-class _ContactClientButton extends StatelessWidget {
-  const _ContactClientButton({required this.onPressed});
+class _ContactButton extends StatelessWidget {
+  const _ContactButton({required this.label, required this.onPressed});
 
+  final String label;
   final VoidCallback onPressed;
 
   @override
@@ -499,7 +512,7 @@ class _ContactClientButton extends StatelessWidget {
           ),
         ),
         icon: const Icon(Iconsax.message, size: 18),
-        label: const Text('Discuter avec le client'),
+        label: Text(label),
       ),
     );
   }

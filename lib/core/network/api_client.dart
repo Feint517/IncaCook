@@ -4,6 +4,7 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:ulid/ulid.dart';
 
 import 'package:incacook/core/constants/api_constants.dart';
+import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/network/api_response.dart';
 import 'package:incacook/core/network/auth_interceptor.dart';
 import 'package:incacook/core/network/token_storage.dart';
@@ -40,8 +41,11 @@ class ApiClient extends GetxService {
     );
     _dio.interceptors.add(
       PrettyDioLogger(
+        // SECURITY: never log request/response bodies or headers — they carry
+        // passwords (POST /auth/signup), bearer tokens (Authorization),
+        // refresh/access tokens and OAuth codes. Method + URL + status only.
         requestHeader: false,
-        requestBody: true,
+        requestBody: false,
         responseBody: false,
         responseHeader: false,
         compact: true,
@@ -189,9 +193,27 @@ class ApiClient extends GetxService {
         return ApiFailure.fromJson(error, fallbackStatus: response?.statusCode);
       }
     }
-    return ApiFailure.transport(
-      message: e.message ?? e.type.name,
-      statusCode: response?.statusCode ?? 0,
-    );
+    // Connection-level failures that never reached the backend (or got no
+    // response). Surface a clean, actionable French message instead of a raw
+    // Dio dump like "DioExceptionType.connectionTimeout".
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.connectionError:
+        return ApiFailure.transport(
+          message: AppTexts.serverUnreachableError,
+          code: 'INCACOOK_OFFLINE',
+        );
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.sendTimeout:
+        return ApiFailure.transport(
+          message: AppTexts.serverTimeoutError,
+          code: 'INCACOOK_TIMEOUT',
+        );
+      default:
+        return ApiFailure.transport(
+          message: e.message ?? e.type.name,
+          statusCode: response?.statusCode ?? 0,
+        );
+    }
   }
 }

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:incacook/core/common/styles/loaders.dart';
 import 'package:incacook/core/constants/text_strings.dart';
+import 'package:incacook/core/controllers/user_controller.dart';
 import 'package:incacook/core/enums/food_enums.dart';
 import 'package:incacook/core/enums/order_enums.dart';
 import 'package:incacook/core/models/auth/kyc_document.dart';
@@ -27,14 +28,49 @@ import 'package:incacook/features/catalog/data/repositories/listings_repository.
 /// creating a new one.
 class AddProductController extends GetxController {
   AddProductController({
-    SellerCategory sellerCategory = SellerCategory.faitMaison,
+    SellerCategory? sellerCategory,
     Listing? existing,
     ListingsRepository? listingsRepository,
-  }) : sellerCategory = existing?.category ?? sellerCategory,
+    UserController? userController,
+  }) : // Category source priority: the listing being edited → an explicit
+       // override → the CONNECTED seller's profile. Never a hardcoded
+       // fallback — when none is known, [hasCategory] is false and publishing
+       // is blocked (the backend derives the real category from the profile).
+       sellerCategory = existing?.category ??
+           sellerCategory ??
+           (userController ?? UserController.instance)
+               .user
+               .value
+               ?.sellerAccount
+               ?.category,
        _existing = existing,
        _listings = listingsRepository ?? ListingsRepository();
 
-  final SellerCategory sellerCategory;
+  /// The connected seller's category, or null when it couldn't be resolved.
+  final SellerCategory? sellerCategory;
+
+  bool get hasCategory => sellerCategory != null;
+
+  /// UI label for the category chip (maps via [SellerCategory.label]:
+  /// faitMaison→"Le Bon Fait Maison", traiteur→"L'Atelier Traiteur",
+  /// restaurant→"Sauve Ton Panier"), or an "unavailable" message.
+  String get categoryLabel =>
+      sellerCategory?.label ?? AppTexts.addProductCategoryUnavailable;
+
+  /// Price-rule note under the price field, category-specific:
+  /// fait-maison has the €4.50 cap; traiteur/restaurant are free.
+  String get priceCapNote {
+    switch (sellerCategory) {
+      case SellerCategory.faitMaison:
+        return AppTexts.addProductPriceCapNoteFaitMaison;
+      case SellerCategory.traiteur:
+      case SellerCategory.restaurant:
+        return AppTexts.addProductPriceFreeNote;
+      case null:
+        return AppTexts.addProductCategoryUnavailable;
+    }
+  }
+
   final Listing? _existing;
   final ListingsRepository _listings;
 
@@ -85,6 +121,8 @@ class AddProductController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    debugPrint('[AddProduct] seller category=${sellerCategory?.name ?? 'none'}');
+    debugPrint('[AddProduct] category label=$categoryLabel');
     titleController.addListener(_onTextChanged);
     descriptionController.addListener(_onTextChanged);
     priceController.addListener(_onTextChanged);
@@ -164,7 +202,9 @@ class AddProductController extends GetxController {
 
   bool get isFaitMaison => sellerCategory == SellerCategory.faitMaison;
 
-  List<DishType> get dishOptions => DishType.valuesFor(sellerCategory);
+  List<DishType> get dishOptions => sellerCategory == null
+      ? const <DishType>[]
+      : DishType.valuesFor(sellerCategory!);
 
   /// Enables the publish button once the core fields are filled. The
   /// fait-maison price cap is deliberately NOT checked here — instead it
@@ -180,6 +220,11 @@ class AddProductController extends GetxController {
     onSite.value;
     delivery.value;
     termsAccepted.value;
+
+    // No resolvable seller category → publishing is blocked (the backend
+    // derives the real category from the seller profile, so we never let a
+    // category-less product through).
+    if (sellerCategory == null) return false;
 
     if (titleController.text.trim().isEmpty) return false;
     if (descriptionController.text.trim().isEmpty) return false;
@@ -298,6 +343,13 @@ class AddProductController extends GetxController {
         ..file = result.file
         ..path = result.path
         ..uploading = false;
+      photos.refresh();
+    } on ImageTooLargeException catch (e) {
+      // Image still too big after compression — show the clear message and
+      // stop the spinner (never hang on an upload that can't succeed).
+      slot
+        ..uploading = false
+        ..error = e.message;
       photos.refresh();
     } on ApiFailure catch (e) {
       slot

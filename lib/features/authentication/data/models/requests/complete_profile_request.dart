@@ -18,6 +18,9 @@ abstract class CompleteProfileRequest with _$CompleteProfileRequest {
     required UserRole role,
     required bool acceptedCgu,
     required bool acceptedCgv,
+    // Phone collected during onboarding, saved unverified when SMS OTP is
+    // skipped. Null when no number was captured. Sent only if non-null.
+    @JsonKey(includeIfNull: false) String? phone,
   }) = _CompleteProfileRequest;
 
   factory CompleteProfileRequest.fromJson(Map<String, dynamic> json) =>

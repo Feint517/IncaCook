@@ -25,4 +25,20 @@ class FeatureFlags {
   /// phone field is required and the OTP step calls
   /// `POST /v1/auth/phone/{request-otp,verify}`.
   static const bool useEmailOtpBypass = false;
+
+  /// Skip phone verification entirely: no SMS, no 6-digit code. The number is
+  /// still collected on the basic-info screen (required + format-validated)
+  /// and saved on the User row **unverified** (`phoneVerified = false`) via
+  /// Gate 2's body — Prelude is never called.
+  ///
+  /// When `true`:
+  /// - the wizard's `phoneVerification` step is dropped from the flow;
+  /// - `POST /v1/users` (Gate 2) carries the typed `phone`, which the backend
+  ///   stores unverified when Supabase auth has no confirmed phone.
+  ///
+  /// The phone-OTP code paths (Prelude, `requestOtp`/`verifyOtp`, the OTP
+  /// page) are intentionally left intact so flipping this back to `false`
+  /// restores SMS verification in one line. Mutually independent from
+  /// [useEmailOtpBypass] (don't enable both).
+  static const bool skipPhoneVerification = true;
 }

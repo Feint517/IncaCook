@@ -177,6 +177,8 @@ class _ConversationTile extends StatelessWidget {
         return 'Nouvelle discussion';
       case ConversationType.buyerDelivery:
         return 'Livraison en cours';
+      case ConversationType.sellerDriver:
+        return 'Coordination livraison';
       case ConversationType.support:
         return 'Support';
     }

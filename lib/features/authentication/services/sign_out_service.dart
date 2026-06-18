@@ -7,8 +7,8 @@ import 'package:get/get.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/controllers/user_controller.dart';
-import 'package:incacook/core/services/google_auth_service.dart';
 import 'package:incacook/core/services/notifications/push_notification_service.dart';
+import 'package:incacook/core/services/supabase_oauth_service.dart';
 import 'package:incacook/core/utils/theme/theme_extensions.dart';
 import 'package:incacook/features/authentication/data/repositories/auth_repository.dart';
 import 'package:incacook/features/authentication/presentation/screens/welcome.dart';
@@ -50,12 +50,13 @@ class SignOutService {
       // Swallow — token clearing already happened in the repo's finally.
       // We still want to navigate the user out.
     }
-    // Also drop the Google plugin's cached account so the next sign-in
-    // shows the OS picker again. Best-effort — failures here shouldn't
-    // block the user from leaving the protected screens.
-    if (Get.isRegistered<GoogleAuthService>()) {
+    // Clear Supabase's locally-cached OAuth session (Google/Facebook both run
+    // through Supabase now). Local scope only — the live bearer was already
+    // revoked above via /v1/auth/signout. No-op for email/password users (no
+    // Supabase session). Best-effort — never block leaving the screen.
+    if (Get.isRegistered<SupabaseOAuthService>()) {
       try {
-        await Get.find<GoogleAuthService>().signOut();
+        await Get.find<SupabaseOAuthService>().signOut();
       } catch (_) {
         // ignore
       }

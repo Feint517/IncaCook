@@ -18,6 +18,12 @@ abstract class DriverAccount with _$DriverAccount {
     String? dateOfBirth,
     @Default(<String>[]) List<String> zones,
     @Default(false) bool canDeliver,
+
+    // Payout/identity gate fields (mirror DriverProfileResponseDto). Drive the
+    // delivery-claim gate: a driver can only claim once KYC is APPROVED and
+    // Stripe Connect payout onboarding is complete.
+    @Default('PENDING') String kycStatus,
+    @Default(false) bool stripeOnboardingCompleted,
   }) = _DriverAccount;
 
   factory DriverAccount.fromJson(Map<String, dynamic> json) =>

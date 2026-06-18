@@ -85,11 +85,23 @@ class _SubscriptionCardState extends State<SubscriptionCard> {
               children: [
                 Icon(Iconsax.crown, color: scheme.primary, size: 20),
                 const Gap(8),
-                Text('Mon abonnement',
-                    style: text.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.bold)),
-                const Spacer(),
-                SubscriptionStatusBadge(active: active),
+                // Expanded so the title absorbs leftover width and ellipsizes
+                // instead of pushing the badge off-screen (was a fixed Text +
+                // Spacer → RenderFlex overflow on narrow phones).
+                Expanded(
+                  child: Text(
+                    'Mon abonnement',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        text.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const Gap(8),
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: SubscriptionStatusBadge(active: active),
+                ),
               ],
             ),
             const Gap(10),

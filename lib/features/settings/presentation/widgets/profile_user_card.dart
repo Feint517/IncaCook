@@ -43,17 +43,21 @@ class ProfileUserCard extends StatelessWidget {
           //  avatar when no photo was provided (or it fails to load).
           Obx(() {
             final u = userController.user.value;
+            final initials = userController.initials;
             final url = _resolveAvatarUrl(
               u?.avatarPath ?? u?.sellerAccount?.profilePhotoUrl,
             );
-            if (url == null) return const _DefaultAvatar(size: 88);
+            if (url == null) {
+              return _DefaultAvatar(size: 88, initials: initials);
+            }
             return ClipOval(
               child: Image.network(
                 url,
                 width: 88,
                 height: 88,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const _DefaultAvatar(size: 88),
+                errorBuilder: (_, _, _) =>
+                    _DefaultAvatar(size: 88, initials: initials),
               ),
             );
           }),
@@ -127,16 +131,19 @@ String? _resolveAvatarUrl(String? value) {
   return ApiConstants.publicImageUrl(value);
 }
 
-/// Generic placeholder shown when a user has no profile photo — a person
-/// silhouette on a soft tinted circle.
+/// Placeholder shown when a user has no profile photo (or it fails to load):
+/// their initials (e.g. "GD") on a soft tinted circle. Falls back to a person
+/// silhouette only when no initials are available.
 class _DefaultAvatar extends StatelessWidget {
-  const _DefaultAvatar({required this.size});
+  const _DefaultAvatar({required this.size, this.initials = ''});
 
   final double size;
+  final String initials;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final hasInitials = initials.isNotEmpty && initials != '?';
     return Container(
       width: size,
       height: size,
@@ -145,11 +152,20 @@ class _DefaultAvatar extends StatelessWidget {
         color: scheme.primary.withValues(alpha: 0.10),
       ),
       alignment: Alignment.center,
-      child: Icon(
-        Iconsax.user,
-        size: size * 0.5,
-        color: scheme.primary.withValues(alpha: 0.65),
-      ),
+      child: hasInitials
+          ? Text(
+              initials,
+              style: TextStyle(
+                fontSize: size * 0.36,
+                fontWeight: FontWeight.w700,
+                color: scheme.primary,
+              ),
+            )
+          : Icon(
+              Iconsax.user,
+              size: size * 0.5,
+              color: scheme.primary.withValues(alpha: 0.65),
+            ),
     );
   }
 }

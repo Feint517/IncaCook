@@ -91,9 +91,51 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     // price/availability — the list/feed endpoints omit `extras`.
     final l = widget.listing;
     if (l != null) {
+      _logSeller();
       _refetch();
       _loadReviews(l.sellerId);
     }
+  }
+
+  /// First non-empty (trimmed) of [a]/[b], else null. Used to coalesce seller
+  /// fields across the detail re-fetch and the feed row.
+  static String? _firstNonEmpty(String? a, String? b) {
+    if (a != null && a.trim().isNotEmpty) return a.trim();
+    if (b != null && b.trim().isNotEmpty) return b.trim();
+    return null;
+  }
+
+  /// Up-to-2 uppercase initials from a seller name (e.g. "Chez Karim" → "CK").
+  /// Empty when no name — SellerCard then shows a default person icon.
+  static String _initialsFrom(String? name) {
+    final parts = (name ?? '')
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return '';
+    final first = parts[0][0];
+    final second = parts.length > 1 ? parts[1][0] : '';
+    return (first + second).toUpperCase();
+  }
+
+  /// Debug trace of the resolved seller block (no secrets). Logged on open and
+  /// after the detail re-fetch lands so we can confirm real data is bound.
+  void _logSeller() {
+    final name = _firstNonEmpty(
+      _fetched?.sellerName,
+      widget.listing?.sellerName,
+    );
+    final id = _fetched?.sellerId ?? widget.listing?.sellerId;
+    final avatar = _firstNonEmpty(
+      _fetched?.sellerAvatarUrl,
+      widget.listing?.sellerAvatarUrl,
+    );
+    debugPrint('[ProductDetail] sellerId=${id ?? 'none'}');
+    debugPrint(
+      '[ProductDetail] sellerName=${name ?? AppTexts.productSellerFallbackName}',
+    );
+    debugPrint('[ProductDetail] sellerAvatarUrl present=${avatar != null}');
   }
 
   /// Fetches the seller's real reviews and maps them to the card model.
@@ -150,6 +192,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         _fetched = fresh;
         _refetching = false;
       });
+      _logSeller();
     } catch (_) {
       // Soft-fail: keep the row we already have. Errors are not blocking
       // because the seller can still see the staler list-version of the
@@ -364,9 +407,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         : _productImages;
     final boundRating = l?.rating ?? 3.9;
     final boundReviewsCount = l?.reviewCount ?? 193;
-    final boundSellerName = (l?.sellerName?.isNotEmpty ?? false)
-        ? l!.sellerName!
-        : AppTexts.productSampleSellerName;
+    // Real seller identity — coalesced across the detail re-fetch (`_fetched`)
+    // and the feed row (`widget.listing`); both now carry sellerName + avatar.
+    // No mock fallback: a missing name shows "Cuisinier", a missing photo
+    // shows initials/a default avatar (handled inside SellerCard).
+    final resolvedSellerName = _firstNonEmpty(
+      _fetched?.sellerName,
+      widget.listing?.sellerName,
+    );
+    final boundSellerName =
+        resolvedSellerName ?? AppTexts.productSellerFallbackName;
+    final sellerAvatarUrl = ApiConstants.publicImageUrl(
+      _firstNonEmpty(_fetched?.sellerAvatarUrl, widget.listing?.sellerAvatarUrl),
+    );
+    final sellerInitials = _initialsFrom(resolvedSellerName);
     final boundDeliveryLabel = l != null
         ? _fulfillmentLabel(l.fulfillment)
         : null;
@@ -450,6 +504,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               const Gap(AppSizes.lg),
                               SellerCard(
                                 name: boundSellerName,
+                                // Real seller photo (storage path → public
+                                // URL); null falls back to initials/default.
+                                avatarUrl: sellerAvatarUrl,
+                                initials: sellerInitials,
                                 // Thread the seller's user id through so
                                 // the chat button can open a pair-keyed
                                 // ChatScreen with the real counterparty.

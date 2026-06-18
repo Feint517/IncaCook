@@ -146,6 +146,10 @@ class SignupFlowController extends GetxController {
   late final TextEditingController confirmPasswordTextController;
 
   final phoneVerified = false.obs;
+  // True once Gate 2 (`POST /v1/users`) has committed the User row. From that
+  // point the wizard is forward-only (re-running Gate 2 would 409). Replaces
+  // the old OTP-success lock now that phone verification can be skipped.
+  final profileCommitted = false.obs;
   final emailVerified = false.obs;
   final biometricEnabled = false.obs;
   final acceptedCgu = false.obs;
@@ -163,6 +167,12 @@ class SignupFlowController extends GetxController {
   // (basicInfo skipped) leaves it false until the user types a number and taps
   // "Envoyer le code".
   final otpRequested = false.obs;
+  // True when the backend reports the phone is already linked to another
+  // account (`INCACOOK_PHONE_ALREADY_USED` / 409). While set: the red error
+  // stays, the success snackbar is suppressed, and "Renvoyer le code" is
+  // disabled in favour of a "Changer de numéro" action. Reset when the user
+  // edits the number (see the phone listener and [editPhoneNumber]).
+  final phoneAlreadyUsed = false.obs;
   Timer? _otpTimer;
 
   // ---------------------------------------------------------------------------
@@ -171,6 +181,13 @@ class SignupFlowController extends GetxController {
   final Rxn<UserRole> role = Rxn<UserRole>();
   final Rxn<SellerCategory> sellerCategory = Rxn<SellerCategory>();
   final Rxn<DriverVehicleType> vehicleType = Rxn<DriverVehicleType>();
+
+  // ---------------------------------------------------------------------------
+  // Seller subscription (final step 10/10 — RevenueCat). The
+  // SellerSubscriptionPage flips this to true once an active subscription /
+  // trial entitlement exists; the bottom bar's "Terminer" is gated on it.
+  // ---------------------------------------------------------------------------
+  final subscriptionActive = false.obs;
 
   // ---------------------------------------------------------------------------
   // Buyer-specific
@@ -264,7 +281,15 @@ class SignupFlowController extends GetxController {
     emailTextController = TextEditingController(text: email.value)
       ..addListener(() => email.value = emailTextController.text.trim());
     phoneTextController = TextEditingController(text: phone.value)
-      ..addListener(() => phone.value = phoneTextController.text);
+      ..addListener(() {
+        phone.value = phoneTextController.text;
+        // Editing the number clears a previous "already used" rejection so the
+        // user can request a code for the new number.
+        if (phoneAlreadyUsed.value) {
+          phoneAlreadyUsed.value = false;
+          otpError.value = '';
+        }
+      });
     passwordTextController = TextEditingController(text: password.value)
       ..addListener(() => password.value = passwordTextController.text);
     confirmPasswordTextController =
@@ -306,8 +331,13 @@ class SignupFlowController extends GetxController {
       if (!startedSignedUp.value) {
         list.add(SignupStep.basicInfo);
       }
+      // Phone verification is skipped when [FeatureFlags.skipPhoneVerification]
+      // is on — the number is collected on basicInfo and saved unverified via
+      // Gate 2, with no SMS / OTP step.
+      if (!FeatureFlags.skipPhoneVerification) {
+        list.add(SignupStep.phoneVerification);
+      }
       list.addAll([
-        SignupStep.phoneVerification,
         SignupStep.biometricSetup,
         SignupStep.legalAcceptance,
       ]);
@@ -346,8 +376,10 @@ class SignupFlowController extends GetxController {
           list.add(SignupStep.sellerKycSelfie);
         }
         list.add(SignupStep.sellerCharter);
-        // Optional payout setup (Stripe Connect) — last, skippable.
-        list.add(SignupStep.payoutSetup);
+        // Final step 10/10: mandatory monthly subscription via RevenueCat
+        // (App Store / Google Play). Replaces Stripe payout onboarding for
+        // sellers — payouts are set up later from the dashboard banner.
+        list.add(SignupStep.sellerSubscription);
       case UserRole.driver:
         list.addAll([
           SignupStep.driverDobAddress,
@@ -393,7 +425,7 @@ class SignupFlowController extends GetxController {
   /// OTP page would re-trigger a new code send — so the wizard becomes
   /// strictly forward-only. The shell uses this to hide the appbar's
   /// back arrow; the PopScope intercepts the system back gesture too.
-  bool get canGoBack => !phoneVerified.value;
+  bool get canGoBack => !phoneVerified.value && !profileCommitted.value;
 
   // ---------------------------------------------------------------------------
   // Validators (the per-step rules the bottom-bar checks).
@@ -564,6 +596,11 @@ class SignupFlowController extends GetxController {
         // Optional — payout onboarding can always be skipped (the
         // dashboard banner re-prompts later), so Continue is enabled.
         return true;
+      case SignupStep.sellerSubscription:
+        // Mandatory: "Terminer" stays disabled until the seller has an active
+        // subscription or trial (set by SellerSubscriptionPage after a
+        // successful RevenueCat purchase/restore + backend sync).
+        return subscriptionActive.value;
     }
   }
 
@@ -716,6 +753,10 @@ class SignupFlowController extends GetxController {
       // Shared — payout onboarding is launched from the page button
       // (Stripe Connect), not a gate; nothing to commit here.
       case SignupStep.payoutSetup:
+        return true;
+      // Seller subscription — the purchase + backend sync happen on the page;
+      // by the time "Terminer" is enabled the subscription is already active.
+      case SignupStep.sellerSubscription:
         return true;
     }
   }
@@ -1039,6 +1080,9 @@ class SignupFlowController extends GetxController {
           role: selectedRole,
           acceptedCgu: acceptedCgu.value,
           acceptedCgv: acceptedCgv.value,
+          // Phone collected on basicInfo, saved unverified (SMS OTP skipped).
+          // Null for paths that never collected one (e.g. OAuth no-profile).
+          phone: phone.value.trim().isEmpty ? null : _phoneE164,
         ),
       );
       // Warm the global user cache so the wizard's exit-to-home doesn't
@@ -1046,6 +1090,8 @@ class SignupFlowController extends GetxController {
       if (Get.isRegistered<UserController>()) {
         UserController.instance.setUser(created);
       }
+      // Lock back-navigation: the User row now exists (forward-only).
+      profileCommitted.value = true;
       return true;
     } on ApiFailure catch (e) {
       submitError.value = e.message;
@@ -1218,13 +1264,21 @@ class SignupFlowController extends GetxController {
   /// decide whether to auto-send on open or first collect the number inline.
   bool get canRequestOtp => FeatureFlags.useEmailOtpBypass || isPhoneValid;
 
-  Future<void> requestOtp() async {
+  /// Requests (or resends) the verification code. Returns `true` only when the
+  /// backend confirmed the send — callers use this to gate the "Code renvoyé"
+  /// success message so it never appears before the API actually succeeds.
+  ///
+  /// Send and resend share this one path so error handling can't diverge (a
+  /// resend used to always claim success). A phone already linked to another
+  /// account (`INCACOOK_PHONE_ALREADY_USED` / 409) flips [phoneAlreadyUsed]
+  /// and keeps the red error instead of pretending the code was sent.
+  Future<bool> requestOtp() async {
     otpError.value = '';
     // Guard the SMS path against firing with no/blank number (the Google
     // NoProfile path lands here without one — would POST `{phone: +33}`).
     if (!canRequestOtp) {
       otpError.value = AppTexts.signupPhoneError;
-      return;
+      return false;
     }
     try {
       if (FeatureFlags.useEmailOtpBypass) {
@@ -1236,12 +1290,27 @@ class SignupFlowController extends GetxController {
           RequestOtpRequest(phone: _phoneE164),
         );
       }
+      phoneAlreadyUsed.value = false;
       otpRequested.value = true;
       _startResendCountdown();
+      debugPrint('[PhoneOtp] resend success');
+      return true;
     } on ApiFailure catch (e) {
-      otpError.value = e.message;
+      if (_isPhoneAlreadyUsed(e)) {
+        phoneAlreadyUsed.value = true;
+        otpError.value = AppTexts.signupOtpPhoneAlreadyUsed;
+        debugPrint('[PhoneOtp] resend blocked: phone already used');
+      } else {
+        otpError.value = e.message;
+      }
+      return false;
     }
   }
+
+  /// Whether [e] is the backend's "phone already linked to another account"
+  /// rejection — matched by the machine code (preferred) or the 409 status.
+  bool _isPhoneAlreadyUsed(ApiFailure e) =>
+      e.code == 'INCACOOK_PHONE_ALREADY_USED' || e.statusCode == 409;
 
   /// Returns the phone-verification page to its number-entry phase so the user
   /// can correct the number before a code is (re)sent. Drives the "Modifier le
@@ -1252,6 +1321,7 @@ class SignupFlowController extends GetxController {
     otpResendSecondsLeft.value = 0;
     otpError.value = '';
     otpRequested.value = false;
+    phoneAlreadyUsed.value = false;
   }
 
   void _startResendCountdown() {

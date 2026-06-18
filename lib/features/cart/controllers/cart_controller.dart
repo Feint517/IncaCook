@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:incacook/core/models/cart_item.dart';
 import 'package:incacook/core/models/food_listing.dart';
@@ -70,18 +71,45 @@ class CartController extends GetxController {
     final item = items[index];
     if (item.quantity >= item.listing.portionsLeft) return;
     items[index] = item.copyWith(quantity: item.quantity + 1);
+    items.refresh();
+    _logTotals();
   }
 
+  /// Minus button. Decrements while quantity > 1; at quantity 1 the item is
+  /// removed from the cart entirely. There is deliberately NO min-1 clamp here
+  /// — a minimum of 1 only applies *before* an item is added to the cart. Once
+  /// in the cart, quantity 0 means "delete". Totals + the cart badge recompute
+  /// immediately because they derive from the reactive [items] list.
   void decrementQuantity(String lineId) {
     final index = items.indexWhere((i) => i.id == lineId);
     if (index == -1) return;
     final item = items[index];
-    if (item.quantity <= 1) return;
-    items[index] = item.copyWith(quantity: item.quantity - 1);
+    if (item.quantity <= 1) {
+      debugPrint('[Cart] remove item=$lineId');
+      items.removeAt(index);
+    } else {
+      debugPrint('[Cart] decrease item=$lineId oldQty=${item.quantity}');
+      items[index] = item.copyWith(quantity: item.quantity - 1);
+    }
+    items.refresh();
+    _logTotals();
   }
 
   void removeItem(String lineId) {
+    debugPrint('[Cart] remove item=$lineId');
     items.removeWhere((i) => i.id == lineId);
+    items.refresh();
+    _logTotals();
+  }
+
+  /// Debug trace of the cart aggregate after every mutation. `total` mirrors
+  /// the subtotal here — delivery + service fees are added downstream at the
+  /// order-summary / payment step, not in this session cart.
+  void _logTotals() {
+    debugPrint(
+      '[Cart] count=$itemCount subtotal=${subtotal.toStringAsFixed(2)} '
+      'total=${subtotal.toStringAsFixed(2)}',
+    );
   }
 
   void markUnavailable(String lineId, {bool unavailable = true}) {

@@ -15,7 +15,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CompleteProfileRequest {
 
- String get firstName; String get lastName; UserRole get role; bool get acceptedCgu; bool get acceptedCgv;
+ String get firstName; String get lastName; UserRole get role; bool get acceptedCgu; bool get acceptedCgv;// Phone collected during onboarding, saved unverified when SMS OTP is
+// skipped. Null when no number was captured. Sent only if non-null.
+@JsonKey(includeIfNull: false) String? get phone;
 /// Create a copy of CompleteProfileRequest
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +30,16 @@ $CompleteProfileRequestCopyWith<CompleteProfileRequest> get copyWith => _$Comple
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompleteProfileRequest&&(identical(other.firstName, firstName) || other.firstName == firstName)&&(identical(other.lastName, lastName) || other.lastName == lastName)&&(identical(other.role, role) || other.role == role)&&(identical(other.acceptedCgu, acceptedCgu) || other.acceptedCgu == acceptedCgu)&&(identical(other.acceptedCgv, acceptedCgv) || other.acceptedCgv == acceptedCgv));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompleteProfileRequest&&(identical(other.firstName, firstName) || other.firstName == firstName)&&(identical(other.lastName, lastName) || other.lastName == lastName)&&(identical(other.role, role) || other.role == role)&&(identical(other.acceptedCgu, acceptedCgu) || other.acceptedCgu == acceptedCgu)&&(identical(other.acceptedCgv, acceptedCgv) || other.acceptedCgv == acceptedCgv)&&(identical(other.phone, phone) || other.phone == phone));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,firstName,lastName,role,acceptedCgu,acceptedCgv);
+int get hashCode => Object.hash(runtimeType,firstName,lastName,role,acceptedCgu,acceptedCgv,phone);
 
 @override
 String toString() {
-  return 'CompleteProfileRequest(firstName: $firstName, lastName: $lastName, role: $role, acceptedCgu: $acceptedCgu, acceptedCgv: $acceptedCgv)';
+  return 'CompleteProfileRequest(firstName: $firstName, lastName: $lastName, role: $role, acceptedCgu: $acceptedCgu, acceptedCgv: $acceptedCgv, phone: $phone)';
 }
 
 
@@ -48,7 +50,7 @@ abstract mixin class $CompleteProfileRequestCopyWith<$Res>  {
   factory $CompleteProfileRequestCopyWith(CompleteProfileRequest value, $Res Function(CompleteProfileRequest) _then) = _$CompleteProfileRequestCopyWithImpl;
 @useResult
 $Res call({
- String firstName, String lastName, UserRole role, bool acceptedCgu, bool acceptedCgv
+ String firstName, String lastName, UserRole role, bool acceptedCgu, bool acceptedCgv,@JsonKey(includeIfNull: false) String? phone
 });
 
 
@@ -65,14 +67,15 @@ class _$CompleteProfileRequestCopyWithImpl<$Res>
 
 /// Create a copy of CompleteProfileRequest
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? firstName = null,Object? lastName = null,Object? role = null,Object? acceptedCgu = null,Object? acceptedCgv = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? firstName = null,Object? lastName = null,Object? role = null,Object? acceptedCgu = null,Object? acceptedCgv = null,Object? phone = freezed,}) {
   return _then(_self.copyWith(
 firstName: null == firstName ? _self.firstName : firstName // ignore: cast_nullable_to_non_nullable
 as String,lastName: null == lastName ? _self.lastName : lastName // ignore: cast_nullable_to_non_nullable
 as String,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as UserRole,acceptedCgu: null == acceptedCgu ? _self.acceptedCgu : acceptedCgu // ignore: cast_nullable_to_non_nullable
 as bool,acceptedCgv: null == acceptedCgv ? _self.acceptedCgv : acceptedCgv // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,phone: freezed == phone ? _self.phone : phone // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -157,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String firstName,  String lastName,  UserRole role,  bool acceptedCgu,  bool acceptedCgv)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String firstName,  String lastName,  UserRole role,  bool acceptedCgu,  bool acceptedCgv, @JsonKey(includeIfNull: false)  String? phone)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CompleteProfileRequest() when $default != null:
-return $default(_that.firstName,_that.lastName,_that.role,_that.acceptedCgu,_that.acceptedCgv);case _:
+return $default(_that.firstName,_that.lastName,_that.role,_that.acceptedCgu,_that.acceptedCgv,_that.phone);case _:
   return orElse();
 
 }
@@ -178,10 +181,10 @@ return $default(_that.firstName,_that.lastName,_that.role,_that.acceptedCgu,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String firstName,  String lastName,  UserRole role,  bool acceptedCgu,  bool acceptedCgv)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String firstName,  String lastName,  UserRole role,  bool acceptedCgu,  bool acceptedCgv, @JsonKey(includeIfNull: false)  String? phone)  $default,) {final _that = this;
 switch (_that) {
 case _CompleteProfileRequest():
-return $default(_that.firstName,_that.lastName,_that.role,_that.acceptedCgu,_that.acceptedCgv);case _:
+return $default(_that.firstName,_that.lastName,_that.role,_that.acceptedCgu,_that.acceptedCgv,_that.phone);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -198,10 +201,10 @@ return $default(_that.firstName,_that.lastName,_that.role,_that.acceptedCgu,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String firstName,  String lastName,  UserRole role,  bool acceptedCgu,  bool acceptedCgv)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String firstName,  String lastName,  UserRole role,  bool acceptedCgu,  bool acceptedCgv, @JsonKey(includeIfNull: false)  String? phone)?  $default,) {final _that = this;
 switch (_that) {
 case _CompleteProfileRequest() when $default != null:
-return $default(_that.firstName,_that.lastName,_that.role,_that.acceptedCgu,_that.acceptedCgv);case _:
+return $default(_that.firstName,_that.lastName,_that.role,_that.acceptedCgu,_that.acceptedCgv,_that.phone);case _:
   return null;
 
 }
@@ -213,7 +216,7 @@ return $default(_that.firstName,_that.lastName,_that.role,_that.acceptedCgu,_tha
 @JsonSerializable()
 
 class _CompleteProfileRequest implements CompleteProfileRequest {
-  const _CompleteProfileRequest({required this.firstName, required this.lastName, required this.role, required this.acceptedCgu, required this.acceptedCgv});
+  const _CompleteProfileRequest({required this.firstName, required this.lastName, required this.role, required this.acceptedCgu, required this.acceptedCgv, @JsonKey(includeIfNull: false) this.phone});
   factory _CompleteProfileRequest.fromJson(Map<String, dynamic> json) => _$CompleteProfileRequestFromJson(json);
 
 @override final  String firstName;
@@ -221,6 +224,9 @@ class _CompleteProfileRequest implements CompleteProfileRequest {
 @override final  UserRole role;
 @override final  bool acceptedCgu;
 @override final  bool acceptedCgv;
+// Phone collected during onboarding, saved unverified when SMS OTP is
+// skipped. Null when no number was captured. Sent only if non-null.
+@override@JsonKey(includeIfNull: false) final  String? phone;
 
 /// Create a copy of CompleteProfileRequest
 /// with the given fields replaced by the non-null parameter values.
@@ -235,16 +241,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompleteProfileRequest&&(identical(other.firstName, firstName) || other.firstName == firstName)&&(identical(other.lastName, lastName) || other.lastName == lastName)&&(identical(other.role, role) || other.role == role)&&(identical(other.acceptedCgu, acceptedCgu) || other.acceptedCgu == acceptedCgu)&&(identical(other.acceptedCgv, acceptedCgv) || other.acceptedCgv == acceptedCgv));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompleteProfileRequest&&(identical(other.firstName, firstName) || other.firstName == firstName)&&(identical(other.lastName, lastName) || other.lastName == lastName)&&(identical(other.role, role) || other.role == role)&&(identical(other.acceptedCgu, acceptedCgu) || other.acceptedCgu == acceptedCgu)&&(identical(other.acceptedCgv, acceptedCgv) || other.acceptedCgv == acceptedCgv)&&(identical(other.phone, phone) || other.phone == phone));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,firstName,lastName,role,acceptedCgu,acceptedCgv);
+int get hashCode => Object.hash(runtimeType,firstName,lastName,role,acceptedCgu,acceptedCgv,phone);
 
 @override
 String toString() {
-  return 'CompleteProfileRequest(firstName: $firstName, lastName: $lastName, role: $role, acceptedCgu: $acceptedCgu, acceptedCgv: $acceptedCgv)';
+  return 'CompleteProfileRequest(firstName: $firstName, lastName: $lastName, role: $role, acceptedCgu: $acceptedCgu, acceptedCgv: $acceptedCgv, phone: $phone)';
 }
 
 
@@ -255,7 +261,7 @@ abstract mixin class _$CompleteProfileRequestCopyWith<$Res> implements $Complete
   factory _$CompleteProfileRequestCopyWith(_CompleteProfileRequest value, $Res Function(_CompleteProfileRequest) _then) = __$CompleteProfileRequestCopyWithImpl;
 @override @useResult
 $Res call({
- String firstName, String lastName, UserRole role, bool acceptedCgu, bool acceptedCgv
+ String firstName, String lastName, UserRole role, bool acceptedCgu, bool acceptedCgv,@JsonKey(includeIfNull: false) String? phone
 });
 
 
@@ -272,14 +278,15 @@ class __$CompleteProfileRequestCopyWithImpl<$Res>
 
 /// Create a copy of CompleteProfileRequest
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? firstName = null,Object? lastName = null,Object? role = null,Object? acceptedCgu = null,Object? acceptedCgv = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? firstName = null,Object? lastName = null,Object? role = null,Object? acceptedCgu = null,Object? acceptedCgv = null,Object? phone = freezed,}) {
   return _then(_CompleteProfileRequest(
 firstName: null == firstName ? _self.firstName : firstName // ignore: cast_nullable_to_non_nullable
 as String,lastName: null == lastName ? _self.lastName : lastName // ignore: cast_nullable_to_non_nullable
 as String,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as UserRole,acceptedCgu: null == acceptedCgu ? _self.acceptedCgu : acceptedCgu // ignore: cast_nullable_to_non_nullable
 as bool,acceptedCgv: null == acceptedCgv ? _self.acceptedCgv : acceptedCgv // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,phone: freezed == phone ? _self.phone : phone // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

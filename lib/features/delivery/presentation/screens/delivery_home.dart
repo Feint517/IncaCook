@@ -5,6 +5,9 @@ import 'package:get/get.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'package:incacook/core/constants/sizes.dart';
+import 'package:incacook/core/constants/text_strings.dart';
+import 'package:incacook/core/controllers/user_controller.dart';
+import 'package:incacook/core/network/api_response.dart';
 import 'package:incacook/core/services/map/models/map_route.dart';
 import 'package:incacook/core/utils/theme/theme_extensions.dart';
 import 'package:incacook/features/delivery/controllers/delivery_driver_controller.dart';
@@ -59,7 +62,16 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
     if (order == null || _modalOpen || !mounted) return;
     _modalOpen = true;
     try {
-      final accepted = await showIncomingOrderModal(context, order: order);
+      // Gate "Accepter" on the backend claim rule (KYC approved + payout
+      // onboarding complete). The driver still SEES the offer; the offer just
+      // disables Accept and offers a "set up payments" CTA when not ready.
+      final canClaim = UserController.instance.canDriverClaim;
+      final accepted = await showIncomingOrderModal(
+        context,
+        order: order,
+        canClaim: canClaim,
+        onConfigurePayments: _configurePayments,
+      );
       if (accepted == true) {
         final deliveryId = _incoming.pendingDeliveryId.value;
         if (deliveryId == null) {
@@ -74,7 +86,7 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
         } catch (e) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Couldn\'t claim job: $e')),
+              SnackBar(content: Text(_claimErrorMessage(e))),
             );
           }
           _incoming.resolve(accepted: false);
@@ -84,6 +96,32 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
       }
     } finally {
       _modalOpen = false;
+    }
+  }
+
+  /// Maps a claim failure to a clear French message — never the raw backend
+  /// error. A 403 payout-onboarding rejection becomes the "set up payments"
+  /// hint; anything else is a generic retry message.
+  String _claimErrorMessage(Object error) {
+    if (error is ApiFailure) {
+      final isPayout = error.code == 'INCACOOK_PAYOUT_ONBOARDING_INCOMPLETE' ||
+          (error.statusCode == 403 &&
+              error.message.toLowerCase().contains('stripe connect onboarding'));
+      if (isPayout) return AppTexts.incomingOrderPayoutRequired;
+    }
+    return AppTexts.incomingOrderClaimFailed;
+  }
+
+  /// Opens Stripe Connect payout onboarding, then refreshes the driver profile
+  /// so the claim gate re-evaluates without an app restart (the next offer's
+  /// "Accepter" is enabled once onboarding is complete).
+  Future<void> _configurePayments() async {
+    if (!mounted) return;
+    await PayoutOnboardingService.openOnboarding(context);
+    try {
+      await UserController.instance.refreshFromServer();
+    } catch (_) {
+      // Best-effort refresh; the home banner / next poll will retry.
     }
   }
 
@@ -169,8 +207,9 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
           ),
           DeliveryTopButtons(onGpsTap: _centerOnDriver),
           //* Payout setup nudge — sits just under the top buttons until the
-          //* driver completes Stripe Connect Express onboarding. Tap is
-          //* stubbed until the StripeConnectService lands.
+          //* driver completes Stripe Connect Express onboarding. Hidden once
+          //* payouts are ready so it disappears right after onboarding (no
+          //* app restart — driven by the reactive UserController).
           Positioned(
             top: 0,
             left: 0,
@@ -183,8 +222,10 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
                   AppSizes.md,
                   0,
                 ),
-                child: PayoutSetupBanner(
-                  onTap: () => _onPayoutSetupTap(context),
+                child: Obx(
+                  () => UserController.instance.driverPayoutReady
+                      ? const SizedBox.shrink()
+                      : PayoutSetupBanner(onTap: _configurePayments),
                 ),
               ),
             ),
@@ -195,9 +236,4 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
     );
   }
 
-  void _onPayoutSetupTap(BuildContext context) {
-    // Opens Stripe Connect Express onboarding so the driver can add the
-    // bank/debit card that receives their delivery earnings.
-    PayoutOnboardingService.openOnboarding(context);
-  }
 }

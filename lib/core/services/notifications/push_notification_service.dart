@@ -68,7 +68,8 @@ class PushNotificationService extends GetxService {
       await _initLocalNotifications();
 
       _currentToken = await _messaging.getToken();
-      debugPrint('[FCM] token: $_currentToken');
+      // Never log the token value. Presence only.
+      debugPrint('[FCM] token received: ${_currentToken != null && _currentToken!.isNotEmpty}');
 
       // Register now if a session already exists (cold-start rehydrate),
       // then on every transition into an authenticated state.

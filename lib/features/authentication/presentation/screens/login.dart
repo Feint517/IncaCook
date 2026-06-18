@@ -8,6 +8,7 @@ import 'package:incacook/core/common/widgets/login_signup/social_buttons.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/widgets/decor/decor_blob.dart';
+import 'package:incacook/features/authentication/controllers/welcome_controller.dart';
 import 'package:incacook/features/authentication/presentation/widgets/login_form.dart';
 import 'package:incacook/features/authentication/presentation/widgets/login_header.dart';
 
@@ -16,6 +17,10 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Reuse the shared social-auth controller (Google + Facebook). Same
+    // instance the welcome screen uses; the controller guards against
+    // re-entrant taps, so the icon buttons need no per-button spinner.
+    final social = Get.put(WelcomeController());
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: CustomAppBar(showBackArrow: true),
@@ -43,8 +48,17 @@ class LoginScreen extends StatelessWidget {
                   FormDivider(dividerText: AppTexts.orSignInWith.capitalize!),
                   const Gap(AppSizes.spaceBtwSections),
 
-                  //* footer
-                  const SocialButtons(),
+                  //* footer — disabled while any social login is in flight
+                  Obx(
+                    () => SocialButtons(
+                      onGoogle: social.isAnySocialLoading
+                          ? null
+                          : social.signInWithGoogle,
+                      onFacebook: social.isAnySocialLoading
+                          ? null
+                          : social.signInWithFacebook,
+                    ),
+                  ),
                 ],
               ),
             ),

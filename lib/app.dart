@@ -28,6 +28,13 @@ class App extends StatelessWidget {
             transition: Transition.fadeIn,
           ),
         ],
+        // Safety net: an unmatched route (e.g. an OAuth callback deep link
+        // that slips through to the router) lands on the splash, which
+        // re-bootstraps — instead of GetX null-crashing in route middleware.
+        unknownRoute: GetPage<void>(
+          name: '/_unknown',
+          page: () => const SplashScreen(),
+        ),
         // Splash hands off to OnBoarding / Welcome / role home / resumed
         // signup based on stored session + /users/me/onboarding.
         home: const SplashScreen(),

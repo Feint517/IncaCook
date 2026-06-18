@@ -28,16 +28,21 @@ class OrderSummaryScreen extends StatelessWidget {
   final FulfillmentOptions options;
   final DeliveryDetails? deliveryDetails;
 
-  static const double _serviceFee = 0.50;
+  /// 5% platform fee on (subtotal + delivery) — same formula as the backend
+  /// so the displayed total equals the Stripe charge. Delivery fee (5,00 €)
+  /// comes from [selection.fee]; it's 0 for pickup.
+  double _platformFee(double subtotal) =>
+      (subtotal + selection.fee) * AppTexts.platformFeeRate;
 
   double _computeTotal(double subtotal) =>
-      subtotal + selection.fee + _serviceFee;
+      subtotal + selection.fee + _platformFee(subtotal);
 
   @override
   Widget build(BuildContext context) {
     final cart = CartController.instance;
     final seller = cart.sellerReference!;
     final subtotal = cart.subtotal;
+    final platformFee = _platformFee(subtotal);
     final total = _computeTotal(subtotal);
 
     final firstNote = cart.items
@@ -98,7 +103,7 @@ class OrderSummaryScreen extends StatelessWidget {
                   _PriceBreakdown(
                     subtotal: subtotal,
                     deliveryFee: selection.fee,
-                    serviceFee: _serviceFee,
+                    platformFee: platformFee,
                     total: total,
                     isDelivery: selection.choice == FulfillmentChoice.delivery,
                   ),
@@ -444,14 +449,14 @@ class _PriceBreakdown extends StatelessWidget {
   const _PriceBreakdown({
     required this.subtotal,
     required this.deliveryFee,
-    required this.serviceFee,
+    required this.platformFee,
     required this.total,
     required this.isDelivery,
   });
 
   final double subtotal;
   final double deliveryFee;
-  final double serviceFee;
+  final double platformFee;
   final double total;
   final bool isDelivery;
 
@@ -469,7 +474,7 @@ class _PriceBreakdown extends StatelessWidget {
             _Row(label: AppTexts.checkoutPriceDelivery, amount: deliveryFee),
           ],
           const Gap(AppSizes.sm),
-          _Row(label: AppTexts.checkoutPriceService, amount: serviceFee),
+          _Row(label: AppTexts.cartPlatformFeeLabel, amount: platformFee),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSizes.md - 4),
             child: Divider(height: 1, color: scheme.outline),

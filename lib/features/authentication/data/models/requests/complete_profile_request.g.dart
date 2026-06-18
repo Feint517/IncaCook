@@ -14,6 +14,7 @@ _CompleteProfileRequest _$CompleteProfileRequestFromJson(
   role: $enumDecode(_$UserRoleEnumMap, json['role']),
   acceptedCgu: json['acceptedCgu'] as bool,
   acceptedCgv: json['acceptedCgv'] as bool,
+  phone: json['phone'] as String?,
 );
 
 Map<String, dynamic> _$CompleteProfileRequestToJson(
@@ -24,6 +25,7 @@ Map<String, dynamic> _$CompleteProfileRequestToJson(
   'role': _$UserRoleEnumMap[instance.role]!,
   'acceptedCgu': instance.acceptedCgu,
   'acceptedCgv': instance.acceptedCgv,
+  'phone': ?instance.phone,
 };
 
 const _$UserRoleEnumMap = {

@@ -259,7 +259,11 @@ class _HomeScreenState extends State<ClientHomeScreen> {
   }
 
   Widget _buildKitchensSection(BuildContext context) {
-    final sectionHeight = DeviceUtils.getScreenHeight(context) * 0.4;
+    // 40% of the screen, but never below 310px — a kitchen card needs more
+    // vertical room than a food card (image + name + meta + tag chips), and on
+    // short Android screens 40% wasn't enough, clipping the card's bottom.
+    final dynamicHeight = DeviceUtils.getScreenHeight(context) * 0.4;
+    final sectionHeight = dynamicHeight < 310 ? 310.0 : dynamicHeight;
     const title = AppTexts.clientHomeSectionKitchensNearYou;
     if (_loadingKitchens) {
       return ClientHomeSection(

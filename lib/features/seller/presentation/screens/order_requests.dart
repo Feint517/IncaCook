@@ -5,7 +5,9 @@ import 'package:lottie/lottie.dart';
 import 'package:incacook/core/constants/animations.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
+import 'package:incacook/core/services/realtime/chat_message.dart';
 import 'package:incacook/core/widgets/decor/decor_blob.dart';
+import 'package:incacook/features/chat/presentation/chat_navigator.dart';
 import 'package:incacook/features/seller/data/seller_orders_repository.dart';
 import 'package:incacook/features/seller/domain/accepted_order.dart';
 import 'package:incacook/features/seller/presentation/widgets/accepted_order_card.dart';
@@ -227,6 +229,14 @@ class _OrderRequestsScreenState extends State<OrderRequestsScreen> {
                                 totalPrice: o.totalEuros,
                               );
                               final cta = _ctaLabel(o.status);
+                              // Seller ↔ driver chat for delivery orders once a
+                              // driver is in the picture (READY → a driver is
+                              // claiming; IN_DELIVERY → assigned). The backend
+                              // derives the driver from the order and rejects
+                              // with a SnackBar if none is assigned yet.
+                              final showContactDriver =
+                                  o.fulfillmentChoice == 'DELIVERY' &&
+                                  (o.status == _kReady || o.status == _kInDelivery);
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
@@ -246,6 +256,20 @@ class _OrderRequestsScreenState extends State<OrderRequestsScreen> {
                                               ),
                                             )
                                           : Text(cta),
+                                    ),
+                                  ],
+                                  if (showContactDriver) ...[
+                                    const Gap(AppSizes.sm),
+                                    OutlinedButton.icon(
+                                      onPressed: () =>
+                                          ChatNavigator.openSellerDriver(
+                                            context: context,
+                                            peerName: 'Livreur',
+                                            orderId: o.id,
+                                            myRole: ParticipantRole.seller,
+                                          ),
+                                      icon: const Icon(Icons.message_outlined, size: 18),
+                                      label: const Text(AppTexts.chatContactDriverCta),
                                     ),
                                   ],
                                 ],

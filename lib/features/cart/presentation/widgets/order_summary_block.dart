@@ -17,7 +17,10 @@ class OrderSummaryBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total = subtotal + shipping;
+    // 5% platform fee on (subtotal + delivery), matching the backend so the
+    // total shown equals what Stripe charges.
+    final platformFee = (subtotal + shipping) * AppTexts.platformFeeRate;
+    final total = subtotal + shipping + platformFee;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -31,6 +34,8 @@ class OrderSummaryBlock extends StatelessWidget {
         _SummaryRow(label: AppTexts.cartSubtotalLabel, value: subtotal),
         const Gap(AppSizes.sm),
         _SummaryRow(label: AppTexts.cartShippingLabel, value: shipping),
+        const Gap(AppSizes.sm),
+        _SummaryRow(label: AppTexts.cartPlatformFeeLabel, value: platformFee),
         const Gap(AppSizes.md - 4),
         const HorizontalSeparator(),
         const Gap(AppSizes.md - 4),

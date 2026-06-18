@@ -17,6 +17,9 @@ _DriverAccount _$DriverAccountFromJson(Map<String, dynamic> json) =>
           (json['zones'] as List<dynamic>?)?.map((e) => e as String).toList() ??
           const <String>[],
       canDeliver: json['canDeliver'] as bool? ?? false,
+      kycStatus: json['kycStatus'] as String? ?? 'PENDING',
+      stripeOnboardingCompleted:
+          json['stripeOnboardingCompleted'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$DriverAccountToJson(_DriverAccount instance) =>
@@ -25,6 +28,8 @@ Map<String, dynamic> _$DriverAccountToJson(_DriverAccount instance) =>
       'dateOfBirth': ?instance.dateOfBirth,
       'zones': instance.zones,
       'canDeliver': instance.canDeliver,
+      'kycStatus': instance.kycStatus,
+      'stripeOnboardingCompleted': instance.stripeOnboardingCompleted,
     };
 
 const _$DriverVehicleTypeEnumMap = {

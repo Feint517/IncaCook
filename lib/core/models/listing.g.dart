@@ -56,6 +56,7 @@ _Listing _$ListingFromJson(Map<String, dynamic> json) => _Listing(
           .toList() ??
       const <ListingExtra>[],
   sellerName: json['sellerName'] as String?,
+  sellerAvatarUrl: json['sellerAvatarUrl'] as String?,
   distanceKm: (json['distanceKm'] as num?)?.toDouble(),
   inRange: json['inRange'] as bool?,
   rating: (json['rating'] as num?)?.toDouble(),
@@ -94,6 +95,7 @@ Map<String, dynamic> _$ListingToJson(_Listing instance) => <String, dynamic>{
   'updatedAt': instance.updatedAt.toIso8601String(),
   'extras': instance.extras.map((e) => e.toJson()).toList(),
   'sellerName': ?instance.sellerName,
+  'sellerAvatarUrl': ?instance.sellerAvatarUrl,
   'distanceKm': ?instance.distanceKm,
   'inRange': ?instance.inRange,
   'rating': ?instance.rating,

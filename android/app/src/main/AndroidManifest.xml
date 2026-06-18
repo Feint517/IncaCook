@@ -11,9 +11,28 @@
                  while the Flutter UI initializes. After that, this theme continues
                  to determine the Window background behind the Flutter UI. -->
             <meta-data android:name="io.flutter.embedding.android.NormalTheme" android:resource="@style/NormalTheme"/>
+            <!-- Don't let the Flutter framework auto-route incoming deep links
+                 (e.g. incacook://auth/callback) into GetX's Navigator — GetX
+                 has no matching route and crashes its route middleware. The
+                 OAuth callback is consumed out-of-band by app_links /
+                 supabase_flutter instead. -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Supabase OAuth callback (Google + Facebook). Supabase redirects
+                 to incacook://auth/callback after the hosted login;
+                 supabase_flutter's deep-link observer catches it and completes
+                 the session. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="incacook"
+                    android:host="auth"
+                    android:path="/callback" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

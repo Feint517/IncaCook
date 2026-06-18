@@ -163,25 +163,37 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
           const Gap(AppSizes.md),
           Obx(() {
             final secs = controller.otpResendSecondsLeft.value;
-            final canResend = secs == 0;
+            final alreadyUsed = controller.phoneAlreadyUsed.value;
+            // No resend while a number is already taken — the user must change
+            // it first (resending would never succeed, and the green "Code
+            // renvoyé" must not contradict the red error).
+            final canResend = secs == 0 && !alreadyUsed;
             return Column(
               children: [
                 TextButton(
                   onPressed: canResend
                       ? () async {
-                          await controller.requestOtp();
-                          CustomLoaders.successSnackBar(
-                            title: AppTexts.signupOtpResentTitle,
-                            message: useEmail
-                                ? AppTexts.signupOtpEmailResentBody
-                                : AppTexts.signupOtpResentBody,
-                          );
+                          // Only celebrate once the backend confirms the send —
+                          // a failed/blocked request returns false and keeps the
+                          // red error (no success snackbar).
+                          final sent = await controller.requestOtp();
+                          if (sent) {
+                            CustomLoaders.successSnackBar(
+                              title: AppTexts.signupOtpResentTitle,
+                              message: useEmail
+                                  ? AppTexts.signupOtpEmailResentBody
+                                  : AppTexts.signupOtpResentBody,
+                            );
+                          }
                         }
                       : null,
                   child: Text(
-                    canResend
-                        ? AppTexts.signupOtpResendNow
-                        : AppTexts.signupOtpResendIn(secs),
+                    // Countdown text only while waiting; otherwise the plain
+                    // "Renvoyer le code" (greyed out when disabled by
+                    // [phoneAlreadyUsed]).
+                    secs > 0
+                        ? AppTexts.signupOtpResendIn(secs)
+                        : AppTexts.signupOtpResendNow,
                   ),
                 ),
                 TextButton(
@@ -195,9 +207,11 @@ class _PhoneVerificationPageState extends State<PhoneVerificationPage> {
                     }
                   },
                   child: Text(
-                    useEmail
-                        ? AppTexts.signupOtpEmailEditAddress
-                        : AppTexts.signupOtpEditNumber,
+                    alreadyUsed
+                        ? AppTexts.signupOtpChangeNumber
+                        : (useEmail
+                            ? AppTexts.signupOtpEmailEditAddress
+                            : AppTexts.signupOtpEditNumber),
                   ),
                 ),
               ],

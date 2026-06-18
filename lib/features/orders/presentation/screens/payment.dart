@@ -67,44 +67,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
   /// Apple Pay) or before a card's details have been entered.
   String? _cardPaymentMethodId;
 
-  @override
-  void initState() {
-    super.initState();
-    _selectedId = _pickDefaultId();
-  }
-
-  String? _pickDefaultId() {
-    final wallet = _methods.whereType<WalletPaymentMethod>().firstOrNull;
-    if (wallet != null && wallet.coversAmount(widget.totalAmount)) {
-      return wallet.id;
-    }
-    final firstSelectable = _methods.firstWhere(
-      (m) => _isSelectable(m),
-      orElse: () => _methods.first,
-    );
-    return _isSelectable(firstSelectable) ? firstSelectable.id : null;
-  }
+  // No default selection: the buyer must choose a method manually. The "Payer"
+  // button stays disabled (see `_PayFooter.enabled`) until `_selectedId` is
+  // non-null, so we deliberately do NOT pre-pick wallet/card/PayPal here.
 
   bool _isSelectable(PaymentMethod m) {
     if (m is WalletPaymentMethod) return m.coversAmount(widget.totalAmount);
     return true;
   }
 
-  Future<void> _select(PaymentMethod m) async {
+  /// Selects a method. The whole card is the tap target (see `_MethodCard`),
+  /// and selection turns the card green *immediately* — we no longer block it
+  /// behind the Stripe card-entry popup, which made selection feel unreliable.
+  /// Card details are captured at "Payer" time instead (`_pay`'s safety net).
+  void _select(PaymentMethod m) {
     if (!_isSelectable(m)) return;
-    // Choosing a card opens a popup to enter the card's details (Stripe).
-    // The tokenized PaymentMethod id is kept to settle the order on "Payer".
-    if (m is SavedCardPaymentMethod && StripeConfig.isConfigured) {
-      final pmId = await showCardEntrySheet(context, brandLabel: m.brand);
-      if (pmId == null) return; // cancelled — keep the previous selection
-      setState(() {
-        _selectedId = m.id;
-        _cardPaymentMethodId = pmId;
-      });
-      return;
-    }
+    debugPrint('[Payment] selected method=${m.id}');
     setState(() {
       _selectedId = m.id;
+      // Reset any previously captured card token; `_pay` re-prompts the card
+      // popup for the selected card before settling.
       _cardPaymentMethodId = null;
     });
   }

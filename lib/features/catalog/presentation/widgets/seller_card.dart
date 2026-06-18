@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:incacook/core/common/widgets/custon_shapes/container/circular_container.dart';
-import 'package:incacook/core/common/widgets/custon_shapes/container/circular_image.dart';
-import 'package:incacook/core/constants/image_strings.dart';
 import 'package:incacook/core/utils/theme/theme_extensions.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
@@ -13,8 +11,9 @@ import 'package:incacook/features/chat/presentation/chat_navigator.dart';
 class SellerCard extends StatelessWidget {
   const SellerCard({
     super.key,
-    this.name = AppTexts.productSampleSellerName,
-    this.imageUrl = AppImages.profilePic,
+    this.name = AppTexts.productSellerFallbackName,
+    this.avatarUrl,
+    this.initials = '',
     this.rating = AppTexts.productSampleSellerRating,
     this.ordersCompleted = AppTexts.productSampleSellerOrdersCompleted,
     this.sellerUserId,
@@ -23,7 +22,15 @@ class SellerCard extends StatelessWidget {
   });
 
   final String name;
-  final String imageUrl;
+
+  /// Resolved network URL of the seller's profile photo, or null when the
+  /// seller has none — the card then falls back to [initials] (or a person
+  /// icon). Never a mock asset.
+  final String? avatarUrl;
+
+  /// Up-to-2-letter initials shown when [avatarUrl] is null / fails to load.
+  final String initials;
+
   final double rating;
   final int ordersCompleted;
 
@@ -61,7 +68,7 @@ class SellerCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            CustomCircularImage(image: imageUrl, size: 48),
+            _SellerAvatar(avatarUrl: avatarUrl, initials: initials, size: 48),
             const Gap(AppSizes.sm),
             Expanded(
               child: Column(
@@ -133,6 +140,76 @@ class SellerCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Seller profile photo for the product-detail seller block. Shows the real
+/// network photo when [avatarUrl] is set; otherwise the seller's [initials]
+/// on a tinted circle (a person icon when even those are unavailable). Never
+/// renders a mock asset.
+class _SellerAvatar extends StatelessWidget {
+  const _SellerAvatar({
+    required this.avatarUrl,
+    required this.initials,
+    required this.size,
+  });
+
+  final String? avatarUrl;
+  final String initials;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = avatarUrl;
+    if (url == null || url.isEmpty) {
+      return _InitialsAvatar(initials: initials, size: size);
+    }
+    return ClipOval(
+      child: Image.network(
+        url,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) =>
+            _InitialsAvatar(initials: initials, size: size),
+      ),
+    );
+  }
+}
+
+class _InitialsAvatar extends StatelessWidget {
+  const _InitialsAvatar({required this.initials, required this.size});
+
+  final String initials;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final hasInitials = initials.trim().isNotEmpty;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: scheme.primary.withValues(alpha: 0.10),
+      ),
+      alignment: Alignment.center,
+      child: hasInitials
+          ? Text(
+              initials,
+              style: TextStyle(
+                fontSize: size * 0.36,
+                fontWeight: FontWeight.w700,
+                color: scheme.primary,
+              ),
+            )
+          : Icon(
+              Iconsax.user,
+              size: size * 0.5,
+              color: scheme.primary.withValues(alpha: 0.65),
+            ),
     );
   }
 }

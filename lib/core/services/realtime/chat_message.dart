@@ -7,6 +7,7 @@
 enum ConversationType {
   buyerSeller,
   buyerDelivery,
+  sellerDriver,
   support,
 }
 
@@ -17,6 +18,8 @@ extension ConversationTypeWire on ConversationType {
         return 'BUYER_SELLER';
       case ConversationType.buyerDelivery:
         return 'BUYER_DELIVERY';
+      case ConversationType.sellerDriver:
+        return 'SELLER_DRIVER';
       case ConversationType.support:
         return 'SUPPORT';
     }
@@ -29,6 +32,8 @@ ConversationType conversationTypeFromWire(String s) {
       return ConversationType.buyerSeller;
     case 'BUYER_DELIVERY':
       return ConversationType.buyerDelivery;
+    case 'SELLER_DRIVER':
+      return ConversationType.sellerDriver;
     case 'SUPPORT':
       return ConversationType.support;
     default:

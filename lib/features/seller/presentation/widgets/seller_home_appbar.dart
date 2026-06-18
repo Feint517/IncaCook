@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:incacook/core/constants/sizes.dart';
+import 'package:incacook/core/constants/text_strings.dart';
+import 'package:incacook/core/controllers/user_controller.dart';
 import 'package:incacook/core/utils/device/device_utility.dart';
 
 class SellerHomeAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -8,6 +11,7 @@ class SellerHomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final userController = UserController.instance;
     return Container(
       padding: EdgeInsets.only(
         top: DeviceUtils.getStatusBarHeight(),
@@ -18,12 +22,16 @@ class SellerHomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       child: Row(
         children: [
           Flexible(
-            child: Text(
-              "Bonjour Fatima",
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: onSurface,
+            // Dynamic greeting from the connected user (same source as the
+            // profile screen) — never a hardcoded name.
+            child: Obx(
+              () => Text(
+                '${AppTexts.clientHomeAppbarTitle} ${userController.greetingName}',
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: onSurface,
+                ),
               ),
             ),
           ),

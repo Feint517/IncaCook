@@ -18,8 +18,8 @@ class StripeConfig {
   static const String publishableKey = String.fromEnvironment(
     'STRIPE_PUBLISHABLE_KEY',
     defaultValue:
-      'pk_test_51TdvHCBSdl9ByXxumU62Vjl06xKGV1b4wsMQ0gO0wjGpWJyM88h0sg4QxukJjiOEhbBa38ObVN8IVrYdKtYqREL000HesTtbcX'
-        //'pk_test_51SaFR61kCiAVzFAvgrT1IE5iN5oIYYABm1UESulyTbZgOwm6hJ5CbGnvaVtwwjOfdsd9ejCUlXVetk1HfRKHIqce00YXS5pFHy',
+        'pk_test_51TdvHCBSdl9ByXxumU62Vjl06xKGV1b4wsMQ0gO0wjGpWJyM88h0sg4QxukJjiOEhbBa38ObVN8IVrYdKtYqREL000HesTtbcX',
+    //'pk_test_51SaFR61kCiAVzFAvgrT1IE5iN5oIYYABm1UESulyTbZgOwm6hJ5CbGnvaVtwwjOfdsd9ejCUlXVetk1HfRKHIqce00YXS5pFHy',
   );
 
   /// Name shown at the top of the Stripe Payment Sheet.

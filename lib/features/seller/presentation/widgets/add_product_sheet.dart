@@ -24,11 +24,14 @@ import 'package:incacook/features/seller/controllers/add_product_controller.dart
 class AddProductSheet extends StatefulWidget {
   const AddProductSheet({
     super.key,
-    this.sellerCategory = SellerCategory.faitMaison,
+    this.sellerCategory,
     this.existing,
   });
 
-  final SellerCategory sellerCategory;
+  /// Optional explicit override. Normally left null so the controller
+  /// resolves the category from the connected seller's profile — the
+  /// Add Product page never picks a category by hand.
+  final SellerCategory? sellerCategory;
 
   /// When non-null the sheet opens in **edit mode**: the form is pre-filled
   /// from this listing and Save sends `PATCH /v1/listings/:id` instead of
@@ -42,7 +45,7 @@ class AddProductSheet extends StatefulWidget {
 
   static Future<bool?> show(
     BuildContext context, {
-    SellerCategory sellerCategory = SellerCategory.faitMaison,
+    SellerCategory? sellerCategory,
     Listing? existing,
   }) {
     return showBlurredModalBottomSheet<bool>(
@@ -266,16 +269,20 @@ class BaseInfoSection extends StatelessWidget {
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         ),
-        if (controller.isFaitMaison) ...[
+        if (controller.sellerCategory != null) ...[
           const Gap(AppSizes.sm),
-          //? Reactive: once the price crosses the €4.50 fait-maison cap we
-          //? swap the neutral hint for a red error so the rule is explained
-          //? rather than silently blocking the publish button.
-          Obx(
-            () => controller.priceCapExceeded
-                ? const _ErrorNote(text: AppTexts.addProductPriceCapError)
-                : const _HelperNote(text: AppTexts.addProductPriceCapNote),
-          ),
+          if (controller.isFaitMaison)
+            //? Reactive: once the price crosses the €4.50 fait-maison cap we
+            //? swap the neutral hint for a red error so the rule is explained
+            //? rather than silently blocking the publish button.
+            Obx(
+              () => controller.priceCapExceeded
+                  ? const _ErrorNote(text: AppTexts.addProductPriceCapError)
+                  : _HelperNote(text: controller.priceCapNote),
+            )
+          else
+            //? Traiteur / Restaurant have no price cap.
+            _HelperNote(text: controller.priceCapNote),
         ],
       ],
     );
@@ -684,29 +691,44 @@ class _SelectableChip extends StatelessWidget {
 class _CategoryReadonlyChip extends StatelessWidget {
   const _CategoryReadonlyChip({required this.category});
 
-  final SellerCategory category;
+  /// Null when the connected seller's category couldn't be resolved — the
+  /// chip then shows an "unavailable" warning state instead of a category.
+  final SellerCategory? category;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final unavailable = category == null;
+
+    // Warning (amber) styling when the category is missing; the normal
+    // "selected" green pill when it's resolved from the seller profile.
+    final bg = unavailable
+        ? BrandColors.warning.withValues(alpha: 0.12)
+        : colors.selectedSurface;
+    final fg = unavailable ? BrandColors.warning : colors.selectedOnSurface;
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.md,
         vertical: AppSizes.sm + 2,
       ),
       decoration: BoxDecoration(
-        color: colors.selectedSurface,
+        color: bg,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Iconsax.tick_circle, size: 16, color: colors.selectedOnSurface),
+          Icon(
+            unavailable ? Iconsax.info_circle : Iconsax.tick_circle,
+            size: 16,
+            color: fg,
+          ),
           const Gap(AppSizes.sm),
           Text(
-            category.label,
+            category?.label ?? AppTexts.addProductCategoryUnavailable,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colors.selectedOnSurface,
+              color: fg,
               fontWeight: FontWeight.w700,
             ),
           ),
