@@ -655,6 +655,12 @@ class SignupFlowController extends GetxController {
     debugPrint('[NAV] gateOk=$gateOk');
     if (!gateOk) return;
 
+    // The page is going to change — drop focus so a keyboard left open on a
+    // text step (e.g. phone/password on basic info) doesn't carry over into
+    // the next step. Only do this once the gate has passed, so a failed gate
+    // keeps the field focused for retry.
+    FocusManager.instance.primaryFocus?.unfocus();
+
     if (isLastPage) {
       debugPrint('[NAV] -> _finishSignup (isLastPage)');
       _finishSignup();

@@ -24,35 +24,21 @@ class RevenueCatConfig {
 
   // Public RevenueCat SDK keys (`appl_…` iOS / `goog_…` Android). These are
   // PUBLIC client keys — safe to embed in the app binary (like the Supabase
-  // anon key), so the iOS default below lets a plain `flutter run` reach the
-  // store. A `--dart-define=REVENUECAT_IOS_KEY=…` / `REVENUECAT_ANDROID_KEY=…`
-  // still overrides it (e.g. a separate prod key). Empty → "unconfigured" →
+  // anon key). Each is a SINGLE constant read from `--dart-define` (the value
+  // comes from `.vscode/dart_defines.json`, same as MAPBOX/SUPABASE), with a
+  // baked-in `defaultValue` so a plain `flutter run` still reaches the store.
+  // The dart-define value, when set, always wins. Empty → "unconfigured" →
   // RevenueCatService.init() skips Purchases.configure (paywall shows fallback
   // prices). NEVER put a SECRET key (`sk_…`) here.
-  static const String _defaultAndroidApiKey = '';
-
-  static const String _defaultIosApiKey = 'appl_mtskPNbxiaPozqLtGvqoAOrsCNt';
-
-  static const String _androidApiKeyFromEnv = String.fromEnvironment(
+  static const String androidApiKey = String.fromEnvironment(
     'REVENUECAT_ANDROID_KEY',
+    defaultValue: '',
   );
 
-  // NOTE: the argument is the dart-define VARIABLE NAME, not the key value. A
-  // previous edit mistakenly passed the key itself here, so the variable never
-  // resolved and iOS stayed "unconfigured" → "Abonnement indisponible".
-  static const String _iosApiKeyFromEnv = String.fromEnvironment(
+  static const String iosApiKey = String.fromEnvironment(
     'REVENUECAT_IOS_KEY',
+    defaultValue: 'appl_mtskPNbxiaPozqLtGvqoAOrsCNt',
   );
-
-  static String get androidApiKey {
-    if (_androidApiKeyFromEnv.isNotEmpty) return _androidApiKeyFromEnv;
-    return _defaultAndroidApiKey;
-  }
-
-  static String get iosApiKey {
-    if (_iosApiKeyFromEnv.isNotEmpty) return _iosApiKeyFromEnv;
-    return _defaultIosApiKey;
-  }
 
   /// The public SDK key for the running platform (empty when unconfigured).
   static String get apiKey {
