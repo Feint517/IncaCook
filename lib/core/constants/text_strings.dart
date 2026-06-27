@@ -1369,6 +1369,15 @@ class AppTexts {
       "Abonnement impossible. Veuillez réessayer.";
   static const String signupSubscriptionUnavailable =
       "Abonnement indisponible. Vérifiez la configuration RevenueCat.";
+  // Precise paywall errors (TestFlight debugging) — one per failure cause.
+  static const String subscriptionErrorKeyMissing =
+      "Configuration RevenueCat manquante.";
+  static const String subscriptionErrorOfferingMissing =
+      "Offre d'abonnement introuvable.";
+  static const String subscriptionErrorPackagesEmpty =
+      "Produits d'abonnement indisponibles.";
+  static const String subscriptionErrorStore =
+      "Produits non encore disponibles dans l'environnement Apple Sandbox.";
   static const String signupSubscriptionPerMonth = "/ mois";
 
   //* seller paywall (shown post-login when subscription is inactive)

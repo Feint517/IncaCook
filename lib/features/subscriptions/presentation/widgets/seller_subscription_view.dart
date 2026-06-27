@@ -52,6 +52,8 @@ class _SellerSubscriptionViewState extends State<SellerSubscriptionView> {
   _Plan? _selected;
   bool _loadingOfferings = true;
   bool _busy = false;
+  // Precise unavailability message (null once the products are available).
+  String? _unavailableReason;
 
   SellerCategory get _category => widget.category;
 
@@ -72,22 +74,38 @@ class _SellerSubscriptionViewState extends State<SellerSubscriptionView> {
       await _revenueCat.login(userId);
     }
 
-    final offering = await _revenueCat.offeringForCategory(_category);
-    debugPrint('[Subscription] available packages: '
-        '${offering?.availablePackages.map((p) => p.identifier).toList() ?? const <String>[]}');
+    final result = await _revenueCat.loadOfferingForCategory(_category);
+    final offering = result.offering;
     if (offering != null) {
       for (final p in offering.availablePackages) {
         if (p.identifier == RevenueCatConfig.packageStandard) _standardPkg = p;
         if (p.identifier == RevenueCatConfig.packagePremium) _premiumPkg = p;
       }
     }
+    _unavailableReason = _resolveUnavailableReason(result);
     if (mounted) setState(() => _loadingOfferings = false);
+  }
+
+  /// Maps the load result to a precise, actionable message — or null when both
+  /// expected packages are present (so the banner stays hidden).
+  String? _resolveUnavailableReason(OfferingResult result) {
+    if (_standardPkg != null && _premiumPkg != null) return null;
+    switch (result.failure) {
+      case OfferingFailure.keyMissing:
+        return AppTexts.subscriptionErrorKeyMissing;
+      case OfferingFailure.storeError:
+        return AppTexts.subscriptionErrorStore;
+      case OfferingFailure.offeringMissing:
+        return AppTexts.subscriptionErrorOfferingMissing;
+      case null:
+        // Offering loaded but the expected packages are empty / mismatched.
+        return AppTexts.subscriptionErrorPackagesEmpty;
+    }
   }
 
   /// True once loading is done and at least one expected package is missing
   /// (RevenueCat misconfigured / products not live / SDK key absent).
-  bool get _productsUnavailable =>
-      !_loadingOfferings && (_standardPkg == null || _premiumPkg == null);
+  bool get _productsUnavailable => !_loadingOfferings && _unavailableReason != null;
 
   Package? _packageFor(_Plan plan) => plan == _Plan.premium ? _premiumPkg : _standardPkg;
 
@@ -191,7 +209,9 @@ class _SellerSubscriptionViewState extends State<SellerSubscriptionView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (_productsUnavailable) ...[
-          _UnavailableBanner(),
+          _UnavailableBanner(
+            message: _unavailableReason ?? AppTexts.signupSubscriptionUnavailable,
+          ),
           const Gap(AppSizes.md),
         ],
         _PlanCard(
@@ -257,6 +277,10 @@ class _SellerSubscriptionViewState extends State<SellerSubscriptionView> {
 }
 
 class _UnavailableBanner extends StatelessWidget {
+  const _UnavailableBanner({required this.message});
+
+  final String message;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -273,7 +297,7 @@ class _UnavailableBanner extends StatelessWidget {
           const Gap(AppSizes.sm),
           Expanded(
             child: Text(
-              AppTexts.signupSubscriptionUnavailable,
+              message,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.error),
             ),
           ),
