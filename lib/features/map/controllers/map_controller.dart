@@ -1,10 +1,11 @@
 import 'dart:async';
 
 import 'package:get/get.dart';
-import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:incacook/core/enums/food_enums.dart';
 import 'package:incacook/core/models/listing_mappers.dart';
 import 'package:incacook/core/services/location/location_service.dart';
+import 'package:incacook/core/services/map/models/map_route.dart';
 import 'package:incacook/features/catalog/data/models/requests/list_listings_query.dart';
 import 'package:incacook/features/catalog/data/repositories/listings_repository.dart';
 import 'package:incacook/features/map/domain/map_entry.dart';
@@ -12,7 +13,7 @@ import 'package:incacook/features/map/presentation/widget/map_filter_bar.dart';
 
 /// Owns map state for [MapScreen]: the real backend listings (pinned by
 /// seller location), the selected filter, the tapped pin, and the projected
-/// screen coords for every visible pin (recomputed on each camera change).
+/// selected pin.
 /// The screen reads these reactively via [Obx] and stays UI-only.
 class MapController extends GetxController {
   static MapController get instance => Get.isRegistered<MapController>()
@@ -21,7 +22,8 @@ class MapController extends GetxController {
 
   /// Map centre / user dot. Defaults to central Paris until the device
   /// location resolves; updated to the real position in [loadListings].
-  final Rx<Position> userLocation = Position(2.3522, 48.8566).obs;
+  final Rx<MapPoint> userLocation =
+      const MapPoint(lng: 2.3522, lat: 48.8566).obs;
   static const double initialZoom = 14;
   static const Duration urgentWindow = Duration(hours: 2, minutes: 30);
 
@@ -35,18 +37,9 @@ class MapController extends GetxController {
   final Rx<MapFilter> selectedFilter = MapFilter.all.obs;
   final RxnString selectedId = RxnString();
 
-  /// Screen-space coordinates for each entry in [visibleEntries], in order.
-  /// Null when projection isn't ready or the point is off-screen.
-  final RxList<ScreenCoordinate?> pinScreenCoords = <ScreenCoordinate?>[].obs;
-  final Rxn<ScreenCoordinate> userScreenCoord = Rxn<ScreenCoordinate>();
-
   // ── Map handle + projection generation ────────────────────────────────
 
-  MapboxMap? _map;
-
-  //* Bumped on every projection request; results from stale generations are
-  //* dropped to avoid jitter when many camera events fire in quick succession.
-  int _projectionGen = 0;
+  GoogleMapController? _map;
 
   @override
   void onInit() {
@@ -69,7 +62,7 @@ class MapController extends GetxController {
       if (pos != null) {
         lat = pos.latitude;
         lng = pos.longitude;
-        userLocation.value = Position(lng, lat);
+        userLocation.value = MapPoint(lng: lng, lat: lat);
       }
     } catch (_) {
       // keep the fallback centre — never crash on location.
@@ -89,7 +82,7 @@ class MapController extends GetxController {
         for (final l in result.items)
           if (l.lat != null && l.lng != null)
             MapEntry(
-              position: Position(l.lng!, l.lat!),
+              position: MapPoint(lng: l.lng!, lat: l.lat!),
               listing: l.toFoodListing(),
               source: l,
             ),
@@ -99,7 +92,6 @@ class MapController extends GetxController {
     } finally {
       loading.value = false;
       if (lat != null && lng != null) unawaited(centerOnUser());
-      unawaited(refreshScreenCoords());
     }
   }
 
@@ -128,59 +120,22 @@ class MapController extends GetxController {
 
   // ── Map lifecycle / camera ────────────────────────────────────────────
 
-  Future<void> onMapCreated(MapboxMap map) async {
+  Future<void> onMapCreated(GoogleMapController map) async {
     _map = map;
-    await map.scaleBar.updateSettings(ScaleBarSettings(enabled: false));
-    //* hide the bottom-right "i" attribution button (Mapbox TOS still
-    //* requires attribution somewhere — surface it elsewhere if needed).
-    await map.attribution.updateSettings(AttributionSettings(enabled: false));
-    await map.setBounds(CameraBoundsOptions(minZoom: 11.0, maxZoom: 18.0));
-    await refreshScreenCoords();
-  }
-
-  void onCameraChange(CameraChangedEventData _) {
-    unawaited(refreshScreenCoords());
-  }
-
-  Future<void> refreshScreenCoords() async {
-    final map = _map;
-    if (map == null) return;
-
-    final gen = ++_projectionGen;
-    final visible = visibleEntries;
-
-    final pinPoints = visible
-        .map((e) => Point(coordinates: e.position))
-        .toList();
-    final userPoint = Point(coordinates: userLocation.value);
-
-    final results = await map.pixelsForCoordinates([...pinPoints, userPoint]);
-    if (gen != _projectionGen) return;
-
-    pinScreenCoords.assignAll(results.sublist(0, visible.length));
-    userScreenCoord.value = results.last;
   }
 
   Future<void> centerOnUser() async {
-    await _map?.flyTo(
-      CameraOptions(
-        center: Point(coordinates: userLocation.value),
-        zoom: initialZoom,
-      ),
-      MapAnimationOptions(duration: 600),
+    final loc = userLocation.value;
+    await _map?.animateCamera(
+      CameraUpdate.newLatLngZoom(LatLng(loc.lat, loc.lng), initialZoom),
     );
   }
 
-  Future<void> flyToCurrentZoom(Position pos) async {
+  Future<void> flyToCurrentZoom(MapPoint pos) async {
     final map = _map;
     if (map == null) return;
-    final state = await map.getCameraState();
-    await map.flyTo(
-      CameraOptions(
-        center: Point(coordinates: pos),
-        zoom: state.zoom,
-      ),
-      MapAnimationOptions(duration: 400),
+    await map.animateCamera(
+      CameraUpdate.newLatLng(LatLng(pos.lat, pos.lng)),
     );
   }
 
@@ -188,7 +143,6 @@ class MapController extends GetxController {
 
   void setFilter(MapFilter f) {
     selectedFilter.value = f;
-    unawaited(refreshScreenCoords());
   }
 
   void setSelected(String? id) => selectedId.value = id;

@@ -7,7 +7,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/models/address.dart';
 import 'package:incacook/core/services/map/address_mapping.dart';
-import 'package:incacook/core/services/map/mapbox_search_client.dart';
+import 'package:incacook/core/services/map/google_places_client.dart';
 import 'package:incacook/core/services/map/models/place_suggestion.dart';
 import 'package:incacook/core/widgets/effects/frosted_surface.dart';
 
@@ -22,7 +22,7 @@ class _AddressSearchSheetState extends State<AddressSearchSheet> {
   static const Duration _debounce = Duration(milliseconds: 350);
 
   final TextEditingController _controller = TextEditingController();
-  final MapboxSearchClient _client = Get.find<MapboxSearchClient>();
+  final GooglePlacesClient _client = Get.find<GooglePlacesClient>();
   late final String _sessionToken = _client.newSessionToken();
 
   Timer? _debounceTimer;
@@ -82,7 +82,7 @@ class _AddressSearchSheetState extends State<AddressSearchSheet> {
     setState(() => _loading = true);
     try {
       final place = await _client.retrieve(
-        mapboxId: suggestion.mapboxId,
+        placeId: suggestion.placeId,
         sessionToken: _sessionToken,
       );
       if (!mounted) return;
@@ -91,7 +91,7 @@ class _AddressSearchSheetState extends State<AddressSearchSheet> {
       // city + country) — never just the street. Shared mapping keeps the rule
       // identical across every picker.
       final address = addressFromRetrievedPlace(place).copyWith(
-        id: 'mb-${place.mapboxId}',
+        id: 'g-${place.placeId}',
         type: SavedAddressType.other,
       );
 
@@ -130,7 +130,8 @@ class _AddressSearchSheetState extends State<AddressSearchSheet> {
                 onChanged: _onChanged,
                 decoration: InputDecoration(
                   hintText: 'Chercher une adresse',
-                  prefixIcon: Icon(Iconsax.search_normal, color: scheme.primary),
+                  prefixIcon:
+                      Icon(Iconsax.search_normal, color: scheme.primary),
                   filled: false,
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
@@ -139,7 +140,6 @@ class _AddressSearchSheetState extends State<AddressSearchSheet> {
               ),
             ),
             const Gap(AppSizes.md),
-
             if (_loading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: AppSizes.md),
@@ -152,8 +152,8 @@ class _AddressSearchSheetState extends State<AddressSearchSheet> {
                   child: Text(
                     _error!,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: scheme.error,
-                    ),
+                          color: scheme.error,
+                        ),
                   ),
                 ),
               )

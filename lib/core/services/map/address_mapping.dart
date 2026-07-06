@@ -1,15 +1,15 @@
-import 'package:flutter/foundation.dart';
-
 import 'package:incacook/core/models/address.dart';
 import 'package:incacook/core/services/map/models/place_suggestion.dart';
+import 'package:incacook/core/utils/log.dart';
 
-/// Builds a complete [Address] from a Mapbox [RetrievedPlace].
+/// Builds a complete [Address] from a provider [RetrievedPlace].
 ///
 /// Guarantees the displayed `fullAddress` is the WHOLE address (street +
 /// postal + city + country), e.g. `"12 Rue Victor Hugo, 75001 Paris, France"`,
 /// never just the street (`"Rue Victor Hugo"`). City + postcode come from
-/// Mapbox's structured `context` first (locale-independent), with a fallback
-/// parse of the FR "12345 City" formatted string when Mapbox omits them.
+/// the provider's structured address components first (locale-independent),
+/// with a fallback parse of the FR "12345 City" formatted string when the
+/// provider omits them.
 ///
 /// Used by every address picker (seller onboarding, pickup, client/delivery)
 /// so the rule is identical everywhere. Logs only field-presence flags — never
@@ -31,8 +31,9 @@ Address addressFromRetrievedPlace(RetrievedPlace place) {
         .trim();
   }
 
-  final street =
-      place.name.trim().isNotEmpty ? place.name.trim() : place.placeFormatted.trim();
+  final street = place.name.trim().isNotEmpty
+      ? place.name.trim()
+      : place.placeFormatted.trim();
 
   final fullAddress = composeFullAddress(
     fullAddress: place.fullAddress,
@@ -44,9 +45,10 @@ Address addressFromRetrievedPlace(RetrievedPlace place) {
   );
 
   // Safe debug — presence flags only, no address values.
-  debugPrint('[Address] selected full address exists: ${fullAddress.isNotEmpty}');
-  debugPrint('[Address] city exists: ${city.isNotEmpty}');
-  debugPrint('[Address] postalCode exists: ${postal.isNotEmpty}');
+  logWarning(
+      '[Address] selected full address exists: ${fullAddress.isNotEmpty}');
+  logWarning('[Address] city exists: ${city.isNotEmpty}');
+  logWarning('[Address] postalCode exists: ${postal.isNotEmpty}');
 
   return Address(
     fullAddress: fullAddress,
@@ -56,8 +58,8 @@ Address addressFromRetrievedPlace(RetrievedPlace place) {
   );
 }
 
-/// Composes the most complete address string we can. Prefers Mapbox's own
-/// `full_address`; otherwise reconstructs `street, "postal city", country`
+/// Composes the most complete address string we can. Prefers the provider's
+/// full address; otherwise reconstructs `street, "postal city", country`
 /// so the city is never dropped. Falls back to `place_formatted` / street when
 /// little structured data is available.
 String composeFullAddress({

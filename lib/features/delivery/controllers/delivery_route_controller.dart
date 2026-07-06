@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 import 'package:incacook/core/enums/order_stage.dart';
 import 'package:incacook/core/models/order_detail.dart';
 import 'package:incacook/core/services/location/location_service.dart';
-import 'package:incacook/core/services/map/mapbox_directions_client.dart';
+import 'package:incacook/core/services/map/google_directions_client.dart';
 import 'package:incacook/core/services/map/models/map_route.dart';
 import 'package:incacook/core/services/realtime/delivery_cancelled_event.dart';
 import 'package:incacook/core/services/realtime/tracking_socket_client.dart';
@@ -56,12 +56,10 @@ class DeliveryRouteController extends GetxController {
   /// Null until the location stream emits its first reading.
   MapPoint? get currentDriverPosition {
     final pos = LocationService.instance.currentPosition.value;
-    return pos == null
-        ? null
-        : MapPoint(lng: pos.longitude, lat: pos.latitude);
+    return pos == null ? null : MapPoint(lng: pos.longitude, lat: pos.latitude);
   }
 
-  //* Latest route from Mapbox Directions. Null until [bootstrap] succeeds.
+  //* Latest route from Google Directions. Null until [bootstrap] succeeds.
   final Rxn<MapRoute> route = Rxn<MapRoute>();
 
   //* Off-route detection thresholds.
@@ -114,8 +112,12 @@ class DeliveryRouteController extends GetxController {
     String? activeDeliveryId,
     String? activeOrderId,
   }) {
-    if (activeDeliveryId != null && event.deliveryId == activeDeliveryId) return true;
-    if (activeOrderId != null && event.orderId == activeOrderId) return true;
+    if (activeDeliveryId != null && event.deliveryId == activeDeliveryId) {
+      return true;
+    }
+    if (activeOrderId != null && event.orderId == activeOrderId) {
+      return true;
+    }
     return false;
   }
 
@@ -125,10 +127,13 @@ class DeliveryRouteController extends GetxController {
     _cancelSub = TrackingSocketClient.instance.deliveryCancellations().listen(
       (ev) {
         if (!cancelMatchesJob(ev,
-            activeDeliveryId: _deliveryId, activeOrderId: currentJob.value?.id)) {
+            activeDeliveryId: _deliveryId,
+            activeOrderId: currentJob.value?.id)) {
           return;
         }
-        final message = ev.message.isNotEmpty ? ev.message : 'Cette livraison a été annulée.';
+        final message = ev.message.isNotEmpty
+            ? ev.message
+            : 'Cette livraison a été annulée.';
         clearJob();
         Get.snackbar(
           'Livraison annulée',
@@ -309,7 +314,7 @@ class DeliveryRouteController extends GetxController {
     MapPoint? origin,
     MapPoint destination,
   ) async {
-    final client = Get.find<MapboxDirectionsClient>();
+    final client = Get.find<GoogleDirectionsClient>();
     if (origin != null) {
       try {
         return await client.getRoute(origin: origin, destination: destination);
@@ -373,8 +378,8 @@ class DeliveryRouteController extends GetxController {
       final sinceMs = now.difference(lastAt).inMilliseconds;
       if (sinceMs < _minPushIntervalMs) return;
       final lastP = _lastPushedPoint;
-      final movedEnough =
-          lastP == null || greatCircleDistance(lastP, point) >= _minPushDistanceM;
+      final movedEnough = lastP == null ||
+          greatCircleDistance(lastP, point) >= _minPushDistanceM;
       final keepalive = sinceMs >= _keepaliveMs;
       if (!movedEnough && !keepalive) return;
     }

@@ -2,25 +2,25 @@ import 'package:incacook/core/services/map/models/map_route.dart';
 
 class PlaceSuggestion {
   const PlaceSuggestion({
-    required this.mapboxId,
+    required this.placeId,
     required this.name,
     required this.placeFormatted,
     required this.featureType,
     this.fullAddress,
   });
 
-  final String mapboxId;
+  final String placeId;
   final String name;
   final String placeFormatted;
   final String? fullAddress;
   final String featureType;
 }
 
-//* Result of a /retrieve call. Has the full coordinate, billable in the
-//* Search Box session model.
+//* Result of a place detail/reverse-geocode call. Has the full coordinate and
+//* structured locality fields for the app's Address model.
 class RetrievedPlace {
   const RetrievedPlace({
-    required this.mapboxId,
+    required this.placeId,
     required this.name,
     required this.placeFormatted,
     required this.coordinate,
@@ -30,14 +30,14 @@ class RetrievedPlace {
     this.country,
   });
 
-  final String mapboxId;
+  final String placeId;
   final String name;
   final String placeFormatted;
   final MapPoint coordinate;
   final String? fullAddress;
 
-  //* Structured locality fields from Mapbox `context` — locale-independent,
-  //* unlike parsing the formatted string. Null when Mapbox omits them.
+  //* Structured locality fields from the provider's address components.
+  //* Null when the provider omits them.
   final String? city;
   final String? postcode;
   final String? country;

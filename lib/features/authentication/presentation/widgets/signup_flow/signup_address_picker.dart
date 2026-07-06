@@ -4,19 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:incacook/core/config/mapbox_config.dart';
+import 'package:incacook/core/config/google_maps_config.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/models/address.dart';
 import 'package:incacook/core/services/location/location_service.dart';
 import 'package:incacook/core/services/map/address_mapping.dart';
-import 'package:incacook/core/services/map/mapbox_search_client.dart';
+import 'package:incacook/core/services/map/google_places_client.dart';
 import 'package:incacook/core/services/map/models/map_route.dart';
 import 'package:incacook/core/services/map/models/place_suggestion.dart';
 import 'package:incacook/core/utils/theme/theme_extensions.dart';
 import 'package:incacook/features/authentication/presentation/widgets/signup_flow/signup_text_field.dart';
 
-/// Address autocomplete backed by the Mapbox Search Box API (debounced
+/// Address autocomplete backed by Google Places (debounced autocomplete
 /// `suggest` → `retrieve` for real coordinates) plus a one-tap
 /// "use my current location" that reverse-geocodes the device GPS fix.
 class SignupAddressPicker extends StatefulWidget {
@@ -38,11 +38,11 @@ class SignupAddressPicker extends StatefulWidget {
 class _SignupAddressPickerState extends State<SignupAddressPicker> {
   static const Duration _debounce = Duration(milliseconds: 350);
 
-  final MapboxSearchClient _client = Get.find<MapboxSearchClient>();
+  final GooglePlacesClient _client = Get.find<GooglePlacesClient>();
   final LocationService _location = Get.find<LocationService>();
   late final TextEditingController _controller;
-  // One session token per picker instance — Mapbox bills per search session
-  // (suggest calls + the retrieve that closes it).
+  // One session token per picker instance — Google Places groups autocomplete
+  // calls with the details call that closes the search session.
   late final String _sessionToken = _client.newSessionToken();
 
   Timer? _debounceTimer;
@@ -93,7 +93,7 @@ class _SignupAddressPickerState extends State<SignupAddressPicker> {
       );
       if (gen != _queryGen || !mounted) return;
       // Float precise street addresses (which carry a postcode) above coarser
-      // place/locality results, keeping Mapbox's relevance order within each
+      // place/locality results, keeping provider relevance order within each
       // group. Places are still selectable — the backend allows no postcode.
       final ordered = [
         ...results.where((s) => s.featureType == 'address'),
@@ -120,7 +120,7 @@ class _SignupAddressPickerState extends State<SignupAddressPicker> {
     });
     try {
       final place = await _client.retrieve(
-        mapboxId: suggestion.mapboxId,
+        placeId: suggestion.placeId,
         sessionToken: _sessionToken,
       );
       if (!mounted) return;
@@ -177,7 +177,7 @@ class _SignupAddressPickerState extends State<SignupAddressPicker> {
     FocusScope.of(context).unfocus();
   }
 
-  /// Builds our [Address] from a Mapbox place. Delegates to the shared
+  /// Builds our [Address] from a provider place. Delegates to the shared
   /// [addressFromRetrievedPlace] so the `fullAddress` always carries the WHOLE
   /// address (street + postal + city + country), never just the street.
   Address _addressFromPlace(RetrievedPlace place) =>
@@ -292,7 +292,7 @@ class _SignupAddressPickerState extends State<SignupAddressPicker> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Static Mapbox preview centered on the picked coordinate.
+                  // Static Google Maps preview centered on the picked coordinate.
                   // Falls back to the icon placeholder while loading / on error
                   // (or when a coordinate is somehow missing).
                   if (widget.value!.coordinate != null)
@@ -353,16 +353,23 @@ class _SignupAddressPickerState extends State<SignupAddressPicker> {
     );
   }
 
-  /// Builds a Mapbox Static Images API URL: a [width]×140 map centered on
+  /// Builds a Google Static Maps URL: a [width]×140 map centered on
   /// [c] with a brand-green pin. Style follows light/dark mode.
   String _staticMapUrl(MapPoint c, {required bool dark, int width = 640}) {
-    final style = dark ? 'dark-v11' : 'streets-v12';
-    const pin = '00c263'; // BrandColors.primary
     const zoom = 15;
-    return 'https://api.mapbox.com/styles/v1/mapbox/$style/static/'
-        'pin-l+$pin(${c.lng},${c.lat})/'
-        '${c.lng},${c.lat},$zoom/${width}x280@2x'
-        '?access_token=${MapboxConfig.publicToken}';
+    final style = dark
+        ? '&style=element:geometry|color:0x242f3e'
+            '&style=element:labels.text.fill|color:0x746855'
+            '&style=element:labels.text.stroke|color:0x242f3e'
+        : '';
+    return 'https://maps.googleapis.com/maps/api/staticmap'
+        '?center=${c.lat},${c.lng}'
+        '&zoom=$zoom'
+        '&size=${width}x280'
+        '&scale=2'
+        '&markers=color:green%7C${c.lat},${c.lng}'
+        '$style'
+        '&key=${GoogleMapsConfig.apiKey}';
   }
 
   /// Fallback tile shown while the static map loads or if it fails — the

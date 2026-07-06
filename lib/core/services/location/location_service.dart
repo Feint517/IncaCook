@@ -7,8 +7,8 @@ class LocationService extends GetxService {
   static LocationService get instance => Get.find();
 
   final Rx<Position?> currentPosition = Rx<Position?>(null);
-  final Rx<LocationPermission> permission = LocationPermission.unableToDetermine
-      .obs;
+  final Rx<LocationPermission> permission =
+      LocationPermission.unableToDetermine.obs;
 
   /// Human-readable "City, Country" for the current location, reverse-geocoded
   /// by whoever resolves the position (e.g. the client home). Null until known
@@ -33,7 +33,9 @@ class LocationService extends GetxService {
   //* route from" — for live tracking, use [start] and read [currentPosition].
   Future<Position?> getCurrent() async {
     if (!await ensurePermission()) return null;
-    return Geolocator.getCurrentPosition();
+    final pos = await Geolocator.getCurrentPosition();
+    currentPosition.value = pos;
+    return pos;
   }
 
   //* Start streaming the user's position. Safe to call repeatedly — no-ops if

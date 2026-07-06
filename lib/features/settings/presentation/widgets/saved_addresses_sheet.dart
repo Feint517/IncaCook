@@ -1,14 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:iconsax/iconsax.dart';
 
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
+import 'package:incacook/core/models/address.dart';
 import 'package:incacook/core/models/auth/address_record.dart';
 import 'package:incacook/core/network/api_response.dart';
+import 'package:incacook/core/services/map/models/map_route.dart';
 import 'package:incacook/core/utils/popups/blurred_modal_sheet.dart';
 import 'package:incacook/core/utils/theme/theme_extensions.dart';
 import 'package:incacook/core/widgets/effects/frosted_surface.dart';
+import 'package:incacook/core/widgets/map/google_map_address_picker.dart';
 import 'package:incacook/core/widgets/misc/drag_handle.dart';
 import 'package:incacook/features/authentication/data/models/requests/upsert_address_request.dart';
 import 'package:incacook/features/authentication/data/repositories/users_repository.dart';
@@ -328,8 +333,8 @@ class _ErrorState extends StatelessWidget {
 }
 
 /// Add / edit form for one address. Pops `true` after a successful save so
-/// the list refreshes. Self-contained (text fields only) so it doesn't
-/// depend on the signup-only address autocomplete.
+/// the list refreshes. Uses [GoogleMapAddressPicker] for Google Places
+/// autocomplete with map preview.
 class _AddressEditorSheet extends StatefulWidget {
   const _AddressEditorSheet({this.existing});
 
@@ -348,11 +353,9 @@ class _AddressEditorSheet extends StatefulWidget {
 }
 
 class _AddressEditorSheetState extends State<_AddressEditorSheet> {
-  late final TextEditingController _fullAddress;
-  late final TextEditingController _postalCode;
-  late final TextEditingController _city;
   late final TextEditingController _label;
   AddressType _type = AddressType.home;
+  Address? _selectedAddress;
   bool _saving = false;
   String? _error;
 
@@ -360,37 +363,42 @@ class _AddressEditorSheetState extends State<_AddressEditorSheet> {
   void initState() {
     super.initState();
     final e = widget.existing;
-    _fullAddress = TextEditingController(text: e?.fullAddress ?? '');
-    _postalCode = TextEditingController(text: e?.postalCode ?? '');
-    _city = TextEditingController(text: e?.city ?? '');
     _label = TextEditingController(text: e?.customLabel ?? '');
     _type = e?.type ?? AddressType.home;
+    // Initialize with existing address if editing.
+    if (e != null) {
+      _selectedAddress = Address(
+        fullAddress: e.fullAddress,
+        city: e.city,
+        postalCode: e.postalCode,
+        coordinate: e.lat != null && e.lng != null
+            ? MapPoint(lat: e.lat!, lng: e.lng!)
+            : null,
+      );
+    }
   }
 
   @override
   void dispose() {
-    _fullAddress.dispose();
-    _postalCode.dispose();
-    _city.dispose();
     _label.dispose();
     super.dispose();
   }
 
-  bool get _valid =>
-      _fullAddress.text.trim().isNotEmpty &&
-      _postalCode.text.trim().isNotEmpty &&
-      _city.text.trim().isNotEmpty;
+  bool get _valid => _selectedAddress != null;
 
   Future<void> _save() async {
     if (_saving || !_valid) return;
+    final addr = _selectedAddress!;
     setState(() {
       _saving = true;
       _error = null;
     });
     final req = UpsertAddressRequest(
-      fullAddress: _fullAddress.text.trim(),
-      city: _city.text.trim(),
-      postalCode: _postalCode.text.trim(),
+      fullAddress: addr.fullAddress,
+      city: addr.city,
+      postalCode: addr.postalCode,
+      lat: addr.coordinate?.lat,
+      lng: addr.coordinate?.lng,
       type: _type,
       customLabel: _label.text.trim().isEmpty ? null : _label.text.trim(),
     );
@@ -436,6 +444,7 @@ class _AddressEditorSheetState extends State<_AddressEditorSheet> {
               style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
             const Gap(AppSizes.md),
+            // Address type selector (home/work/other).
             Wrap(
               spacing: AppSizes.sm,
               children: AddressType.values.map((t) {
@@ -449,37 +458,14 @@ class _AddressEditorSheetState extends State<_AddressEditorSheet> {
               }).toList(),
             ),
             const Gap(AppSizes.md),
-            TextField(
-              controller: _fullAddress,
-              decoration: const InputDecoration(
-                labelText: 'Adresse',
-                hintText: '12 rue Saint-Sabin',
-              ),
-              onChanged: (_) => setState(() {}),
+            // Google Places autocomplete with map preview.
+            GoogleMapAddressPicker(
+              value: _selectedAddress,
+              onChanged: (address) => setState(() => _selectedAddress = address),
+              hint: 'Rechercher une adresse',
             ),
             const Gap(AppSizes.sm),
-            Row(
-              children: [
-                SizedBox(
-                  width: 120,
-                  child: TextField(
-                    controller: _postalCode,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Code postal'),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
-                const Gap(AppSizes.sm),
-                Expanded(
-                  child: TextField(
-                    controller: _city,
-                    decoration: const InputDecoration(labelText: 'Ville'),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
-              ],
-            ),
-            const Gap(AppSizes.sm),
+            // Optional custom label (e.g., "Chez ma sœur").
             TextField(
               controller: _label,
               decoration: const InputDecoration(

@@ -7,8 +7,10 @@ import 'package:incacook/core/common/widgets/appbar/appbar.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/models/address.dart';
+import 'package:incacook/core/models/auth/address_record.dart';
 import 'package:incacook/core/utils/popups/blurred_modal_sheet.dart';
 import 'package:incacook/core/models/delivery_details.dart';
+import 'package:incacook/features/authentication/data/repositories/users_repository.dart';
 import 'package:incacook/features/orders/presentation/widgets/address_card.dart';
 import 'package:incacook/features/orders/presentation/widgets/address_search_sheet.dart';
 
@@ -20,34 +22,9 @@ class DeliveryAddressScreen extends StatefulWidget {
 }
 
 class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
-  //? demo addresses — swap for CRUD against a real source later
-  final List<Address> _addresses = [
-    const Address(
-      id: 'home',
-      type: SavedAddressType.home,
-      fullAddress: '12 Rue de la Roquette',
-      city: 'Paris',
-      postalCode: '75011',
-    ),
-    const Address(
-      id: 'work',
-      type: SavedAddressType.work,
-      fullAddress: '45 Avenue de la République',
-      city: 'Paris',
-      postalCode: '75011',
-    ),
-    const Address(
-      id: 'family',
-      type: SavedAddressType.other,
-      customLabel: 'Famille',
-      fullAddress: '50 Rue de Saint-Germain',
-      city: 'Rueil-Malmaison',
-      postalCode: '92500',
-      inRange: false,
-    ),
-  ];
-
-  late String? _selectedId = _addresses.isNotEmpty ? _addresses.first.id : null;
+  final List<Address> _addresses = [];
+  bool _loading = true;
+  String? _selectedId;
   final TextEditingController _instructionsController = TextEditingController();
   final DeliveryTiming _timing = DeliveryTiming.asap;
   final DateTime _scheduledAt = DateTime.now().add(const Duration(minutes: 45));
@@ -56,7 +33,47 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
   void initState() {
     super.initState();
     _instructionsController.addListener(() => setState(() {}));
+    _loadAddresses();
   }
+
+  /// Loads the buyer's real saved addresses (`GET /v1/users/me/addresses`).
+  /// On failure we fall back to the empty state so they can add one.
+  Future<void> _loadAddresses() async {
+    try {
+      final records = await UsersRepository.instance.listAddresses();
+      if (!mounted) return;
+      setState(() {
+        _addresses
+          ..clear()
+          ..addAll(records.map(_addressFromRecord));
+        _selectedId = _addresses.isNotEmpty ? _addresses.first.id : null;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+    }
+  }
+
+  /// Maps the wire [AddressRecord] to the UI [Address]. `inRange` defaults to
+  /// true (the seller-radius check isn't computed server-side yet).
+  static Address _addressFromRecord(AddressRecord r) => Address(
+        id: r.id,
+        type: switch (r.type) {
+          AddressType.home => SavedAddressType.home,
+          AddressType.work => SavedAddressType.work,
+          AddressType.other => SavedAddressType.other,
+          null => null,
+        },
+        customLabel: r.customLabel,
+        fullAddress: r.fullAddress,
+        city: r.city,
+        postalCode: r.postalCode,
+        apartment: r.apartment,
+        floor: r.floor,
+        digicode: r.digicode,
+        deliveryNotes: r.deliveryNotes,
+      );
 
   @override
   void dispose() {
@@ -127,8 +144,13 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (_addresses.isEmpty)
-                    const _EmptyAddressState()
+                  if (_loading)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 48),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (_addresses.isEmpty)
+                    _EmptyAddressState(onAdd: _openAddressSearch)
                   else ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -172,7 +194,9 @@ class _DeliveryAddressScreenState extends State<DeliveryAddressScreen> {
 }
 
 class _EmptyAddressState extends StatelessWidget {
-  const _EmptyAddressState();
+  const _EmptyAddressState({required this.onAdd});
+
+  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -206,7 +230,7 @@ class _EmptyAddressState extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: onAdd,
               child: const Text(AppTexts.addressAddFirst),
             ),
           ),

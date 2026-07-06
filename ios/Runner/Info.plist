@@ -4,6 +4,14 @@
 <dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!-- Public Google Maps Platform mobile key. Read synchronously by AppDelegate
+	     (GMSServices.provideAPIKey) so the Maps SDK is authorized before any map
+	     view exists — this is what stops the address-picker map from rendering as
+	     a blank grey box. Restrict this key by iOS bundle id + API in Google Cloud;
+	     it must be a mobile/web-service key, never a backend-only key. Same value
+	     as GOOGLE_MAPS_API_KEY in .vscode/dart_defines.json. -->
+	<key>GMSApiKey</key>
+	<string>AIzaSyCQiTn7eq3B8jwb4rM8DGJ6WY8uhitNVhI</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -28,9 +36,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
-		<!-- Supabase OAuth callback (incacook://auth/callback) for the hosted
-		     Google + Facebook sign-in. supabase_flutter's deep-link observer
-		     catches this scheme to complete the session after login. -->
+		<!-- Supabase OAuth callback (incacook://auth/callback) for hosted
+		     Facebook sign-in and other Supabase callback flows. -->
 		<dict>
 			<key>CFBundleURLName</key>
 			<string>com.incacook.app.oauth</string>
@@ -39,7 +46,21 @@
 				<string>incacook</string>
 			</array>
 		</dict>
+		<!-- Native Google Sign-In callback for the iOS OAuth client ID. -->
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.googleusercontent.apps.623882469274-h4uol69lflf0r39n8eg6t9lr2tpnsp6m</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.623882469274-h4uol69lflf0r39n8eg6t9lr2tpnsp6m</string>
+			</array>
+		</dict>
 	</array>
+	<!-- Keep custom-scheme callbacks out of Flutter's Navigator. app_links,
+	     supabase_flutter, and PayoutOnboardingService consume incacook://...
+	     callbacks out-of-band; auto-routing them makes GetX visit /_unknown. -->
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -77,6 +98,10 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

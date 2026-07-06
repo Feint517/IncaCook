@@ -1,8 +1,8 @@
-import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:incacook/core/constants/image_strings.dart';
 import 'package:incacook/core/enums/food_enums.dart';
 import 'package:incacook/core/enums/order_enums.dart';
 import 'package:incacook/core/models/food_listing.dart';
+import 'package:incacook/core/services/map/models/map_route.dart';
 import 'package:incacook/features/map/domain/map_entry.dart';
 
 class MapMockData {
@@ -14,7 +14,7 @@ class MapMockData {
     final now = DateTime.now();
     return [
       MapEntry(
-        position: Position(2.3530, 48.8580),
+        position: const MapPoint(lng: 2.3530, lat: 48.8580),
         listing: FoodListing(
           id: 'm1',
           name: 'Tajine poulet olives',
@@ -33,7 +33,7 @@ class MapMockData {
         ),
       ),
       MapEntry(
-        position: Position(2.3490, 48.8610),
+        position: const MapPoint(lng: 2.3490, lat: 48.8610),
         listing: FoodListing(
           id: 'm2',
           name: 'Lasagne maison',
@@ -51,7 +51,7 @@ class MapMockData {
         ),
       ),
       MapEntry(
-        position: Position(2.3580, 48.8550),
+        position: const MapPoint(lng: 2.3580, lat: 48.8550),
         listing: FoodListing(
           id: 'm3',
           name: 'Buddha bowl végé',
@@ -70,7 +70,7 @@ class MapMockData {
         ),
       ),
       MapEntry(
-        position: Position(2.3460, 48.8540),
+        position: const MapPoint(lng: 2.3460, lat: 48.8540),
         listing: FoodListing(
           id: 'm4',
           name: 'Soupe de légumes',
@@ -87,7 +87,7 @@ class MapMockData {
         ),
       ),
       MapEntry(
-        position: Position(2.3560, 48.8620),
+        position: const MapPoint(lng: 2.3560, lat: 48.8620),
         listing: FoodListing(
           id: 'm5',
           name: 'Quiche lorraine',
@@ -104,7 +104,7 @@ class MapMockData {
         ),
       ),
       MapEntry(
-        position: Position(2.3440, 48.8595),
+        position: const MapPoint(lng: 2.3440, lat: 48.8595),
         listing: FoodListing(
           id: 'm6',
           name: 'Tarte aux pommes',
