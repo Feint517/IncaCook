@@ -32,10 +32,11 @@ class CartFooter extends StatelessWidget {
         children: [
           CartSellerCard(listing: CartController.instance.sellerReference!),
           const Gap(AppSizes.md + 4),
-          OrderSummaryBlock(
-            subtotal: CartController.instance.subtotal,
-            shipping: AppTexts.cartShippingFee,
-          ),
+          // No `shipping` here on purpose: delivery vs pickup (and its fee) is
+          // chosen AFTER "Continuer le paiement", so the cart shows a deferred
+          // hint instead of a made-up delivery fee/total (fixed the "livraison
+          // par défaut" bug). The real breakdown is on the summary screen.
+          OrderSummaryBlock(subtotal: CartController.instance.subtotal),
           const Gap(AppSizes.md),
           SizedBox(
             width: double.infinity,

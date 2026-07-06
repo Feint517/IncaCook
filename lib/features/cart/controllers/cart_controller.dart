@@ -1,7 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:incacook/core/models/cart_item.dart';
 import 'package:incacook/core/models/food_listing.dart';
+import 'package:incacook/core/utils/log.dart';
 
 /// Session-scoped cart state. Items are locked to a single seller: trying to
 /// add from another seller surfaces a conflict that the caller resolves via
@@ -85,10 +85,10 @@ class CartController extends GetxController {
     if (index == -1) return;
     final item = items[index];
     if (item.quantity <= 1) {
-      debugPrint('[Cart] remove item=$lineId');
+      logInfo('[Cart] remove item=$lineId');
       items.removeAt(index);
     } else {
-      debugPrint('[Cart] decrease item=$lineId oldQty=${item.quantity}');
+      logInfo('[Cart] decrease item=$lineId oldQty=${item.quantity}');
       items[index] = item.copyWith(quantity: item.quantity - 1);
     }
     items.refresh();
@@ -96,7 +96,7 @@ class CartController extends GetxController {
   }
 
   void removeItem(String lineId) {
-    debugPrint('[Cart] remove item=$lineId');
+    logInfo('[Cart] remove item=$lineId');
     items.removeWhere((i) => i.id == lineId);
     items.refresh();
     _logTotals();
@@ -106,7 +106,7 @@ class CartController extends GetxController {
   /// the subtotal here — delivery + service fees are added downstream at the
   /// order-summary / payment step, not in this session cart.
   void _logTotals() {
-    debugPrint(
+    logInfo(
       '[Cart] count=$itemCount subtotal=${subtotal.toStringAsFixed(2)} '
       'total=${subtotal.toStringAsFixed(2)}',
     );
