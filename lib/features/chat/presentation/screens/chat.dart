@@ -144,12 +144,16 @@ class _ChatScreenState extends State<ChatScreen> {
     if (trimmed.isEmpty) return;
     setState(() => _sending = true);
     try {
-      // Persist + optimistically render. The socket echo deduplicates
-      // against the message id we already inserted.
+      // Persist + optimistically render. The socket echo can beat the
+      // HTTP response back (WebSocket push vs REST round-trip), so guard
+      // the optimistic add by id — otherwise the echo appends the message
+      // first and this line duplicates it. Both paths are now idempotent.
       final sent =
           await MessagesRepository.instance.send(widget.conversationId, trimmed);
       if (!mounted) return;
-      setState(() => _messages.add(sent));
+      setState(() {
+        if (_messages.every((m) => m.id != sent.id)) _messages.add(sent);
+      });
       _scrollToBottom();
     } catch (e) {
       if (mounted) {
