@@ -1,0 +1,25 @@
+name: incacook
+
+packages:
+  - .
+
+scripts:
+  "build:android:apk":
+    description: Build the Android release APK.
+    run: flutter build apk --release --dart-define-from-file=.vscode/dart_defines.json
+
+  "build:android:aab":
+    description: Build the Android release App Bundle for Play Store upload.
+    run: flutter build appbundle --release --dart-define-from-file=.vscode/dart_defines.json
+
+  "build:android":
+    description: Build both Android release artifacts, APK and AAB.
+    run: melos run build:android:apk && melos run build:android:aab
+
+  "build:ios":
+    description: Build the iOS release app without exporting an IPA.
+    run: flutter build ios --release --dart-define-from-file=.vscode/dart_defines.json
+
+  "build:ios:ipa":
+    description: Build the signed iOS release IPA for distribution.
+    run: flutter build ipa --release --dart-define-from-file=.vscode/dart_defines.json
