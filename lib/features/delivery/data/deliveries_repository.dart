@@ -123,6 +123,23 @@ class DeliveriesRepository extends GetxService {
     return result.data;
   }
 
+  /// `GET /v1/drivers/me/stats/today`. Today's completed-delivery count and
+  /// summed payout (earnings, in cents). Online-time is not server-tracked —
+  /// the driver dashboard measures it on the device.
+  Future<({int earningsCents, int deliveriesCount})> todayStats() async {
+    final result = await _api.get<({int earningsCents, int deliveriesCount})>(
+      '${ApiConstants.apiPrefix}/drivers/me/stats/today',
+      decoder: (json) {
+        final m = json! as Map<String, dynamic>;
+        return (
+          earningsCents: (m['earningsCents'] as num?)?.toInt() ?? 0,
+          deliveriesCount: (m['deliveriesCount'] as num?)?.toInt() ?? 0,
+        );
+      },
+    );
+    return result.data;
+  }
+
   /// `POST /v1/drivers/me/deliveries/:id/claim`. Atomic — returns 409
   /// if another driver claimed it first.
   Future<void> claim(String deliveryId) async {

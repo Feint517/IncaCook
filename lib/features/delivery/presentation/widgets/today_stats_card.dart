@@ -1,29 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/widgets/effects/frosted_surface.dart';
-import 'package:incacook/features/delivery/data/delivery_driver_mock_data.dart';
+import 'package:incacook/features/delivery/controllers/delivery_driver_controller.dart';
 
 /// Today summary card — earnings as the hero number, with online time
-/// and completed deliveries as secondary stat tiles below.
+/// and completed deliveries as secondary stat tiles below. Reads live figures
+/// from [DeliveryDriverController]: earnings + deliveries from the backend,
+/// online-time measured on-device. Shows zeros until the first load resolves.
 class TodayStatsCard extends StatelessWidget {
   const TodayStatsCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final stats = DeliveryDriverMockData.todayStats();
+    final controller = DeliveryDriverController.instance;
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final hours = stats.onlineTime.inHours;
-    final minutes = stats.onlineTime.inMinutes.remainder(60);
-    final onlineLabel = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
-    final earnings = '€${stats.earnings.toStringAsFixed(2)}';
+    return Obx(() {
+      final stats = controller.todayStats.value;
+      final onlineTime = stats?.onlineTime ?? Duration.zero;
+      final hours = onlineTime.inHours;
+      final minutes = onlineTime.inMinutes.remainder(60);
+      final onlineLabel = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
+      final earnings = '€${(stats?.earnings ?? 0).toStringAsFixed(2)}';
+      final rides = stats?.rides ?? 0;
 
-    return Padding(
+      return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
       child: Container(
         decoration: BoxDecoration(
@@ -75,7 +82,7 @@ class TodayStatsCard extends StatelessWidget {
                   Expanded(
                     child: _StatTile(
                       icon: Iconsax.driver_2,
-                      value: stats.rides.toString().padLeft(2, '0'),
+                      value: rides.toString().padLeft(2, '0'),
                       label: AppTexts.deliveryDashboardDeliveriesLabel
                           .toUpperCase(),
                     ),
@@ -85,8 +92,9 @@ class TodayStatsCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+        ),
+      );
+    });
   }
 }
 

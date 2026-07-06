@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/controllers/user_controller.dart';
 import 'package:incacook/core/network/api_response.dart';
+import 'package:incacook/core/services/location/location_service.dart';
 import 'package:incacook/core/services/map/models/map_route.dart';
-import 'package:incacook/core/utils/theme/theme_extensions.dart';
 import 'package:incacook/features/delivery/controllers/delivery_driver_controller.dart';
 import 'package:incacook/features/delivery/controllers/delivery_route_controller.dart';
 import 'package:incacook/features/delivery/controllers/incoming_order_controller.dart';
@@ -17,10 +17,10 @@ import 'package:incacook/features/delivery/data/deliveries_repository.dart';
 import 'package:incacook/features/delivery/presentation/widgets/delivery_bottom_sheet.dart';
 import 'package:incacook/features/delivery/presentation/widgets/delivery_top_buttons.dart';
 import 'package:incacook/features/delivery/presentation/widgets/incoming_order_sheet.dart';
-import 'package:incacook/features/delivery/utils/delivery_map_painter.dart';
 import 'package:incacook/core/models/order_detail.dart';
 import 'package:incacook/features/payments/data/payout_onboarding_service.dart';
 import 'package:incacook/features/payments/presentation/widgets/payout_setup_banner.dart';
+import 'package:incacook/core/utils/log.dart';
 
 class DeliveryHomeScreen extends StatefulWidget {
   const DeliveryHomeScreen({super.key});
@@ -31,23 +31,32 @@ class DeliveryHomeScreen extends StatefulWidget {
 
 class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
   late final DeliveryRouteController _route;
+  late final DeliveryDriverController _driver;
   late final IncomingOrderController _incoming;
-  DeliveryMapPainter? _painter;
+  GoogleMapController? _map;
   Worker? _routeWorker;
   Worker? _incomingWorker;
   Worker? _jobWorker;
+  Worker? _onlineWorker;
+  Worker? _onlineErrorWorker;
   bool _modalOpen = false;
+  Set<Marker> _markers = const {};
+  Set<Marker> _onlineMarkers = const {};
+  Set<Polyline> _polylines = const {};
 
   @override
   void initState() {
     super.initState();
     _route = Get.put(DeliveryRouteController());
-    Get.put(DeliveryDriverController());
+    _driver = Get.put(DeliveryDriverController());
     _incoming = Get.put(IncomingOrderController());
     _incomingWorker = ever<OrderDetail?>(
       _incoming.pendingOrder,
       _onPendingOrderChanged,
     );
+    _onlineWorker = ever<bool>(_driver.isOnline, _onOnlineChanged);
+    _onlineErrorWorker =
+        ever<String?>(_driver.lastError, _onOnlineErrorChanged);
   }
 
   @override
@@ -55,7 +64,29 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
     _routeWorker?.dispose();
     _incomingWorker?.dispose();
     _jobWorker?.dispose();
+    _onlineWorker?.dispose();
+    _onlineErrorWorker?.dispose();
     super.dispose();
+  }
+
+  Future<void> _onOnlineChanged(bool online) async {
+    if (!online) {
+      if (!mounted) return;
+      setState(() => _onlineMarkers = const {});
+      return;
+    }
+    await _refreshOnlineMarker();
+  }
+
+  void _onOnlineErrorChanged(String? message) {
+    if (message == null || message.isEmpty || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+      ),
+    );
   }
 
   Future<void> _onPendingOrderChanged(OrderDetail? order) async {
@@ -83,9 +114,9 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
           _incoming.resolve(accepted: true);
         } catch (e) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(_claimErrorMessage(e))),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(_claimErrorMessage(e))));
           }
           _incoming.resolve(accepted: false);
         }
@@ -104,7 +135,9 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
     if (error is ApiFailure) {
       final isPayout = error.code == 'INCACOOK_PAYOUT_ONBOARDING_INCOMPLETE' ||
           (error.statusCode == 403 &&
-              error.message.toLowerCase().contains('stripe connect onboarding'));
+              error.message.toLowerCase().contains(
+                    'stripe connect onboarding',
+                  ));
       if (isPayout) return AppTexts.incomingOrderPayoutRequired;
     }
     return AppTexts.incomingOrderClaimFailed;
@@ -123,20 +156,8 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
     }
   }
 
-  Future<void> _onMapCreated(MapboxMap map) async {
-    await DeliveryMapPainter.configure(map);
-
-    final polylineManager = await map.annotations
-        .createPolylineAnnotationManager();
-    final circleManager = await map.annotations.createCircleAnnotationManager();
-    final pointManager = await map.annotations.createPointAnnotationManager();
-    _painter = DeliveryMapPainter(
-      map: map,
-      polylineManager: polylineManager,
-      circleManager: circleManager,
-      pointManager: pointManager,
-    );
-
+  Future<void> _onMapCreated(GoogleMapController map) async {
+    _map = map;
     _routeWorker = ever<MapRoute?>(_route.route, _onRouteChanged);
     _jobWorker = ever<OrderDetail?>(_route.currentJob, _onJobChanged);
 
@@ -147,6 +168,30 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
       final existing = _route.route.value;
       if (existing != null) unawaited(_onRouteChanged(existing));
     }
+    if (_driver.isOnline.value) unawaited(_refreshOnlineMarker());
+  }
+
+  Future<void> _refreshOnlineMarker() async {
+    var pos = _route.currentDriverPosition;
+    if (pos == null) {
+      final current = await LocationService.instance.getCurrent();
+      if (current != null) {
+        pos = MapPoint(lat: current.latitude, lng: current.longitude);
+      }
+    }
+    if (pos == null || !mounted) return;
+    final onlinePosition = pos;
+    setState(() {
+      _onlineMarkers = {
+        Marker(
+          markerId: const MarkerId('driver-online'),
+          position: LatLng(onlinePosition.lat, onlinePosition.lng),
+          infoWindow: const InfoWindow(title: 'Vous etes en ligne'),
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        ),
+      };
+    });
   }
 
   /// Job accepted → drop the seller + client markers immediately (so the
@@ -154,37 +199,132 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
   /// Job cleared → wipe the whole overlay.
   Future<void> _onJobChanged(OrderDetail? job) async {
     if (job == null) {
-      await _painter?.reset();
+      if (mounted) {
+        setState(() {
+          _markers = const {};
+          _polylines = const {};
+        });
+      }
       return;
     }
     final pickup = _route.pickup;
     final dropoff = _route.dropoff;
     final driver = _route.currentDriverPosition;
-    String fmt(MapPoint? p) =>
-        p == null ? 'MISSING' : '(${p.lat.toStringAsFixed(5)},${p.lng.toStringAsFixed(5)})';
+    String fmt(MapPoint? p) => p == null
+        ? 'MISSING'
+        : '(${p.lat.toStringAsFixed(5)},${p.lng.toStringAsFixed(5)})';
     // Driver's own position shows as the native location puck (configure()),
     // so it isn't a circle marker — log it for completeness.
-    debugPrint(
+    logInfo(
       '[TrackingMap](driver) pickup=${fmt(pickup)}, dropoff=${fmt(dropoff)}, '
       'driver=${driver == null ? "puck-pending" : fmt(driver)}',
     );
     if (pickup == null || dropoff == null) {
-      debugPrint('[TrackingMap](driver) stop coords missing — markers not drawn '
-          '(seller/client not geocoded).');
+      logWarning(
+        '[TrackingMap](driver) stop coords missing — markers not drawn '
+        '(seller/client not geocoded).',
+      );
       return;
     }
-    await _painter?.showStops(pickup: pickup, dropoff: dropoff);
+    if (!mounted) return;
+    setState(() {
+      _markers = {
+        Marker(
+          markerId: const MarkerId('pickup'),
+          position: LatLng(pickup.lat, pickup.lng),
+          infoWindow: const InfoWindow(title: 'Vendeur'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueOrange,
+          ),
+        ),
+        Marker(
+          markerId: const MarkerId('dropoff'),
+          position: LatLng(dropoff.lat, dropoff.lng),
+          infoWindow: const InfoWindow(title: 'Client'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        ),
+      };
+    });
+    await _framePoints([pickup, dropoff]);
   }
 
   Future<void> _onRouteChanged(MapRoute? route) async {
     //? Null route = job cleared; the job worker handles the reset.
     if (route == null) return;
-    await _painter?.showRoute(route);
+    if (!mounted) return;
+    setState(() {
+      _polylines = {
+        Polyline(
+          polylineId: const PolylineId('active-route'),
+          points: route.points.map((p) => LatLng(p.lat, p.lng)).toList(),
+          color: const Color(0xFF0066FF),
+          width: 6,
+        ),
+      };
+    });
+    await _framePoints(route.points);
   }
 
   Future<void> _centerOnDriver() async {
-    final pos = _route.currentDriverPosition;
-    if (pos != null) await _painter?.flyToDriver(pos);
+    final map = _map;
+    if (map == null) return;
+
+    var pos = _route.currentDriverPosition;
+    if (pos == null) {
+      final current = await LocationService.instance.getCurrent();
+      if (current != null) {
+        pos = MapPoint(lat: current.latitude, lng: current.longitude);
+      }
+    }
+
+    if (pos == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Activez la localisation pour centrer la carte.'),
+        ),
+      );
+      return;
+    }
+
+    await map.animateCamera(
+      CameraUpdate.newLatLngZoom(LatLng(pos.lat, pos.lng), 14),
+    );
+  }
+
+  Future<void> _framePoints(List<MapPoint> points) async {
+    final map = _map;
+    if (map == null || points.isEmpty) return;
+    if (points.length == 1) {
+      await map.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(points.first.lat, points.first.lng),
+          14,
+        ),
+      );
+      return;
+    }
+
+    var minLat = points.first.lat;
+    var maxLat = points.first.lat;
+    var minLng = points.first.lng;
+    var maxLng = points.first.lng;
+    for (final point in points) {
+      if (point.lat < minLat) minLat = point.lat;
+      if (point.lat > maxLat) maxLat = point.lat;
+      if (point.lng < minLng) minLng = point.lng;
+      if (point.lng > maxLng) maxLng = point.lng;
+    }
+
+    await map.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          southwest: LatLng(minLat, minLng),
+          northeast: LatLng(maxLat, maxLng),
+        ),
+        80,
+      ),
+    );
   }
 
   @override
@@ -195,13 +335,30 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          MapWidget(
-            styleUri: context.isDark ? MapboxStyles.DARK : MapboxStyles.LIGHT,
-            cameraOptions: CameraOptions(
-              center: Point(coordinates: Position(2.3522, 48.8566)),
-              zoom: 11.0,
+          GoogleMap(
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(48.8566, 2.3522),
+              zoom: 11,
             ),
+            markers: {..._markers, ..._onlineMarkers},
+            polylines: _polylines,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            mapToolbarEnabled: false,
             onMapCreated: _onMapCreated,
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Obx(
+                () => _driver.isOnline.value
+                    ? const _OnlineConfirmedPill()
+                    : const SizedBox.shrink(),
+              ),
+            ),
           ),
           DeliveryTopButtons(onGpsTap: _centerOnDriver),
           //* Payout setup nudge — sits just under the top buttons until the
@@ -233,5 +390,57 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
       ),
     );
   }
+}
 
+class _OnlineConfirmedPill extends StatelessWidget {
+  const _OnlineConfirmedPill();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 72),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.surface.withValues(alpha: 0.94),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: const Color(0xFF00A85A)),
+            boxShadow: [
+              BoxShadow(
+                color: scheme.shadow.withValues(alpha: 0.16),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF00A85A),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'En ligne - pret a recevoir des courses',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: scheme.onSurface,
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

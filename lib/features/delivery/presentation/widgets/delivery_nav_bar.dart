@@ -113,7 +113,7 @@ class _NavBarBackground extends StatelessWidget {
     return ValueListenableBuilder<double>(
       valueListenable: frostedness,
       builder: (context, t, _) {
-        //* No BackdropFilter — Mapbox is a PlatformView and Flutter can't
+        //* No BackdropFilter — Google Maps is a PlatformView and Flutter can't
         //* sample it for blur. Instead the surface stays opaque-ish and
         //* gives up a sliver of alpha when collapsed over the map, so the
         //* frostedness signal still reads as "lightening up" without
@@ -287,9 +287,9 @@ class _NavItem extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: color,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            ),
+                  color: color,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
           ),
         ],
       ),
