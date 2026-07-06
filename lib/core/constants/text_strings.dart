@@ -747,6 +747,16 @@ class AppTexts {
   static const String sellerOrdersMinutesSuffix = "min";
   static const String sellerOrdersEmptyMessage = "Aucune commande à afficher";
 
+  //* seller — order details sheet
+  static const String sellerOrderDetailsTitle = "Détails de la commande";
+  static const String sellerOrderDetailsItemsLabel = "Articles";
+  static const String sellerOrderDetailsFulfillmentLabel = "Mode";
+  static const String sellerOrderDetailsFulfillmentDelivery = "Livraison";
+  static const String sellerOrderDetailsFulfillmentPickup = "À récupérer sur place";
+  static const String sellerOrderDetailsBuyerTotalLabel = "Total payé par le client";
+  static const String sellerOrderDetailsEarningsLabel = "Vos revenus";
+  static const String sellerOrderDetailsNoItems = "Aucun article";
+
   //* seller — add product sheet
   static const String addProductSheetTitle = "Ajouter un plat";
   static const String addProductSectionPhotos = "Photos";

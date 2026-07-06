@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
 import 'package:incacook/core/constants/animations.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/network/api_response.dart';
+import 'package:incacook/core/services/notifications/order_notifications_service.dart';
 import 'package:incacook/core/services/realtime/chat_message.dart';
 import 'package:incacook/core/widgets/decor/decor_blob.dart';
 import 'package:incacook/core/widgets/qr/qr_display_sheet.dart';
@@ -13,6 +17,7 @@ import 'package:incacook/features/chat/presentation/chat_navigator.dart';
 import 'package:incacook/features/seller/data/seller_orders_repository.dart';
 import 'package:incacook/features/seller/domain/accepted_order.dart';
 import 'package:incacook/features/seller/presentation/widgets/accepted_order_card.dart';
+import 'package:incacook/features/seller/presentation/widgets/seller_order_details_sheet.dart';
 import 'package:incacook/features/seller/presentation/widgets/orders_filter_panel.dart';
 import 'package:incacook/features/seller/presentation/widgets/orders_tab_toggle.dart';
 
@@ -42,6 +47,7 @@ class _OrderRequestsScreenState extends State<OrderRequestsScreen> {
 
   late Future<List<SellerOrderSummary>> _ordersFuture;
   final Set<String> _busy = <String>{};
+  StreamSubscription<OrderNotificationEvent>? _notifSub;
 
   _OrderRequestsScreenState() : _statusFilter = null;
 
@@ -49,6 +55,23 @@ class _OrderRequestsScreenState extends State<OrderRequestsScreen> {
   void initState() {
     super.initState();
     _ordersFuture = _load();
+    _subscribeToOrderNotifications();
+  }
+
+  /// Notifications are the source of truth: when an order push lands
+  /// (foreground or opened from background), reload so the new/updated
+  /// order is reflected without any manual pull-to-refresh.
+  void _subscribeToOrderNotifications() {
+    if (!Get.isRegistered<OrderNotificationsService>()) return;
+    _notifSub = OrderNotificationsService.instance.events.listen((_) {
+      if (mounted) _refresh();
+    });
+  }
+
+  @override
+  void dispose() {
+    _notifSub?.cancel();
+    super.dispose();
   }
 
   Future<List<SellerOrderSummary>> _load() {
@@ -326,7 +349,11 @@ class _OrderRequestsScreenState extends State<OrderRequestsScreen> {
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  AcceptedOrderCard(order: adapter),
+                                  AcceptedOrderCard(
+                                    order: adapter,
+                                    onTap: () =>
+                                        showSellerOrderDetails(context, o),
+                                  ),
                                   // No driver accepted — awaiting the client's
                                   // decision (switch to pickup / cancel). The
                                   // seller is not penalised.

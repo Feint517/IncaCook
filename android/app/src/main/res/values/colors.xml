@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tint applied by the OS to the small notification icon + used as the
+         accent colour of FCM notifications. Matches BrandColors.primary. -->
+    <color name="notification_color">#FF00C263</color>
+</resources>

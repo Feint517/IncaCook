@@ -13,6 +13,7 @@ import 'package:incacook/core/config/stripe_config.dart';
 import 'package:incacook/core/config/supabase_config.dart';
 import 'package:incacook/core/constants/api_constants.dart';
 import 'package:incacook/core/services/notifications/device_tokens_repository.dart';
+import 'package:incacook/core/services/notifications/order_notifications_service.dart';
 import 'package:incacook/core/services/notifications/push_notification_service.dart';
 import 'package:incacook/core/controllers/theme_controller.dart';
 import 'package:incacook/core/controllers/user_controller.dart';
@@ -140,6 +141,13 @@ void main() async {
     permanent: true,
   );
   Get.put<PostAuthRouter>(PostAuthRouter(), permanent: true);
+  // Always available (even if Firebase/push init later fails or is off on
+  // iOS) so order screens can subscribe unconditionally. The push service is
+  // the only publisher; no events simply means no notification-driven refresh.
+  Get.put<OrderNotificationsService>(
+    OrderNotificationsService(),
+    permanent: true,
+  );
   mark('Get.put services');
 
   mark('runApp');

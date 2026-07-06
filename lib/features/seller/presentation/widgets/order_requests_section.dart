@@ -1,13 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
+import 'package:incacook/core/services/notifications/order_notifications_service.dart';
 import 'package:incacook/core/widgets/effects/frosted_surface.dart';
 import 'package:incacook/features/seller/data/seller_orders_repository.dart';
 import 'package:incacook/features/seller/domain/order_request.dart';
 import 'package:incacook/features/seller/presentation/widgets/order_request_card.dart';
+import 'package:incacook/features/seller/presentation/widgets/seller_order_details_sheet.dart';
 
 /// Home-screen "Demandes de commande" carousel. Lists fresh
 /// CONFIRMED orders awaiting the seller's accept/reject decision.
@@ -27,11 +32,26 @@ class _OrderRequestsSectionState extends State<OrderRequestsSection> {
 
   late Future<List<SellerOrderSummary>> _ordersFuture;
   final Set<String> _busy = <String>{};
+  StreamSubscription<OrderNotificationEvent>? _notifSub;
 
   @override
   void initState() {
     super.initState();
     _ordersFuture = _load();
+    // Notifications are the source of truth: a new paid order (order_paid)
+    // or any order/delivery update pushes the carousel to reload so the
+    // fresh CONFIRMED request appears immediately.
+    if (Get.isRegistered<OrderNotificationsService>()) {
+      _notifSub = OrderNotificationsService.instance.events.listen((_) {
+        if (mounted) _reload();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _notifSub?.cancel();
+    super.dispose();
   }
 
   Future<List<SellerOrderSummary>> _load() {
@@ -165,6 +185,8 @@ class _OrderRequestsSectionState extends State<OrderRequestsSection> {
                               order: _toCardModel(s),
                               onAccept: () => _accept(s.id),
                               onReject: () => _reject(s.id),
+                              onSeeMore: () =>
+                                  showSellerOrderDetails(context, s),
                             ),
                           ),
                         ),

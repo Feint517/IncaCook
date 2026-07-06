@@ -4,11 +4,20 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:incacook/core/common/widgets/navigation/navigation_controller.dart';
 import 'package:incacook/core/controllers/user_controller.dart';
 import 'package:incacook/core/services/notifications/device_tokens_repository.dart';
+import 'package:incacook/core/services/notifications/order_notifications_service.dart';
+import 'package:incacook/core/utils/theme/brand_colors.dart';
+import 'package:incacook/features/authentication/data/models/user_role.dart';
 import 'package:incacook/features/orders/presentation/screens/order_tracking.dart';
 import 'package:incacook/core/utils/log.dart';
 import 'package:incacook/firebase_options.dart';
+
+/// Index of the "Commandes" tab in `kSellerNavTabs` (Accueil=0, Commandes=1,
+/// Messages=2, Mes plats=3, Profil=4). Where a seller's orders live, so a
+/// tapped new-order notification lands there instead of the buyer screen.
+const int _kSellerOrdersTabIndex = 1;
 
 /// Background / terminated-state FCM handler. MUST be a top-level (or static)
 /// function and is registered from `main.dart` via
@@ -57,6 +66,12 @@ class PushNotificationService extends GetxService {
     importance: Importance.high,
   );
 
+  /// Monochrome status-bar small icon (white silhouette, transparent bg). A
+  /// full-colour launcher icon would render as a blank white square because
+  /// Android masks the small icon to its alpha channel. See
+  /// `res/drawable/ic_stat_notification.xml`.
+  static const String _smallIcon = '@drawable/ic_stat_notification';
+
   /// Platform tag sent to the backend. Keep this aligned with
   /// RegisterDeviceTokenDto on the API.
   static String get _platform => Platform.isIOS ? 'IOS' : 'ANDROID';
@@ -101,7 +116,9 @@ class PushNotificationService extends GetxService {
       FirebaseMessaging.onMessage.listen(_onForegroundMessage);
       FirebaseMessaging.onMessageOpenedApp.listen((message) {
         logInfo('[FCM] opened from notification: data=${message.data}');
-        // App was backgrounded → the route stack is live, safe to navigate.
+        // Notifications are the source of truth: publish first so any live
+        // order screen reloads, then navigate the route stack.
+        _emitOrderEvent(message);
         _routeForNotification(message);
       });
 
@@ -181,7 +198,7 @@ class PushNotificationService extends GetxService {
 
   Future<void> _initLocalNotifications() async {
     const initSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      android: AndroidInitializationSettings(_smallIcon),
       iOS: DarwinInitializationSettings(),
     );
     await _localNotifications.initialize(settings: initSettings);
@@ -192,18 +209,50 @@ class PushNotificationService extends GetxService {
         ?.createNotificationChannel(_channel);
   }
 
-  /// Safe tap-routing for business notifications. `order_*` and `delivery_*`
-  /// events all carry an `orderId` and map cleanly to the order-tracking
-  /// screen (which fetches the real order/delivery snapshot and degrades
-  /// gracefully). Any other type is a no-op (logging only). Never throws.
+  /// Publishes an `order_*` / `delivery_*` notification onto the app-wide
+  /// [OrderNotificationsService] bus so any live order screen (the seller's
+  /// carousel / Commandes tab) reloads. Fired for both foreground receipts
+  /// and background opens. Non-order types and payloads without an `orderId`
+  /// are ignored. Never throws.
+  void _emitOrderEvent(RemoteMessage message) {
+    try {
+      if (!Get.isRegistered<OrderNotificationsService>()) return;
+      final type = (message.data['type'] as String?) ?? '';
+      final orderId = (message.data['orderId'] as String?) ?? '';
+      if (orderId.isEmpty) return;
+      if (type.startsWith('order_') || type.startsWith('delivery_')) {
+        OrderNotificationsService.instance
+            .emit(OrderNotificationEvent(type: type, orderId: orderId));
+      }
+    } catch (e) {
+      logError('[FCM] order event emit failed: $e');
+    }
+  }
+
+  /// Safe tap-routing for business notifications. `order_*` / `delivery_*`
+  /// events carry an `orderId`. A **seller** owns these orders in the
+  /// "Commandes" tab of the seller shell, so we switch tabs there (the screen
+  /// reloads from the emitted event / its own init). A **buyer** goes to the
+  /// order-tracking screen (which fetches the snapshot and degrades
+  /// gracefully). Any other type / missing id is a no-op. Never throws.
   void _routeForNotification(RemoteMessage message) {
     try {
       final type = (message.data['type'] as String?) ?? '';
       final orderId = (message.data['orderId'] as String?) ?? '';
       if (orderId.isEmpty) return;
-      if (type.startsWith('order_') || type.startsWith('delivery_')) {
-        Get.to<void>(() => OrderTrackingScreen(orderId: orderId));
+      if (!type.startsWith('order_') && !type.startsWith('delivery_')) return;
+
+      // Seller: their orders are a tab, not the buyer tracking screen.
+      if (_userController.user.value?.role == UserRole.seller) {
+        if (Get.isRegistered<NavigationController>()) {
+          Get.find<NavigationController>().selectedIndex.value =
+              _kSellerOrdersTabIndex;
+        }
+        return;
       }
+
+      // Buyer (and driver order deep-links): open the order tracking screen.
+      Get.to<void>(() => OrderTrackingScreen(orderId: orderId));
     } catch (e) {
       logError('[FCM] route handling failed: $e');
     }
@@ -215,6 +264,9 @@ class PushNotificationService extends GetxService {
       '[FCM] foreground: title=${notification?.title} '
       'body=${notification?.body} data=${message.data}',
     );
+    // Source of truth: refresh any live order screen even while the app is
+    // open, regardless of whether a tray notification is drawn below.
+    _emitOrderEvent(message);
     if (notification == null) return;
     // Surface it ourselves — FCM won't draw a tray notification in foreground.
     _localNotifications.show(
@@ -228,6 +280,8 @@ class PushNotificationService extends GetxService {
           channelDescription: _channel.description,
           importance: Importance.high,
           priority: Priority.high,
+          icon: _smallIcon,
+          color: BrandColors.primary,
         ),
       ),
     );
