@@ -5,6 +5,7 @@ import 'package:incacook/core/common/styles/spacing_styles.dart';
 import 'package:incacook/core/common/widgets/appbar/appbar.dart';
 import 'package:incacook/core/common/widgets/login_signup/form_divider.dart';
 import 'package:incacook/core/common/widgets/login_signup/social_buttons.dart';
+import 'package:incacook/core/config/feature_flags.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/widgets/decor/decor_blob.dart';
@@ -55,7 +56,9 @@ class LoginScreen extends StatelessWidget {
                       return const SizedBox.shrink();
                     }
                     return Padding(
-                      padding: const EdgeInsets.only(top: AppSizes.spaceBtwItems),
+                      padding: const EdgeInsets.only(
+                        top: AppSizes.spaceBtwItems,
+                      ),
                       child: SizedBox(
                         width: double.infinity,
                         height: 52,
@@ -67,7 +70,9 @@ class LoginScreen extends StatelessWidget {
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : const Icon(Icons.fingerprint),
                           label: const Text(AppTexts.biometricLoginCta),
@@ -89,6 +94,7 @@ class LoginScreen extends StatelessWidget {
                       onFacebook: social.isAnySocialLoading
                           ? null
                           : social.signInWithFacebook,
+                      showFacebook: !FeatureFlags.hideFacebookSignIn,
                     ),
                   ),
                 ],

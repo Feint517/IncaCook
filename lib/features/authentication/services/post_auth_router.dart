@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:incacook/core/common/widgets/navigation/navigation_menu.dart';
 import 'package:incacook/core/controllers/user_controller.dart';
+import 'package:incacook/core/services/revenuecat_service.dart';
+import 'package:incacook/core/utils/log.dart';
+import 'package:incacook/features/authentication/data/repositories/sellers_repository.dart';
 import 'package:incacook/core/enums/food_enums.dart';
 import 'package:incacook/core/models/auth/onboarding_state.dart';
 import 'package:incacook/core/models/auth/user.dart';
@@ -91,6 +96,11 @@ class PostAuthRouter extends GetxService {
       if (Get.isRegistered<UserController>()) {
         UserController.instance.setUser(me);
       }
+      // Reconcile store→backend if a seller already owns the subscription
+      // on-device but the backend shows inactive (e.g. the post-purchase sync
+      // failed). Fire-and-forget — never blocks routing; the gate reacts when
+      // refreshFromServer lands.
+      unawaited(_reconcileSellerSubscription(me));
       if (onboarding.next == null) {
         return PostAuthRoleHome(onboarding.role);
       }
@@ -106,6 +116,43 @@ class PostAuthRouter extends GetxService {
     } on ApiFailure catch (e) {
       if (e.statusCode == 404) return const PostAuthNoProfile();
       rethrow;
+    }
+  }
+
+  /// If a seller already owns the RevenueCat subscription on this device but the
+  /// backend reports it inactive (a post-purchase sync that failed, webhook
+  /// lag), re-push the entitlement so the paywall gate unlocks on re-entry.
+  /// Best-effort and non-blocking; any failure is logged, never thrown.
+  Future<void> _reconcileSellerSubscription(User me) async {
+    try {
+      if (me.role != UserRole.seller) return;
+      if (!Get.isRegistered<UserController>() ||
+          UserController.instance.hasActiveSellerSubscription) {
+        return;
+      }
+      if (!Get.isRegistered<RevenueCatService>() ||
+          !Get.isRegistered<SellersRepository>()) {
+        return;
+      }
+      final rc = Get.find<RevenueCatService>();
+      if (!rc.isConfigured) return;
+      await rc.login(me.id);
+      final outcome = await rc.currentOutcome();
+      if (!outcome.hasActiveEntitlement) return;
+      await SellersRepository.instance.syncSubscription(
+        entitlementId: outcome.entitlementId,
+        productId: outcome.productId,
+        expiresAtMs: outcome.expiresAtMs,
+        isTrial: outcome.isTrial,
+        revenueCatCustomerId: me.id,
+        category: me.sellerAccount?.category,
+      );
+      await UserController.instance.refreshFromServer();
+      logSuccess(
+        '[Subscription] launch reconcile synced entitlement=${outcome.entitlementId}',
+      );
+    } catch (e) {
+      logWarning('[Subscription] launch reconcile failed: $e');
     }
   }
 

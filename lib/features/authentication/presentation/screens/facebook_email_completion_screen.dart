@@ -8,6 +8,7 @@ import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/network/api_response.dart';
 import 'package:incacook/features/authentication/data/repositories/auth_repository.dart';
+import 'package:incacook/core/utils/log.dart';
 
 /// Fallback for a Facebook login whose provider returned **no email** and for
 /// which no Supabase session was created. Two steps, both via the PUBLIC
@@ -55,7 +56,7 @@ class _FacebookEmailCompletionScreenState
   Future<void> _sendCode() async {
     if (_busy) return;
     final email = _emailController.text.trim();
-    debugPrint('[Auth][Facebook] manual email submitted');
+    logWarning('[Auth][Facebook] manual email submitted');
     if (!_emailRe.hasMatch(email)) {
       CustomLoaders.warningSnackBar(
         title: AppTexts.fbEmailStepTitle,
@@ -66,7 +67,7 @@ class _FacebookEmailCompletionScreenState
     setState(() => _busy = true);
     try {
       await _auth.requestSocialEmailOtp(email);
-      debugPrint('[Auth][Facebook] verification code requested');
+      logInfo('[Auth][Facebook] verification code requested');
       if (!mounted) return;
       setState(() {
         _email = email;
@@ -106,7 +107,7 @@ class _FacebookEmailCompletionScreenState
       // On success the repository persists the new (email-verified) session.
       await _auth.verifySocialEmailOtp(email: _email, code: code);
       _verified = true;
-      debugPrint('[Auth][Facebook] manual email verified');
+      logSuccess('[Auth][Facebook] manual email verified');
       if (!mounted) return;
       CustomLoaders.successSnackBar(
         title: AppTexts.fbOtpStepTitle,
@@ -114,13 +115,13 @@ class _FacebookEmailCompletionScreenState
       );
       Get.back<bool>(result: true);
     } on ApiFailure catch (e) {
-      debugPrint('[Auth][Facebook] manual email verification failed');
+      logError('[Auth][Facebook] manual email verification failed');
       CustomLoaders.errorSnackBar(
         title: AppTexts.fbOtpStepTitle,
         message: e.message.isNotEmpty ? e.message : AppTexts.fbEmailInvalidCode,
       );
     } catch (_) {
-      debugPrint('[Auth][Facebook] manual email verification failed');
+      logError('[Auth][Facebook] manual email verification failed');
       CustomLoaders.errorSnackBar(
         title: AppTexts.fbOtpStepTitle,
         message: AppTexts.fbEmailGenericError,

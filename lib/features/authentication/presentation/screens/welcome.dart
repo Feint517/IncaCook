@@ -1,7 +1,9 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
+import 'package:incacook/core/config/feature_flags.dart';
 import 'package:incacook/core/constants/image_strings.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
@@ -87,23 +89,25 @@ class WelcomeScreen extends StatelessWidget {
                   //* social row
                   Row(
                     children: [
-                      Expanded(
-                        // Obx so the pill flips to a spinner + disables itself
-                        // while the Facebook OAuth flow runs. Reads both flags
-                        // so it's also disabled while Google is in flight (no
-                        // simultaneous social logins).
-                        child: Obx(
-                          () => _SocialPill(
-                            logo: AppImages.facebookLogo,
-                            label: AppTexts.welcomeContinueWithFacebook,
-                            loading: controller.isFacebookLoading.value,
-                            onTap: controller.isAnySocialLoading
-                                ? null
-                                : controller.signInWithFacebook,
+                      // Facebook sign-in (hidden when feature flag is enabled)
+                      if (!FeatureFlags.hideFacebookSignIn)
+                        Expanded(
+                          // Obx so the pill flips to a spinner + disables itself
+                          // while the Facebook OAuth flow runs. Reads both flags
+                          // so it's also disabled while Google is in flight (no
+                          // simultaneous social logins).
+                          child: Obx(
+                            () => _SocialPill(
+                              logo: AppImages.facebookLogo,
+                              label: AppTexts.welcomeContinueWithFacebook,
+                              loading: controller.isFacebookLoading.value,
+                              onTap: controller.isAnySocialLoading
+                                  ? null
+                                  : controller.signInWithFacebook,
+                            ),
                           ),
                         ),
-                      ),
-                      const Gap(AppSizes.sm),
+                      if (!FeatureFlags.hideFacebookSignIn) const Gap(AppSizes.sm),
                       Expanded(
                         // Obx so the pill flips to a spinner + disables itself
                         // while the Google flow runs (and while Facebook is in
@@ -212,7 +216,17 @@ class _SocialPill extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Image.asset(logo, height: 22, width: 22),
+                        Container(
+                          width: 28,
+                          height: 28,
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: scheme.outlineVariant),
+                          ),
+                          child: Image.asset(logo),
+                        ),
                         const Gap(AppSizes.sm),
                         // Flexible + ellipsis so a longer provider label
                         // ("Continuer avec Facebook") can't overflow the

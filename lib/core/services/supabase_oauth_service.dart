@@ -1,19 +1,17 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
-import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:incacook/core/config/supabase_config.dart';
+import 'package:incacook/core/utils/log.dart';
 
-/// Hosted social sign-in via Supabase OAuth — used for **both** Google and
-/// Facebook. There is no native Google Sign-In anymore: both providers run
-/// the same browser/custom-tab dance, so no SHA-1/SHA-256 fingerprints and no
-/// `SignInHubActivity` are involved, and no client secret ever ships in the
-/// app (it stays in the Supabase dashboard).
+/// Hosted social sign-in via Supabase OAuth — currently used for Facebook.
+/// Google uses [NativeGoogleAuthService] instead so users stay in the native
+/// Google account chooser instead of the hosted Supabase browser redirect.
 ///
-/// Flow (identical per provider):
+/// Flow:
 ///   1. [signIn] opens an external browser at Supabase's authorize URL (PKCE).
 ///   2. The user authenticates; Supabase redirects to
 ///      `incacook://auth/callback` (registered in both native projects).
@@ -85,12 +83,12 @@ class SupabaseOAuthService extends GetxService {
       final error = uri.queryParameters['error'];
       if (error == null) return; // success → handled by onAuthStateChange
       final description = uri.queryParameters['error_description'];
-      debugPrint('[DeepLink] received auth callback: true');
-      debugPrint('[Auth][OAuth] callback error: $error');
-      debugPrint(
+      logError('[DeepLink] received auth callback: true');
+      logError('[Auth][OAuth] callback error: $error');
+      logError(
         '[Auth][OAuth] callback error_description exists: ${description != null}',
       );
-      debugPrint(
+      logError(
         '[Auth][OAuth] provider=${provider.name} session received: false',
       );
       if (!completer.isCompleted) {
@@ -103,16 +101,15 @@ class SupabaseOAuthService extends GetxService {
     final queryParams = _accountSelectionParams(provider);
     // Safe: provider + the flag only — never tokens. e.g.
     // "[Auth][OAuth] provider=google prompt=select_account".
-    final paramsDesc = queryParams.entries
-        .map((e) => '${e.key}=${e.value}')
-        .join(' ');
-    debugPrint('[Auth][OAuth] provider=${provider.name} $paramsDesc');
+    final paramsDesc =
+        queryParams.entries.map((e) => '${e.key}=${e.value}').join(' ');
+    logError('[Auth][OAuth] provider=${provider.name} $paramsDesc');
 
     // Explicitly request the email scope (Facebook returns no email without it
     // → "Error getting user email from external provider"). Safe log — scopes
     // are not secrets. e.g. "[Auth][OAuth] provider=facebook scopes=email public_profile".
     final scopes = _scopesFor(provider);
-    debugPrint(
+    logInfo(
       '[Auth][OAuth] provider=${provider.name} scopes=${scopes ?? 'default'}',
     );
 
@@ -134,7 +131,7 @@ class SupabaseOAuthService extends GetxService {
         // show the generic "réessayer" message.
         throw OAuthSignInException(e.toString());
       }
-      debugPrint(
+      logError(
         '[Auth][OAuth] provider=${provider.name} signInWithOAuth returned: $opened',
       );
       if (!opened) {
@@ -144,7 +141,7 @@ class SupabaseOAuthService extends GetxService {
       }
       launched = true;
 
-      debugPrint(
+      logWarning(
         '[Auth][OAuth] provider=${provider.name} waiting for callback',
       );
       final Session session;
@@ -154,15 +151,15 @@ class SupabaseOAuthService extends GetxService {
         // No deep-link callback within the window — almost always a provider /
         // dashboard misconfig (see [_redirectTimeout]). Surface a clean error;
         // the caller resets the button spinner in its finally.
-        debugPrint('[Auth][OAuth] provider=${provider.name} timeout');
-        debugPrint(
+        logError('[Auth][OAuth] provider=${provider.name} timeout');
+        logError(
           '[Auth][OAuth] provider=${provider.name} session received: false',
         );
         throw const OAuthSignInException(
           'Aucune réponse de connexion. Veuillez réessayer.',
         );
       }
-      debugPrint(
+      logWarning(
         '[Auth][OAuth] provider=${provider.name} session received: true',
       );
       return session;
@@ -176,9 +173,6 @@ class SupabaseOAuthService extends GetxService {
   /// authorize URL) that ask the provider to let the user pick an account
   /// rather than silently reusing the one already signed in to the browser.
   ///
-  /// - **Google** supports the standard OIDC `prompt=select_account`, so the
-  ///   account chooser shows every time — the user can pick a different Google
-  ///   account (or add one).
   /// - **Facebook** has **no** Google-style account-list popup.
   ///   `auth_type=reauthenticate` asks Facebook to re-prompt for credentials
   ///   where it can, but if the browser already holds a logged-in Facebook
@@ -186,9 +180,6 @@ class SupabaseOAuthService extends GetxService {
   ///   log out of Facebook in the browser (or pick another account on
   ///   Facebook's own page if it offers one).
   static Map<String, String> _accountSelectionParams(OAuthProvider provider) {
-    if (provider == OAuthProvider.google) {
-      return const {'prompt': 'select_account'};
-    }
     if (provider == OAuthProvider.facebook) {
       return const {'auth_type': 'rerequest', 'return_scopes': 'true'};
     }
@@ -197,8 +188,7 @@ class SupabaseOAuthService extends GetxService {
 
   /// OAuth scopes per provider. Facebook must explicitly request `email`
   /// (and `public_profile`) or it returns no email and Supabase fails with
-  /// "Error getting user email from external provider". Google returns email
-  /// with its default scopes, so we leave it null.
+  /// "Error getting user email from external provider".
   static String? _scopesFor(OAuthProvider provider) {
     if (provider == OAuthProvider.facebook) return 'email public_profile';
     return null;

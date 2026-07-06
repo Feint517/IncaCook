@@ -13,6 +13,7 @@ import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/network/api_response.dart';
 import 'package:incacook/features/authentication/data/repositories/auth_repository.dart';
+import 'package:incacook/core/utils/log.dart';
 
 /// Shown after a social login whose provider returned no email (Facebook).
 /// The user adds an email and verifies it via a Supabase **magic link**:
@@ -105,7 +106,7 @@ class _CompleteEmailScreenState extends State<CompleteEmailScreen>
         emailRedirectTo: SupabaseConfig.completeEmailRedirectUrl,
         shouldCreateUser: false,
       );
-      debugPrint('[EmailVerify] magic link sent');
+      logInfo('[EmailVerify] magic link sent');
       setState(() {
         _email = email;
         _linkSent = true;
@@ -144,7 +145,7 @@ class _CompleteEmailScreenState extends State<CompleteEmailScreen>
     });
     _linkSub ??= AppLinks().uriLinkStream.listen((uri) {
       if (uri.queryParameters['flow'] == 'complete_email') {
-        debugPrint('[EmailVerify] callback received flow=complete_email');
+        logInfo('[EmailVerify] callback received flow=complete_email');
         // Best-effort: supabase_flutter processes the session async; the
         // onAuthStateChange listener above is the reliable completion path.
         _maybeComplete(Supabase.instance.client.auth.currentSession);
@@ -272,12 +273,12 @@ class _CompleteEmailScreenState extends State<CompleteEmailScreen>
     _verified = true;
     _authSub?.cancel();
     _linkSub?.cancel();
-    debugPrint('[EmailVerify] email verified=true');
+    logSuccess('[EmailVerify] email verified=true');
     CustomLoaders.successSnackBar(
       title: AppTexts.completeEmailTitle,
       message: AppTexts.completeEmailVerifiedSuccess,
     );
-    debugPrint('[EmailVerify] advancing to phoneVerification');
+    logInfo('[EmailVerify] advancing to phoneVerification');
     if (mounted) Get.back<bool>(result: true);
   }
 

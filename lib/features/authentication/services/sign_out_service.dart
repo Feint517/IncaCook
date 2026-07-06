@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/controllers/user_controller.dart';
+import 'package:incacook/core/services/native_google_auth_service.dart';
 import 'package:incacook/core/services/notifications/push_notification_service.dart';
 import 'package:incacook/core/services/supabase_oauth_service.dart';
 import 'package:incacook/core/utils/theme/theme_extensions.dart';
@@ -50,13 +51,19 @@ class SignOutService {
       // Swallow — token clearing already happened in the repo's finally.
       // We still want to navigate the user out.
     }
-    // Clear Supabase's locally-cached OAuth session (Google/Facebook both run
-    // through Supabase now). Local scope only — the live bearer was already
-    // revoked above via /v1/auth/signout. No-op for email/password users (no
-    // Supabase session). Best-effort — never block leaving the screen.
+    // Clear Supabase's locally-cached social session. Local scope only — the
+    // live bearer was already revoked above via /v1/auth/signout. No-op for
+    // email/password users. Best-effort — never block leaving the screen.
     if (Get.isRegistered<SupabaseOAuthService>()) {
       try {
         await Get.find<SupabaseOAuthService>().signOut();
+      } catch (_) {
+        // ignore
+      }
+    }
+    if (Get.isRegistered<NativeGoogleAuthService>()) {
+      try {
+        await Get.find<NativeGoogleAuthService>().signOut();
       } catch (_) {
         // ignore
       }
@@ -131,16 +138,16 @@ class _SignOutConfirmDialog extends StatelessWidget {
                     Text(
                       AppTexts.settingsLogoutConfirmTitle,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                            fontWeight: FontWeight.w800,
+                          ),
                     ),
                     const Gap(AppSizes.sm + 2),
                     Text(
                       AppTexts.settingsLogoutConfirmBody,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                        height: 1.35,
-                      ),
+                            color: scheme.onSurfaceVariant,
+                            height: 1.35,
+                          ),
                     ),
                     const Gap(AppSizes.lg),
                     Row(

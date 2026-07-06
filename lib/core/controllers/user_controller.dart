@@ -20,11 +20,9 @@ import 'package:incacook/features/authentication/data/repositories/users_reposit
 /// controller auto-fetch on construct) means we never accidentally
 /// double-fetch on cold start.
 class UserController extends GetxController {
-  UserController({
-    UsersRepository? usersRepository,
-    TokenStorage? tokenStorage,
-  })  : _usersRepository = usersRepository ?? Get.find<UsersRepository>(),
-        _tokenStorage = tokenStorage ?? Get.find<TokenStorage>();
+  UserController({UsersRepository? usersRepository, TokenStorage? tokenStorage})
+    : _usersRepository = usersRepository ?? Get.find<UsersRepository>(),
+      _tokenStorage = tokenStorage ?? Get.find<TokenStorage>();
 
   static UserController get instance => Get.find();
 
@@ -99,6 +97,11 @@ class UserController extends GetxController {
 
   bool get isSignedIn => user.value != null;
 
+  /// True once the seller finished Stripe Connect payout onboarding. Drives
+  /// the seller home "set up payments" prompt. Reactive.
+  bool get sellerPayoutReady =>
+      user.value?.sellerAccount?.stripeOnboardingCompleted ?? false;
+
   /// True once the driver finished Stripe Connect payout onboarding. Drives the
   /// wallet "set up payments" prompt — NOT the ability to deliver. Reactive.
   bool get driverPayoutReady =>
@@ -159,10 +162,12 @@ class UserController extends GetxController {
   /// empty values are normalized to `null` so callers can use a single
   /// `value != null && value.isNotEmpty`-style check.
   void setAuthName({String? firstName, String? lastName}) {
-    authFirstName.value =
-        (firstName != null && firstName.isNotEmpty) ? firstName : null;
-    authLastName.value =
-        (lastName != null && lastName.isNotEmpty) ? lastName : null;
+    authFirstName.value = (firstName != null && firstName.isNotEmpty)
+        ? firstName
+        : null;
+    authLastName.value = (lastName != null && lastName.isNotEmpty)
+        ? lastName
+        : null;
   }
 
   /// Reads the persisted auth email from [TokenStorage] and seeds
