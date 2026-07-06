@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "723681508646",
-    "project_id": "incacook-d9601",
-    "storage_bucket": "incacook-d9601.firebasestorage.app"
+    "project_number": "623882469274",
+    "project_id": "incacook-7b97c",
+    "storage_bucket": "incacook-7b97c.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:723681508646:android:a3845a4d09bcaa1f7955e7",
+        "mobilesdk_app_id": "1:623882469274:android:fcea782fca1bda5ea1c423",
         "android_client_info": {
           "package_name": "com.incacook.app"
         }
@@ -15,26 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyB9nhBQg88I3Kw2or8j7kHkdzM5hiJ_33g"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:723681508646:android:c1864cfaf00aff8a7955e7",
-        "android_client_info": {
-          "package_name": "com.progix.incacook"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyB9nhBQg88I3Kw2or8j7kHkdzM5hiJ_33g"
+          "current_key": "AIzaSyB3TJ1ly6Dc5QLuxIxLMw04hpYBygBzFHk"
         }
       ],
       "services": {
