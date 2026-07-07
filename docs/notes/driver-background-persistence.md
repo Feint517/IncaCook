@@ -1,7 +1,22 @@
-# Note — Driver background persistence during an Active delivery (frontend, TODO)
+# Note — Driver background persistence during an Active delivery (frontend)
 
-Status: **planned, not yet implemented.** Captured during the online-presence
-design (see `docs/adr/0002-driver-online-presence-and-heartbeat.md`).
+Status: **implemented; on-device verification pending.** Captured during the
+online-presence design (see
+`docs/adr/0002-driver-online-presence-and-heartbeat.md`).
+
+## Implementation (as shipped)
+
+Chose **geolocator's native background location** over adding
+`flutter_foreground_task` (the suich_drive pattern): geolocator is already a
+dependency and covers the requirement directly, with a leaner native surface.
+`LocationService.start(background: true)` (called from
+`DeliveryRouteController.bootstrap` for the Active delivery only) uses an
+Android LOCATION foreground service + persistent notification and iOS
+`allowBackgroundLocationUpdates`; the existing throttled push loop keeps
+running while backgrounded. Idle-online stays foreground-only. Added Android
+`FOREGROUND_SERVICE[_LOCATION]` permissions + the iOS `location` background
+mode. **Still needs device testing** — foreground-service behaviour, the
+permission escalation to "Always", and background push can't be exercised in CI.
 
 ## What
 

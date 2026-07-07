@@ -1,7 +1,10 @@
-# Note — Active-delivery layout: persistent action bar (frontend, TODO)
+# Note — Active-delivery layout: persistent action bar (frontend)
 
-Status: **partially done.** The auto-peek is shipped; the persistent action bar
-is planned.
+Status: **done.** Auto-peek + the persistent action bar are both shipped
+(`delivery_action_bar.dart`, pinned in `delivery_bottom_sheet.dart`; the
+collapsed height grows to keep it visible with the map full-screen). Stage
+flow / labels / primary-CTA runner are shared via `OrderStageFlow` +
+`job_stage_actions.dart` so the bar and `JobLifecycleCard` can't diverge.
 
 ## Decision
 
