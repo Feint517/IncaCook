@@ -316,7 +316,11 @@ class DeliveryRouteController extends GetxController {
         pos == null ? null : MapPoint(lng: pos.longitude, lat: pos.latitude);
 
     route.value = await _computeItinerary(origin);
-    await LocationService.instance.start();
+    // Background-persistent tracking for the duration of the Active delivery:
+    // the Android foreground service / iOS background location keep the push
+    // loop alive while backgrounded so Live tracking doesn't go dark and the
+    // driver can't "disappear" mid-delivery (driver-background-persistence).
+    await LocationService.instance.start(background: true);
     _startPositionWatcher();
   }
 

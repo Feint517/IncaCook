@@ -101,6 +101,10 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<!-- Keeps delivery location updates flowing while backgrounded during an
+		     active delivery (geolocator allowBackgroundLocationUpdates) so Live
+		     tracking to the buyer doesn't go dark. -->
+		<string>location</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
