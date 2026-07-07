@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
-import 'package:incacook/core/network/api_response.dart';
 import 'package:incacook/core/services/realtime/chat_message.dart';
 import 'package:incacook/core/utils/geo/distance.dart';
 import 'package:incacook/core/widgets/effects/frosted_surface.dart';
@@ -15,9 +14,9 @@ import 'package:incacook/features/chat/presentation/chat_navigator.dart';
 import 'package:incacook/features/delivery/controllers/delivery_route_controller.dart';
 import 'package:incacook/features/delivery/data/issue_catalog.dart';
 import 'package:incacook/features/delivery/presentation/screens/absent_dropoff_screen.dart';
-import 'package:incacook/features/delivery/presentation/screens/qr_scan_screen.dart';
 import 'package:incacook/features/delivery/presentation/screens/seller_unavailable_screen.dart';
 import 'package:incacook/features/delivery/presentation/widgets/issue_report_sheet.dart';
+import 'package:incacook/features/delivery/presentation/widgets/job_stage_actions.dart';
 import 'package:incacook/core/models/order_detail.dart';
 import 'package:incacook/core/enums/order_stage.dart';
 
@@ -93,7 +92,7 @@ class _Card extends StatelessWidget {
               // (livreur ↔ vendeur), both scoped to this order. The server
               // derives the counterpart from the order id; hidden once the
               // job reaches a terminal stage.
-              if (!spec.isTerminal) ...[
+              if (!stage.isTerminal) ...[
                 const Gap(AppSizes.md),
                 _ContactButton(
                   label: AppTexts.chatContactClientCta,
@@ -140,7 +139,7 @@ class _Card extends StatelessWidget {
                   label: const Text(AppTexts.absentDropoffCta),
                 ),
               ],
-              if (!spec.isTerminal) ...[
+              if (!stage.isTerminal) ...[
                 const Gap(AppSizes.xs),
                 _ReportIssueButton(
                   onPressed: () => _onReportPressed(context),
@@ -177,79 +176,9 @@ class _Card extends StatelessWidget {
     }
   }
 
-  Future<void> _onCtaPressed(BuildContext context) async {
-    final spec = _StageSpec.forStage(stage);
-    if (spec.isTerminal) {
-      route.clearJob();
-      return;
-    }
-    final next = spec.nextStage;
-    if (next == null) return;
-
-    // Pickup: the driver SCANS the seller's QR (proof the dish was handed
-    // over). The token is validated server-side; the stage only advances on a
-    // successful scan — an invalid/duplicate QR surfaces the backend message.
-    if (next == OrderStage.onTheWay) {
-      final token = await Get.to<String>(
-        () => const QrScanScreen(
-          title: AppTexts.pickupScanTitle,
-          instruction: AppTexts.pickupScanInstruction,
-        ),
-      );
-      if (token == null || token.isEmpty) return;
-      try {
-        await route.confirmPickupScanned(token);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text(AppTexts.pickupConfirmedMessage)),
-          );
-        }
-      } on ApiFailure catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(e.message)));
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-        }
-      }
-      return;
-    }
-
-    // Delivery: the driver SCANS the buyer's reception QR (proof the order
-    // reached the client). On success the job is DELIVERED and cleared; an
-    // invalid/duplicate QR surfaces the backend message.
-    if (next == OrderStage.delivered) {
-      final token = await Get.to<String>(
-        () => const QrScanScreen(
-          title: AppTexts.deliveryScanTitle,
-          instruction: AppTexts.deliveryScanInstruction,
-        ),
-      );
-      if (token == null || token.isEmpty) return;
-      try {
-        await route.confirmDeliveryScanned(token);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text(AppTexts.deliveryConfirmedMessage)),
-          );
-        }
-      } on ApiFailure catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(e.message)));
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-        }
-      }
-      return;
-    }
-
-    await route.advanceStage(next);
-  }
+  /// Delegates to the shared [runStageCta] so the full card and the compact
+  /// persistent action bar drive the identical QR-handoff / advance flow.
+  Future<void> _onCtaPressed(BuildContext context) => runStageCta(context, route, stage);
 
   Future<void> _onReportPressed(BuildContext context) async {
     final result = await showIssueReportModal(context, stage: stage);
@@ -267,15 +196,16 @@ class _Card extends StatelessWidget {
   }
 }
 
-/// Display + behavior for a single lifecycle stage.
+/// Display + behavior for a single lifecycle stage. Title / icon / CTA come
+/// from the shared [stageLabels] (kept in sync with the compact action bar);
+/// the flow (nextStage / isTerminal) lives on [OrderStageFlow]. This spec adds
+/// only the card-specific layout bits (target, instructions, QR handoff).
 class _StageSpec {
   const _StageSpec({
     required this.title,
     required this.icon,
     required this.target,
     required this.cta,
-    required this.nextStage,
-    required this.isTerminal,
     required this.showInstructions,
     this.requiresQrHandoff = false,
   });
@@ -284,79 +214,30 @@ class _StageSpec {
   final IconData icon;
   final _Target target;
   final String cta;
-  final OrderStage? nextStage;
-  final bool isTerminal;
   final bool showInstructions;
 
   /// True for handoff stages — the seller / customer scans a QR before the
-  /// driver advances. Mocked via [showQrHandoffModal].
+  /// driver advances.
   final bool requiresQrHandoff;
 
   static _StageSpec forStage(OrderStage stage) {
-    switch (stage) {
-      case OrderStage.prepared:
-        return const _StageSpec(
-          title: AppTexts.jobStageGoingToPickup,
-          icon: Iconsax.shop,
-          target: _Target.pickup,
-          cta: AppTexts.jobCtaArrivedPickup,
-          nextStage: OrderStage.arrivedPickup,
-          isTerminal: false,
-          showInstructions: false,
-        );
-      case OrderStage.arrivedPickup:
-        return const _StageSpec(
-          title: AppTexts.jobStageAtPickup,
-          icon: Iconsax.shop,
-          target: _Target.pickup,
-          cta: AppTexts.jobCtaPickedUp,
-          nextStage: OrderStage.onTheWay,
-          isTerminal: false,
-          showInstructions: false,
-          requiresQrHandoff: true,
-        );
-      case OrderStage.onTheWay:
-        return const _StageSpec(
-          title: AppTexts.jobStageGoingToDropoff,
-          icon: Iconsax.location,
-          target: _Target.dropoff,
-          cta: AppTexts.jobCtaArrivedDropoff,
-          nextStage: OrderStage.arrivedDropoff,
-          isTerminal: false,
-          showInstructions: false,
-        );
-      case OrderStage.arrivedDropoff:
-        return const _StageSpec(
-          title: AppTexts.jobStageAtDropoff,
-          icon: Iconsax.location,
-          target: _Target.dropoff,
-          cta: AppTexts.jobCtaConfirmDelivery,
-          nextStage: OrderStage.delivered,
-          isTerminal: false,
-          showInstructions: true,
-          requiresQrHandoff: true,
-        );
-      case OrderStage.delivered:
-        return const _StageSpec(
-          title: AppTexts.jobStageDelivered,
-          icon: Iconsax.tick_circle,
-          target: _Target.dropoff,
-          cta: AppTexts.jobCtaFinish,
-          nextStage: null,
-          isTerminal: true,
-          showInstructions: false,
-        );
-      case OrderStage.failed:
-        return const _StageSpec(
-          title: AppTexts.jobStageFailed,
-          icon: Iconsax.warning_2,
-          target: _Target.dropoff,
-          cta: AppTexts.jobCtaFinish,
-          nextStage: null,
-          isTerminal: true,
-          showInstructions: false,
-        );
-    }
+    final labels = stageLabels(stage);
+    final (target, showInstructions, requiresQrHandoff) = switch (stage) {
+      OrderStage.prepared => (_Target.pickup, false, false),
+      OrderStage.arrivedPickup => (_Target.pickup, false, true),
+      OrderStage.onTheWay => (_Target.dropoff, false, false),
+      OrderStage.arrivedDropoff => (_Target.dropoff, true, true),
+      OrderStage.delivered => (_Target.dropoff, false, false),
+      OrderStage.failed => (_Target.dropoff, false, false),
+    };
+    return _StageSpec(
+      title: labels.title,
+      icon: labels.icon,
+      cta: labels.cta,
+      target: target,
+      showInstructions: showInstructions,
+      requiresQrHandoff: requiresQrHandoff,
+    );
   }
 }
 

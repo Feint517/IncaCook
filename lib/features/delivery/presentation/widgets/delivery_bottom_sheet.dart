@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/models/order_detail.dart';
 import 'package:incacook/features/delivery/controllers/delivery_route_controller.dart';
+import 'package:incacook/features/delivery/presentation/widgets/delivery_action_bar.dart';
 import 'package:incacook/features/delivery/presentation/widgets/delivery_nav_bar.dart';
 import 'package:incacook/features/delivery/presentation/widgets/delivery_settings_section.dart';
 import 'package:incacook/features/delivery/presentation/widgets/job_lifecycle_card.dart';
@@ -38,6 +39,11 @@ class _DeliveryBottomSheetState extends State<DeliveryBottomSheet> {
   /// Recomputed in [build] from MediaQuery; the listener reads it.
   double _collapsedFraction = 0.15;
 
+  /// Whether a delivery is currently active. Drives the persistent action bar
+  /// and grows the collapsed height so that bar stays visible even with the
+  /// sheet dragged all the way down (map full-screen).
+  bool _hasActiveJob = false;
+
   /// Watches the active job so the sheet auto-reveals the driver's commands the
   /// moment an order is accepted (or restored on relaunch), and re-collapses
   /// when the job ends — otherwise the [JobLifecycleCard] stays hidden behind
@@ -49,6 +55,7 @@ class _DeliveryBottomSheetState extends State<DeliveryBottomSheet> {
     super.initState();
     _controller.addListener(_updateFrostedness);
     final route = DeliveryRouteController.instance;
+    _hasActiveJob = route.currentJob.value != null;
     _jobWorker = ever<OrderDetail?>(route.currentJob, _onJobChanged);
     // A job may already be active when the sheet mounts (e.g. restored on
     // relaunch, or a fast accept before the worker registered) — reveal it once
@@ -73,7 +80,12 @@ class _DeliveryBottomSheetState extends State<DeliveryBottomSheet> {
   /// Auto-snaps the sheet to the peek height on a new job (surfacing the
   /// lifecycle commands) and back to collapsed when the job clears.
   void _onJobChanged(OrderDetail? job) {
-    if (!mounted || !_controller.isAttached) return;
+    if (!mounted) return;
+    // Track active-job state so [build] reserves room for the persistent action
+    // bar in the collapsed height.
+    final hasJob = job != null;
+    if (hasJob != _hasActiveJob) setState(() => _hasActiveJob = hasJob);
+    if (!_controller.isAttached) return;
     if (job != null) {
       _selectedTab.value = DeliveryNavTab.drive;
       final target = _jobPeekFraction.clamp(_collapsedFraction, _expandedFraction);
@@ -128,9 +140,13 @@ class _DeliveryBottomSheetState extends State<DeliveryBottomSheet> {
   @override
   Widget build(BuildContext context) {
     //* The collapsed sheet is just tall enough to show the full nav bar
-    //* (including its overhang) plus the bottom safe area.
+    //* (including its overhang) plus the bottom safe area — and, during an
+    //* active delivery, the persistent action bar so the next step stays
+    //* visible with the map full-screen.
     _collapsedFraction =
-        (DeliveryNavBar.totalHeight + MediaQuery.of(context).padding.bottom) /
+        (DeliveryNavBar.totalHeight +
+            (_hasActiveJob ? DeliveryActionBar.height : 0) +
+            MediaQuery.of(context).padding.bottom) /
         MediaQuery.of(context).size.height;
 
     final peek = _jobPeekFraction.clamp(_collapsedFraction, _expandedFraction);
@@ -160,6 +176,9 @@ class _DeliveryBottomSheetState extends State<DeliveryBottomSheet> {
                 onTabSelected: _selectTab,
               ),
             ),
+            // Persistent action bar: pinned above the scrollable body so the
+            // driver's next step stays one tap away at any sheet position.
+            if (_hasActiveJob) const DeliveryActionBar(),
             Expanded(
               //* Body shares the bar's surface tint so they read as one
               //* continuous panel — alpha tracks `_frostedness` in lockstep
