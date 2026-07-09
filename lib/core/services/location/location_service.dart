@@ -58,12 +58,22 @@ class LocationService extends GetxService {
     int distanceFilterMeters = 5,
     bool background = false,
   }) async {
-    // Already streaming in the requested mode → nothing to do.
-    if (_positionSub != null && _backgroundMode == background) return true;
+    // Already streaming and no restart warranted → nothing to do. Only an
+    // UPGRADE (foreground → background) restarts; a foreground `start()` that
+    // fires while a background stream is live is NOT allowed to implicitly tear
+    // the foreground-service down (see [shouldRestartStream]).
+    if (_positionSub != null &&
+        !shouldRestartStream(
+          currentBackground: _backgroundMode,
+          requestedBackground: background,
+        )) {
+      return true;
+    }
     if (!await ensurePermission()) return false;
 
-    // Mode changed (e.g. idle-online → active delivery): restart the stream so
-    // the platform settings — foreground service / background updates — match.
+    // Mode changed (idle-online → active delivery, an UPGRADE): restart the
+    // stream so the platform settings — foreground service / background
+    // updates — match.
     await _positionSub?.cancel();
     _positionSub = null;
     _backgroundMode = background;
@@ -117,10 +127,30 @@ class LocationService extends GetxService {
     );
   }
 
+  /// Pure transition rule for [start] when a stream is already running: should
+  /// the live stream be torn down and restarted in the requested mode?
+  ///
+  /// Only an UPGRADE (foreground → background) restarts — an active delivery
+  /// needs the foreground service / background updates. The reverse is never an
+  /// implicit downgrade: an online-restore's foreground `start()` firing right
+  /// after an active-delivery's background `start()` (the relaunch-mid-delivery
+  /// path) must NOT tear the background service down. An explicit downgrade goes
+  /// through [stop] then [start].
+  static bool shouldRestartStream({
+    required bool currentBackground,
+    required bool requestedBackground,
+  }) =>
+      requestedBackground && !currentBackground;
+
   Future<void> stop() async {
-    await _positionSub?.cancel();
+    // Reset the mode flags synchronously (before the async cancel) so a
+    // [start] triggered right after — e.g. re-arming idle GPS the instant a
+    // delivery clears — sees a clean, non-streaming state instead of racing the
+    // in-flight cancel.
+    final sub = _positionSub;
     _positionSub = null;
     _backgroundMode = false;
+    await sub?.cancel();
   }
 
   @override

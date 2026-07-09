@@ -71,6 +71,11 @@ class IncomingOrderController extends GetxController {
 
   void _onJobChanged(OrderDetail? job) {
     if (job == null && DeliveryDriverController.instance.isOnline.value) {
+      // The finished delivery's stream was stopped by [clearJob]; the driver is
+      // still online, so re-arm foreground GPS. Otherwise idle matching keeps
+      // pushing the (now frozen) drop-off position for the rest of the session
+      // and the online marker never moves until a manual offline/online toggle.
+      unawaited(LocationService.instance.start());
       _startPolling();
     }
   }
