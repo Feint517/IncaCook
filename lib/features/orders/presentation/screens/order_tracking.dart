@@ -53,8 +53,12 @@ class OrderTrackingScreen extends StatelessWidget {
                 right: 0,
                 bottom: 200,
                 child: QrConfirmCard(
+                  //? Buyer-collects-from-seller flow: this code is informational
+                  //? (there's no seller-side scanner for it) — the buyer taps to
+                  //? confirm collection. Copy makes clear the tap is what
+                  //? confirms, so it isn't mistaken for a scanned proof code.
                   title: 'Code de récupération',
-                  subtitle: 'Montre ce code au vendeur ou clique en dessous.',
+                  subtitle: 'Présentez ce code au vendeur, puis confirmez ci-dessous.',
                   qrData: 'incacook://handoff?orderId=$orderId&action=pickup',
                   linkLabel: 'Confirmer la récupération',
                   onConfirm: () async {

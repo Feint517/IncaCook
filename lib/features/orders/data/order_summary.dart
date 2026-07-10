@@ -34,7 +34,11 @@ class OrderSummary {
     'CONFIRMED',
     'PREPARING',
     'READY',
+    'PICKED_UP',
     'IN_DELIVERY',
+    // Paid but no driver took it (yet) — the buyer was charged; a refund only
+    // happens once the order is actually cancelled. Must not read "Non payée".
+    'NO_DRIVER_AVAILABLE',
     'DELIVERED',
     'COMPLETED',
   };

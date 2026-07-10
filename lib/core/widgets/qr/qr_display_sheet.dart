@@ -43,6 +43,11 @@ class _QrDisplaySheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
+    // The raw proof token, pulled from the `incacook://…?token=…` payload. Shown
+    // as selectable text so the handoff still works when the camera can't read
+    // the QR (glare, cracked screen, one phone scanning another) — the driver's
+    // scanner has a manual-entry fallback that was useless without this.
+    final token = Uri.tryParse(qrData)?.queryParameters['token'];
     return SafeArea(
       top: false,
       child: Padding(
@@ -82,6 +87,36 @@ class _QrDisplaySheet extends StatelessWidget {
               textAlign: TextAlign.center,
               style: textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
+            if (token != null && token.isNotEmpty) ...[
+              const Gap(AppSizes.md),
+              Text(
+                AppTexts.qrTokenFallbackLabel,
+                textAlign: TextAlign.center,
+                style: textTheme.labelMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+              const Gap(AppSizes.xs),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.md,
+                  vertical: AppSizes.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: SelectableText(
+                  token,
+                  textAlign: TextAlign.center,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ],
             const Gap(AppSizes.lg),
             SizedBox(
               width: double.infinity,

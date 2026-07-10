@@ -209,7 +209,7 @@ class DeliveryRouteController extends GetxController {
   /// not advance on failure.
   Future<void> confirmPickupScanned(String pickupToken) async {
     final id = _deliveryId;
-    if (id == null) return;
+    if (id == null) throw const DemoJobException();
     final p = currentDriverPosition;
     await DeliveriesRepository.instance.confirmPickup(
       id,
@@ -229,7 +229,7 @@ class DeliveryRouteController extends GetxController {
   /// the message and the job is not cleared on failure.
   Future<void> confirmDeliveryScanned(String deliveryToken) async {
     final id = _deliveryId;
-    if (id == null) return;
+    if (id == null) throw const DemoJobException();
     final p = currentDriverPosition;
     await DeliveriesRepository.instance.confirmDelivery(
       id,
@@ -450,4 +450,16 @@ class DeliveryRouteController extends GetxController {
     LocationService.instance.stop();
     super.onClose();
   }
+}
+
+/// Thrown by the QR-handoff methods when the active job has no backend
+/// [Delivery] id (a demo/mock job). Real claimed jobs always carry one, so this
+/// only fires in demo flows — it surfaces a clear message instead of a silent
+/// dead tap when a QR is scanned. Its [toString] is the user-facing message.
+class DemoJobException implements Exception {
+  const DemoJobException();
+
+  @override
+  String toString() =>
+      'Job de démonstration — aucune livraison réelle à confirmer.';
 }

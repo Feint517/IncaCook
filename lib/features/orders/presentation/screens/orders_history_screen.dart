@@ -6,7 +6,9 @@ import 'package:intl/intl.dart';
 import 'package:incacook/core/common/widgets/appbar/appbar.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
+import 'package:incacook/core/network/api_response.dart';
 import 'package:incacook/core/widgets/effects/frosted_surface.dart';
+import 'package:incacook/core/widgets/qr/qr_display_sheet.dart';
 import 'package:incacook/features/orders/data/order_summary.dart';
 import 'package:incacook/features/orders/data/orders_repository.dart';
 import 'package:incacook/features/orders/presentation/screens/dispute_screen.dart';
@@ -73,6 +75,32 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen> {
     }
   }
 
+  /// Fetches the buyer's reception QR and shows it for the driver to scan —
+  /// reachable from history, so leaving the live-tracking screen never strands
+  /// the handoff. Surfaces the backend message (e.g. not in delivery yet).
+  Future<void> _openReceptionQr(OrderSummary order) async {
+    try {
+      final qr = await OrdersRepository.instance.fetchDeliveryQr(order.id);
+      if (!mounted) return;
+      await showQrModal(
+        context,
+        title: AppTexts.deliveryQrSheetTitle,
+        instruction: AppTexts.deliveryQrSheetInstruction,
+        qrData: qr.qrData,
+        closeLabel: AppTexts.deliveryQrSheetClose,
+      );
+    } on ApiFailure catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppTexts.deliveryQrUnavailable)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -123,6 +151,11 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen> {
                 // Buyers can report a post-delivery problem.
                 onDispute:
                     widget.isSeller ? null : () => _openDispute(orders[i]),
+                // Buyers can re-open their reception QR straight from history —
+                // so a buyer who left the live-tracking screen can still present
+                // it to the driver (the card gates it to in-delivery orders).
+                onReceptionQr:
+                    widget.isSeller ? null : () => _openReceptionQr(orders[i]),
               ),
             );
           },
@@ -138,6 +171,7 @@ class _OrderCard extends StatelessWidget {
     required this.showPaidBadge,
     this.onReview,
     this.onDispute,
+    this.onReceptionQr,
   });
 
   final OrderSummary order;
@@ -148,6 +182,10 @@ class _OrderCard extends StatelessWidget {
 
   /// Buyer-side "report a problem" action; shown for in-delivery/delivered orders.
   final VoidCallback? onDispute;
+
+  /// Buyer-side "show my reception QR"; shown only for an in-delivery order
+  /// being delivered (not a pickup) so the buyer can re-present it any time.
+  final VoidCallback? onReceptionQr;
 
   @override
   Widget build(BuildContext context) {
@@ -195,6 +233,22 @@ class _OrderCard extends StatelessWidget {
               ],
             ],
           ),
+          //* Buyer reception-QR action — the order is out for delivery and the
+          //* buyer must present the QR the driver scans. Reachable here so
+          //* leaving the tracking screen doesn't dead-end the handoff.
+          if (onReceptionQr != null &&
+              order.status == 'IN_DELIVERY' &&
+              order.fulfillmentChoice != 'PICKUP') ...[
+            const Gap(AppSizes.sm),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.icon(
+                onPressed: onReceptionQr,
+                icon: const Icon(Icons.qr_code_2, size: 18),
+                label: const Text(AppTexts.buyerDeliveryQrCta),
+              ),
+            ),
+          ],
           //* Buyer review action — only once the order is DELIVERED. The
           //* backend rejects a second review (one per order); the error is
           //* surfaced in the sheet if the buyer already reviewed.
@@ -241,8 +295,12 @@ String _statusLabel(String status) {
       return 'En préparation';
     case 'READY':
       return 'Prête';
+    case 'PICKED_UP':
+      return 'Récupérée';
     case 'IN_DELIVERY':
       return 'En livraison';
+    case 'NO_DRIVER_AVAILABLE':
+      return 'Aucun livreur';
     case 'DELIVERED':
       return 'Livrée';
     case 'COMPLETED':
