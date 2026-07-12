@@ -1211,7 +1211,7 @@ class AppTexts {
   static const String signupSubtypeFaitMaisonNote = "Prix max 4,50 €";
   static const String signupSubtypeTraiteurTitle = "L'Atelier Traiteur";
   static const String signupSubtypeTraiteurSubtitle =
-      "Traiteur professionnel — SIRET requis";
+      "Traiteur professionnel";
   static const String signupSubtypeRestaurantTitle = "Sauve Ton Panier";
   static const String signupSubtypeRestaurantSubtitle =
       "Restaurant qui vend ses surplus";
