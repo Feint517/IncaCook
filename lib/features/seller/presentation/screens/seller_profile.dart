@@ -11,6 +11,7 @@ import 'package:incacook/core/models/seller_profile.dart';
 import 'package:incacook/features/seller/presentation/widgets/bio_section.dart';
 import 'package:incacook/features/seller/presentation/widgets/location_section.dart';
 import 'package:incacook/features/seller/presentation/widgets/reviews_section.dart';
+import 'package:incacook/features/seller/presentation/widgets/seller_menu_section.dart';
 
 class SellerProfileScreen extends StatelessWidget {
   const SellerProfileScreen({super.key, required this.profile});
@@ -63,6 +64,13 @@ class SellerProfileScreen extends StatelessWidget {
                   ReviewsSection(reviews: profile.recentReviews),
                   const Gap(AppSizes.spaceBtwSections),
                 ],
+                // The seller's orderable listings — turns this profile from a
+                // read-only "about" page into an ordering entry point. Left
+                // aligned like the other sections.
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: SellerMenuSection(sellerId: profile.id),
+                ),
                 const Gap(AppSizes.spaceBtwSections),
               ],
             ),
