@@ -15,6 +15,7 @@ import 'package:incacook/core/models/fulfillment_options.dart';
 import 'package:incacook/features/orders/presentation/screens/delivery_address.dart';
 import 'package:incacook/features/orders/presentation/screens/order_summary.dart';
 import 'package:incacook/features/orders/presentation/widgets/fulfillment_choice_sheet.dart';
+import 'package:incacook/features/settings/services/delivery_fee_service.dart';
 
 class MyCartScreen extends StatelessWidget {
   const MyCartScreen({super.key});
@@ -29,7 +30,9 @@ class MyCartScreen extends StatelessWidget {
           seller.fulfillment == Fulfillment.both,
       deliveryMinMinutes: 25,
       deliveryMaxMinutes: 40,
-      deliveryFee: AppTexts.cartShippingFee,
+      // Live admin-configured fee (cached at startup); falls back to
+      // AppTexts.cartShippingFee while loading or on error.
+      deliveryFee: DeliveryFeeService.instance.deliveryFeeEuros,
       pickupAvailable:
           seller.fulfillment == Fulfillment.pickup ||
           seller.fulfillment == Fulfillment.both,
