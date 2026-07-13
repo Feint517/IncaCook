@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 /// [baseUrl] is resolved at build time from `--dart-define`s, in priority
 /// order:
 ///   1. `API_BASE_URL`     — explicit override. Use for staging / prod, e.g.
-///        --dart-define=API_BASE_URL=https://incacook-api-production.up.railway.app
+///        --dart-define=API_BASE_URL=https://incacook-api-production-146b.up.railway.app
 ///   2. `LAN_API_BASE_URL` — your PC's IPv4, for testing on a **real phone**
 ///        on the same Wi-Fi, e.g.
 ///        --dart-define=LAN_API_BASE_URL=http://192.168.1.20:3000
@@ -24,7 +24,7 @@ class ApiConstants {
 
   /// Explicit override — wins over everything. Empty string when not passed.
   /// The argument is the dart-define KEY name, e.g.
-  /// `--dart-define=API_BASE_URL=https://incacook-api-production.up.railway.app`.
+  /// `--dart-define=API_BASE_URL=https://incacook-api-production-146b.up.railway.app`.
   static const String _apiBaseUrlOverride = String.fromEnvironment('API_BASE_URL');
 
   /// LAN/IPv4 override for real-device testing. Empty string when not passed.

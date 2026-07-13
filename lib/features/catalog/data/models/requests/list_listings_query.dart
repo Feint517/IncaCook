@@ -27,6 +27,7 @@ enum ListingFeedSort {
 /// per the doc. Money is in cents.
 class ListListingsQuery {
   const ListListingsQuery({
+    this.sellerId,
     this.category,
     this.cuisineTypes,
     this.dishTypes,
@@ -46,6 +47,9 @@ class ListListingsQuery {
     this.offset,
   });
 
+  /// Restrict the feed to a single seller (their user id). Powers the buyer
+  /// seller-profile "Ses plats" menu — see `list-feed-query.dto.ts`.
+  final String? sellerId;
   final SellerCategory? category;
   final List<CuisineType>? cuisineTypes;
   final List<DishType>? dishTypes;
@@ -71,6 +75,7 @@ class ListListingsQuery {
   /// this dimension" per the doc.
   Map<String, dynamic> toQueryParameters() {
     final params = <String, dynamic>{};
+    if (sellerId != null && sellerId!.isNotEmpty) params['sellerId'] = sellerId;
     if (category != null) params['category'] = _enumWire(category!);
     if (cuisineTypes != null && cuisineTypes!.isNotEmpty) {
       params['cuisineTypes'] = cuisineTypes!.map(_enumWire).join(',');

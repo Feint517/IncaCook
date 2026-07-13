@@ -3,6 +3,7 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 
 import 'package:incacook/core/constants/sizes.dart';
+import 'package:incacook/core/network/api_response.dart';
 import 'package:incacook/core/models/listing.dart';
 import 'package:incacook/core/models/listing_mappers.dart';
 import 'package:incacook/features/catalog/data/models/requests/list_listings_query.dart';
@@ -11,8 +12,8 @@ import 'package:incacook/features/catalog/presentation/screens/product_detail.da
 import 'package:incacook/features/client/presentation/widget/food_listing_card.dart';
 
 /// Loads the seller's currently orderable listings. Returns the [Listing]s
-/// already scoped to one seller — the default implementation fetches the
-/// buyer feed and filters client-side (see [SellerMenuSection]).
+/// already scoped to one seller — the default implementation queries the
+/// buyer feed with `?sellerId=` (see [SellerMenuSection]).
 typedef SellerMenuLoader = Future<List<Listing>> Function();
 
 /// "Ses plats" — the seller's orderable listings, rendered on the
@@ -21,10 +22,12 @@ typedef SellerMenuLoader = Future<List<Listing>> Function();
 /// same orderable path the home feed uses (`FoodListingCard` +
 /// `Get.to(ProductDetailScreen(listing:))`).
 ///
-/// Sourcing: the backend feed (`GET /v1/listings`) has **no `sellerId`
-/// filter** today (see `list-feed-query.dto.ts`), so the default loader
-/// pulls the visible feed and keeps only this seller's items client-side.
-/// A `?sellerId=` param should be added server-side for efficiency. Because
+/// Sourcing: the default loader queries the backend feed scoped to this
+/// seller (`GET /v1/listings?sellerId=<id>`, see `list-feed-query.dto.ts`),
+/// so the server returns only this seller's feed-visible listings — no
+/// client-side filter and no page-size cap. Against an older backend that
+/// doesn't know the param, the loader falls back to pulling the feed and
+/// filtering by seller client-side (so rollout order doesn't matter). Because
 /// only feed-visible listings are surfaced, sold-out / unavailable / expired
 /// entries are naturally excluded — exactly what a buyer can order.
 class SellerMenuSection extends StatefulWidget {
@@ -52,15 +55,27 @@ class _SellerMenuSectionState extends State<SellerMenuSection> {
     _load();
   }
 
-  /// Pulls the buyer feed (max page) and keeps only this seller's listings.
-  /// Pragmatic fallback until the feed supports `?sellerId=`.
+  /// Queries the feed scoped to this seller via `?sellerId=`, so the server
+  /// returns only their orderable listings (no client-side filter, no page cap).
+  ///
+  /// A backend that predates the `sellerId` param rejects the unknown query
+  /// param (400, `forbidNonWhitelisted`), so we fall back to the legacy path —
+  /// pull the visible feed and filter by seller client-side. This keeps the
+  /// menu working regardless of which server version is live, so the Flutter
+  /// and backend rollouts don't have to be coordinated.
   Future<List<Listing>> _defaultLoader() async {
-    final result = await ListingsRepository().getFeed(
-      const ListListingsQuery(limit: 100),
-    );
-    return result.items
-        .where((l) => l.sellerId == widget.sellerId)
-        .toList(growable: false);
+    final repo = ListingsRepository();
+    try {
+      final result = await repo.getFeed(
+        ListListingsQuery(sellerId: widget.sellerId, limit: 100),
+      );
+      return result.items.toList(growable: false);
+    } on ApiFailure {
+      final result = await repo.getFeed(const ListListingsQuery(limit: 100));
+      return result.items
+          .where((l) => l.sellerId == widget.sellerId)
+          .toList(growable: false);
+    }
   }
 
   Future<void> _load() async {
