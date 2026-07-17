@@ -497,8 +497,9 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
           Obx(
             () => DeliveryTopButtons(
               onGpsTap: _centerOnDriver,
-              onFitRouteTap:
-                  _route.currentJob.value != null ? _fitActiveRoute : null,
+              onFitRouteTap: _route.currentJob.value != null
+                  ? _fitActiveRoute
+                  : null,
             ),
           ),
           //* Payout setup nudge — sits just under the top buttons until the
@@ -527,6 +528,12 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
                           pendingVerification:
                               UserController.instance.payoutSetupState ==
                               PayoutSetupState.pendingVerification,
+                          // D6: the last status check itself failed —
+                          // distinct from "not done yet".
+                          reconcileFailed: PayoutOnboardingService
+                              .instance
+                              .reconcileFailed
+                              .value,
                         ),
                 ),
               ),

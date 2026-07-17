@@ -323,6 +323,7 @@ class AppTexts {
   static const String trackingStagePrepared = "Préparé";
   static const String trackingStageOnTheWay = "En route";
   static const String trackingStageDelivered = "Livré";
+
   /// The driver's experience line on the tracking card, from their real
   /// lifetime delivery count. A driver on their first job is named as new
   /// rather than shown a bare "0 livraisons".
@@ -1229,8 +1230,7 @@ class AppTexts {
       "Particulier qui cuisine à la maison";
   static const String signupSubtypeFaitMaisonNote = "Prix max 4,50 €";
   static const String signupSubtypeTraiteurTitle = "L'Atelier Traiteur";
-  static const String signupSubtypeTraiteurSubtitle =
-      "Traiteur professionnel";
+  static const String signupSubtypeTraiteurSubtitle = "Traiteur professionnel";
   static const String signupSubtypeRestaurantTitle = "Sauve Ton Plat";
   static const String signupSubtypeRestaurantSubtitle =
       "Restaurant qui vend ses surplus";
@@ -1395,6 +1395,14 @@ class AppTexts {
       "Stripe examine tes informations. Tes virements seront activés dès "
       "qu'elles seront validées.";
   static const String payoutSetupBannerPendingCta = "Vérifier";
+  // Error variant (D6): the last status check itself failed (offline,
+  // transport stall) — distinct from "not done yet" so the user isn't left
+  // guessing why the prompt hasn't gone away.
+  static const String payoutSetupBannerErrorTitle = "Vérification impossible";
+  static const String payoutSetupBannerErrorSubtitle =
+      "Nous n'avons pas pu vérifier ton statut de paiement. Vérifie ta "
+      "connexion et réessaie.";
+  static const String payoutSetupBannerErrorCta = "Réessayer";
   static const String payoutOnboardingScreenTitle = "Configurer les paiements";
   static const String payoutStatusActive = "Paiements actifs";
   static const String payoutStatusPending = "Configuration en cours";
