@@ -263,7 +263,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   // serves it once onboarding is complete, so the tile stays
                   // disabled until payoutReady; buyers have no payout account.
                   onPayment: isEarner && UserController.instance.payoutReady
-                      ? () => PayoutOnboardingService.openDashboard(context)
+                      ? () => PayoutOnboardingService.instance.openDashboard(context)
                       : null,
                 ),
                 const Gap(AppSizes.md),

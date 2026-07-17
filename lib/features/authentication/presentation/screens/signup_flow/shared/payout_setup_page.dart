@@ -62,7 +62,7 @@ class PayoutSetupPage extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () =>
-                        PayoutOnboardingService.openOnboarding(context),
+                        PayoutOnboardingService.instance.openOnboarding(context),
                     icon: const Icon(Iconsax.card_add, size: 18),
                     label: const Text('Configurer les paiements'),
                   ),

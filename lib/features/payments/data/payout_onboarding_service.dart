@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:incacook/core/constants/api_constants.dart';
@@ -9,6 +10,39 @@ import 'package:incacook/core/controllers/user_controller.dart';
 import 'package:incacook/core/network/api_client.dart';
 import 'package:incacook/core/network/api_response.dart';
 import 'package:incacook/core/utils/log.dart';
+
+/// Abstraction over [AppLinks]'s incoming-URI stream so tests can feed
+/// synthetic `incacook://stripe/...` deep links without touching platform
+/// channels.
+abstract class PayoutReturnLinkSource {
+  Stream<Uri> get uriLinkStream;
+}
+
+class _AppLinksSource implements PayoutReturnLinkSource {
+  final AppLinks _appLinks = AppLinks();
+
+  @override
+  Stream<Uri> get uriLinkStream => _appLinks.uriLinkStream;
+}
+
+/// Matches `launchUrl`'s signature so the real `url_launcher` function (the
+/// default) can be swapped for a recording fake in tests.
+typedef UrlLauncher = Future<bool> Function(Uri url, {LaunchMode mode});
+
+/// How the user's return from the hosted onboarding page was detected.
+enum _ReturnKind {
+  /// `incacook://stripe/return` (or an app-resume with no deep link at all —
+  /// R2/R14, which can't distinguish return from refresh either).
+  completed,
+
+  /// `incacook://stripe/refresh` — Stripe's `refresh_url`, hit when the
+  /// Account Link expired or was otherwise invalid. Must mint a fresh link,
+  /// not be treated as a completed return.
+  refresh,
+
+  /// Neither arrived within the wait window.
+  timeout,
+}
 
 /// Drives the seller / driver Stripe Connect Express payout onboarding so
 /// they can add the bank/debit card that receives their earnings.
@@ -19,30 +53,66 @@ import 'package:incacook/core/utils/log.dart';
 /// `incacook://stripe/return` (via the backend bridge), which — together with
 /// app-resume — tells us the user is back, so we reconcile the live payout
 /// status server-side instead of guessing or waiting on the webhook.
-class PayoutOnboardingService {
-  const PayoutOnboardingService._();
+/// Stripe's `refresh_url` bounces to `incacook://stripe/refresh` when the
+/// Account Link expired or was otherwise invalid; that case mints a fresh
+/// link and reopens it instead of polling a status that can't have changed.
+class PayoutOnboardingService extends GetxService {
+  PayoutOnboardingService({
+    ApiClient? apiClient,
+    UserController? userController,
+    PayoutReturnLinkSource? linkSource,
+    UrlLauncher? urlLauncher,
+  }) : _apiClient = apiClient ?? Get.find<ApiClient>(),
+       _userController = userController ?? Get.find<UserController>(),
+       _linkSource = linkSource ?? _AppLinksSource(),
+       _urlLauncher = urlLauncher ?? launchUrl;
+
+  static PayoutOnboardingService get instance => Get.find();
+
+  final ApiClient _apiClient;
+  final UserController _userController;
+  final PayoutReturnLinkSource _linkSource;
+  final UrlLauncher _urlLauncher;
+
+  /// How many times a `refresh_url` bounce is allowed to re-mint and reopen
+  /// a fresh Account Link before giving up and falling through to reconcile
+  /// (belt-and-braces so a link that keeps expiring immediately can't loop
+  /// forever).
+  static const int _maxRefreshRetries = 2;
 
   /// Requests a fresh Account Link, opens it, then waits for the user to return
   /// and reconciles payout status. Surfaces failures as a SnackBar on [context].
   /// Returns true when the hosted page was opened.
-  static Future<bool> openOnboarding(BuildContext context) async {
+  Future<bool> openOnboarding(BuildContext context) async {
     try {
-      final result = await _requestAccountLink();
-      final uri = Uri.parse(result.data);
-      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!opened) {
-        if (context.mounted) {
-          _toast(
-            context,
-            'Impossible d\'ouvrir la configuration des paiements.',
-          );
+      var result = await _requestAccountLink();
+      for (var refreshAttempt = 0; ; refreshAttempt++) {
+        final uri = Uri.parse(result.data);
+        final opened = await _urlLauncher(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+        if (!opened) {
+          if (context.mounted) {
+            _toast(
+              context,
+              'Impossible d\'ouvrir la configuration des paiements.',
+            );
+          }
+          return false;
         }
-        return false;
+        // Wait for the user to come back (deep link or app-resume), THEN refresh —
+        // the old code refreshed the instant the browser opened, so status never
+        // updated. Reconcile pulls the live Connect state server-side.
+        final kind = await _awaitReturn();
+        if (kind == _ReturnKind.refresh &&
+            refreshAttempt < _maxRefreshRetries) {
+          logInfo('[Payout] refresh_url bounce — minting a fresh link');
+          result = await _requestAccountLink();
+          continue;
+        }
+        break;
       }
-      // Wait for the user to come back (deep link or app-resume), THEN refresh —
-      // the old code refreshed the instant the browser opened, so status never
-      // updated. Reconcile pulls the live Connect state server-side.
-      await _awaitReturn();
       await _reconcilePayoutStatus();
       return true;
     } on ApiFailure catch (e) {
@@ -76,13 +146,13 @@ class PayoutOnboardingService {
   /// The backend 403s (`PayoutSetupRequired`) until onboarding is complete, so
   /// callers should keep the entry point disabled until then; this still fails
   /// gracefully with a SnackBar if it is reached in that state anyway.
-  static Future<void> openDashboard(BuildContext context) async {
+  Future<void> openDashboard(BuildContext context) async {
     try {
-      final result = await ApiClient.instance.post<String>(
+      final result = await _apiClient.post<String>(
         '${ApiConstants.apiPrefix}/stripe/onboarding/dashboard-link',
         decoder: (json) => (json! as Map<String, dynamic>)['url'] as String,
       );
-      final opened = await launchUrl(
+      final opened = await _urlLauncher(
         Uri.parse(result.data),
         mode: LaunchMode.externalApplication,
       );
@@ -111,10 +181,10 @@ class PayoutOnboardingService {
   /// increasing backoff so a cold backend has time to spin up. Only transport
   /// failures (`statusCode == 0`, no HTTP response) are retried — a real
   /// 4xx/5xx has a non-zero status and rethrows immediately.
-  static Future<ApiSuccess<String>> _requestAccountLink() async {
+  Future<ApiSuccess<String>> _requestAccountLink() async {
     for (var attempt = 1; ; attempt++) {
       try {
-        return await ApiClient.instance.post<String>(
+        return await _apiClient.post<String>(
           '${ApiConstants.apiPrefix}/stripe/onboarding/account-link',
           decoder: (json) => (json! as Map<String, dynamic>)['url'] as String,
         );
@@ -134,26 +204,27 @@ class PayoutOnboardingService {
   /// Completes when the user returns from the hosted onboarding — whichever
   /// comes first: an incoming `incacook://stripe/...` deep link, or the app
   /// being resumed. Times out after 5 min so it can never hang forever.
-  static Future<void> _awaitReturn() async {
-    final completer = Completer<void>();
-    final appLinks = AppLinks();
+  Future<_ReturnKind> _awaitReturn() async {
+    final completer = Completer<_ReturnKind>();
     final observer = _ResumeObserver(() {
-      if (!completer.isCompleted) completer.complete();
+      if (!completer.isCompleted) completer.complete(_ReturnKind.completed);
     });
 
-    final linkSub = appLinks.uriLinkStream.listen((uri) {
+    final linkSub = _linkSource.uriLinkStream.listen((uri) {
       if (uri.scheme == 'incacook' &&
           uri.host == 'stripe' &&
           !completer.isCompleted) {
-        completer.complete();
+        completer.complete(
+          uri.path == '/refresh' ? _ReturnKind.refresh : _ReturnKind.completed,
+        );
       }
     }, onError: (Object _) {});
     WidgetsBinding.instance.addObserver(observer);
 
     try {
-      await completer.future.timeout(
+      return await completer.future.timeout(
         const Duration(minutes: 5),
-        onTimeout: () {},
+        onTimeout: () => _ReturnKind.timeout,
       );
     } finally {
       await linkSub.cancel();
@@ -168,10 +239,10 @@ class PayoutOnboardingService {
   ///
   /// Android can resume the app before Stripe's account object has fully
   /// settled, so poll briefly instead of doing a single stale read.
-  static Future<void> _reconcilePayoutStatus() async {
+  Future<void> _reconcilePayoutStatus() async {
     for (var attempt = 0; attempt < 6; attempt++) {
       try {
-        final result = await ApiClient.instance.get<Object?>(
+        final result = await _apiClient.get<Object?>(
           '${ApiConstants.apiPrefix}/stripe/onboarding/status',
           decoder: (json) => json,
         );
@@ -194,13 +265,13 @@ class PayoutOnboardingService {
       await Future<void>.delayed(const Duration(seconds: 2));
     }
     try {
-      await UserController.instance.refreshFromServer();
+      await _userController.refreshFromServer();
     } catch (e) {
       logWarning('[Payout] refreshFromServer failed: $e');
     }
   }
 
-  static void _toast(BuildContext context, String message) {
+  void _toast(BuildContext context, String message) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
