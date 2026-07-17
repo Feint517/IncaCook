@@ -11,6 +11,7 @@ import 'package:incacook/features/chat/data/messages_repository.dart';
 import 'package:incacook/features/delivery/data/deliveries_repository.dart';
 import 'package:incacook/features/notifications/data/notifications_repository.dart';
 import 'package:incacook/features/orders/data/orders_repository.dart';
+import 'package:incacook/features/payments/data/payout_onboarding_service.dart';
 import 'package:incacook/features/seller/data/seller_orders_repository.dart';
 import 'package:incacook/features/settings/data/settings_repository.dart';
 import 'package:incacook/features/settings/services/delivery_fee_service.dart';
@@ -39,6 +40,7 @@ class GeneralBindings extends Bindings {
     Get.lazyPut(() => NotificationsRepository(), fenix: true);
     Get.lazyPut(() => ZonesRepository(), fenix: true);
     Get.lazyPut(() => SettingsRepository(), fenix: true);
+    Get.lazyPut(() => PayoutOnboardingService(), fenix: true);
     // permanent so the fetched fee is cached for the whole session and
     // survives logout's `Get.offAll` teardown (SmartManagement.full). onInit
     // kicks off the one-shot fetch; the cart reads the cached value.

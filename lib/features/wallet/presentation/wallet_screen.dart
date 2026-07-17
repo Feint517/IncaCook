@@ -42,7 +42,7 @@ class _WalletScreenState extends State<WalletScreen> {
   /// Opens Stripe Connect payout onboarding (required only to withdraw), then
   /// refreshes the user so the prompt hides itself once payouts are ready.
   Future<void> _configurePayments() async {
-    await PayoutOnboardingService.openOnboarding(context);
+    await PayoutOnboardingService.instance.openOnboarding(context);
     try {
       await UserController.instance.refreshFromServer();
     } catch (_) {

@@ -23,7 +23,7 @@ class DeliverySettingsSection extends StatelessWidget {
   /// Opens Stripe Connect payout onboarding, then refreshes the driver
   /// profile so the entry hides itself once payouts are ready (no restart).
   Future<void> _configurePayments(BuildContext context) async {
-    await PayoutOnboardingService.openOnboarding(context);
+    await PayoutOnboardingService.instance.openOnboarding(context);
     try {
       await UserController.instance.refreshFromServer();
     } catch (_) {

@@ -129,7 +129,7 @@ class _SellerHomeScreenState extends State<SellerHomeScreen> {
   void _onPayoutSetupTap(BuildContext context) {
     // Opens Stripe Connect Express onboarding so the seller can add the
     // bank/debit card that receives their earnings.
-    PayoutOnboardingService.openOnboarding(context);
+    PayoutOnboardingService.instance.openOnboarding(context);
   }
 }
 

@@ -203,7 +203,7 @@ class _DeliveryHomeScreenState extends State<DeliveryHomeScreen> {
   /// "Accepter" is enabled once onboarding is complete).
   Future<void> _configurePayments() async {
     if (!mounted) return;
-    await PayoutOnboardingService.openOnboarding(context);
+    await PayoutOnboardingService.instance.openOnboarding(context);
     try {
       await UserController.instance.refreshFromServer();
     } catch (_) {
