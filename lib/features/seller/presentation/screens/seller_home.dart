@@ -6,6 +6,7 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/controllers/user_controller.dart';
+import 'package:incacook/core/models/auth/payout_readiness.dart';
 import 'package:incacook/core/widgets/decor/decor_blob.dart';
 import 'package:incacook/features/supply_catalog/presentation/screens/supply_catalog_screen.dart';
 import 'package:incacook/features/payments/data/payout_onboarding_service.dart';
@@ -81,6 +82,17 @@ class _SellerHomeScreenState extends State<SellerHomeScreen> {
                             ),
                             child: PayoutSetupBanner(
                               onTap: () => _onPayoutSetupTap(context),
+                              // Details already with Stripe → swap the
+                              // setup CTA for "verification in progress".
+                              pendingVerification:
+                                  UserController.instance.payoutSetupState ==
+                                  PayoutSetupState.pendingVerification,
+                              // D6: the last status check itself failed —
+                              // distinct from "not done yet".
+                              reconcileFailed: PayoutOnboardingService
+                                  .instance
+                                  .reconcileFailed
+                                  .value,
                             ),
                           ),
                           const Gap(AppSizes.md),
@@ -123,7 +135,7 @@ class _SellerHomeScreenState extends State<SellerHomeScreen> {
   void _onPayoutSetupTap(BuildContext context) {
     // Opens Stripe Connect Express onboarding so the seller can add the
     // bank/debit card that receives their earnings.
-    PayoutOnboardingService.openOnboarding(context);
+    PayoutOnboardingService.instance.openOnboarding(context);
   }
 }
 

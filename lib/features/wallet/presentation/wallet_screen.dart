@@ -7,6 +7,7 @@ import 'package:incacook/core/common/widgets/appbar/appbar.dart';
 import 'package:incacook/core/constants/sizes.dart';
 import 'package:incacook/core/constants/text_strings.dart';
 import 'package:incacook/core/controllers/user_controller.dart';
+import 'package:incacook/core/models/auth/payout_readiness.dart';
 import 'package:incacook/core/network/api_response.dart';
 import 'package:incacook/core/widgets/effects/frosted_surface.dart';
 import 'package:incacook/features/payments/data/payout_onboarding_service.dart';
@@ -41,7 +42,7 @@ class _WalletScreenState extends State<WalletScreen> {
   /// Opens Stripe Connect payout onboarding (required only to withdraw), then
   /// refreshes the user so the prompt hides itself once payouts are ready.
   Future<void> _configurePayments() async {
-    await PayoutOnboardingService.openOnboarding(context);
+    await PayoutOnboardingService.instance.openOnboarding(context);
     try {
       await UserController.instance.refreshFromServer();
     } catch (_) {
@@ -105,13 +106,21 @@ class _WalletScreenState extends State<WalletScreen> {
               children: [
                 _BalanceCard(summary: s),
                 const Gap(AppSizes.md),
-                // Driver payout setup prompt — only while not yet configured.
-                // Reactive so it disappears once onboarding completes.
+                // Payout setup prompt for either earner role, while not yet
+                // configured. Reactive so it disappears once onboarding
+                // completes.
                 Obx(
-                  () => UserController.instance.driverNeedsPayoutSetup
+                  () => UserController.instance.needsPayoutSetup
                       ? Padding(
                           padding: const EdgeInsets.only(bottom: AppSizes.md),
-                          child: _PayoutSetupCard(onConfigure: _configurePayments),
+                          child: _PayoutSetupCard(
+                            onConfigure: _configurePayments,
+                            // Details already with Stripe → swap the setup
+                            // CTA for "verification in progress".
+                            pendingVerification:
+                                UserController.instance.payoutSetupState ==
+                                PayoutSetupState.pendingVerification,
+                          ),
                         )
                       : const SizedBox.shrink(),
                 ),
@@ -239,12 +248,19 @@ class _MiniStat extends StatelessWidget {
   }
 }
 
-/// Non-blocking prompt: drivers can deliver + earn without Stripe payout
+/// Non-blocking prompt: sellers and drivers both earn without Stripe payout
 /// onboarding; it's only needed to withdraw. Shown in the wallet until set up.
+/// While Stripe verifies submitted details ([pendingVerification]), the copy
+/// switches to "verification in progress" and the CTA re-opens Stripe to
+/// check status instead of starting over.
 class _PayoutSetupCard extends StatelessWidget {
-  const _PayoutSetupCard({required this.onConfigure});
+  const _PayoutSetupCard({
+    required this.onConfigure,
+    this.pendingVerification = false,
+  });
 
   final Future<void> Function() onConfigure;
+  final bool pendingVerification;
 
   @override
   Widget build(BuildContext context) {
@@ -257,12 +273,16 @@ class _PayoutSetupCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            AppTexts.walletPayoutSetupTitle,
+            pendingVerification
+                ? AppTexts.walletPayoutPendingTitle
+                : AppTexts.walletPayoutSetupTitle,
             style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
           const Gap(AppSizes.xs),
           Text(
-            AppTexts.walletPayoutSetupBody,
+            pendingVerification
+                ? AppTexts.walletPayoutPendingBody
+                : AppTexts.walletPayoutSetupBody,
             style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const Gap(AppSizes.md),
@@ -270,7 +290,11 @@ class _PayoutSetupCard extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: onConfigure,
-              child: const Text(AppTexts.incomingOrderConfigurePaymentsCta),
+              child: Text(
+                pendingVerification
+                    ? AppTexts.walletPayoutPendingCta
+                    : AppTexts.incomingOrderConfigurePaymentsCta,
+              ),
             ),
           ),
         ],
