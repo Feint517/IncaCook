@@ -51,7 +51,7 @@ Last updated: 2026-07-19.
 | [ISSUE-27](#issue-27) | Driver signup area search has 5 static options | Driver / signup | 🟡 Medium | 🔧 Ready to fix — implement real search |
 | [ISSUE-28](#issue-28) | Keyboard lacks "Done" button across the app | General / UX | 🟡 Medium | ⚙️ Platform-level — keyboardType configuration |
 | [ISSUE-29](#issue-29) | Add product form keyboard overshadows screen | Seller / UX | 🟡 Medium | 🔧 Related to ISSUE-11 (partially addressed) |
-| [ISSUE-30](#issue-30) | Second seller account sharing an Apple ID hits Apple's native "already subscribed" sheet | Subscriptions / iOS IAP | 🟡 Medium | 🔧 Fixed on branch (block-with-message) — verify on device |
+| [ISSUE-30](#issue-30) | Second seller account sharing an Apple ID hits Apple's native "already subscribed" sheet | Subscriptions / iOS IAP | 🟡 Medium | ✅ Fixed + verified on device (PR #43, merged) |
 
 ---
 
@@ -971,19 +971,22 @@ return a *successful* `CustomerInfo` — no exception, so this fix's catch block
 never runs and the block-vs-transfer decision is silently overridden by the
 dashboard config. To make "block" actually hold, the RevenueCat dashboard
 Transfer Behavior must be set to keep the entitlement with the original
-app_user_id (not auto-transfer). Added to the config checklist below —
-unchecked until verified.
+app_user_id (not auto-transfer).
 
-**Caveat — still not confirmed on a physical device.** This session had no
-device access, so the exact code `Purchases.purchase()` returns after the
-user dismisses *this specific* native sheet is still unverified; the fix
-covers both RevenueCat codes documented for the cross-account-receipt family
-rather than one exact code, specifically so it fires even if the real one
-differs from what's assumed here. Needs an on-device sandbox repro (second
-seller account, same Apple ID/sandbox tester already holding an active
-subscription) to confirm the message actually surfaces instead of the native
-sheet swallowing the call before `purchase()` ever throws, *and* to confirm
-the Transfer Behavior setting above doesn't cause a silent transfer instead.
+**✅ Confirmed 2026-07-20** — dashboard was on "Transfer to new App User ID"
+(the default); changed to "Keep with original App User ID." See config
+checklist below.
+
+**✅ Confirmed on physical device — 2026-07-20.** Reproduced on iPhone d'Ali
+(real sandbox, not simulator/StoreKit file): attempted to subscribe under a
+second seller account while the sandbox tester already held an active
+subscription under a different account. `Purchases.purchase()` threw
+`PurchasesErrorCode.receiptAlreadyInUseError` — exactly one of the two codes
+this fix catches — and the app showed the new explanatory message instead of
+the generic "Abonnement impossible." Log: `[RevenueCat] purchase blocked:
+already-subscribed-elsewhere code=PurchasesErrorCode.receiptAlreadyInUseError`.
+Both open items (Transfer Behavior dashboard setting + on-device repro) are
+now closed — **ISSUE-30 fully verified, no further work needed.**
 
 ---
 
@@ -991,10 +994,11 @@ the Transfer Behavior setting above doesn't cause a silent transfer instead.
 
 - [ ] `REVENUECAT_WEBHOOK_AUTH_TOKEN` set in Railway **and** RevenueCat webhook (ISSUE-1, 3)
 - [ ] `REVENUECAT_SECRET_API_KEY` set in Railway (server-side sync verify)
-- [ ] RevenueCat dashboard **Transfer Behavior** set to keep the entitlement
-      with the original app_user_id, not auto-transfer to the new one
-      (ISSUE-30 — required for the "block, don't transfer" decision to
-      actually hold; default setting silently overrides it)
+- [x] RevenueCat dashboard **Transfer Behavior** set to "Keep with original
+      App User ID" (was "Transfer to new App User ID", the default) — set
+      2026-07-20 (ISSUE-30 — required for the "block, don't transfer"
+      decision to actually hold; the default setting would have silently
+      overridden it)
 - [ ] Stripe webhook endpoint listens to **connected-account** `account.updated` (ISSUE-3)
 - [ ] `STRIPE_WEBHOOK_SECRET` matches the endpoint (ISSUE-3)
 - [x] `STRIPE_ONBOARDING_RETURN_URL` / `REFRESH_URL` → backend HTTPS bridge routes that bounce to `incacook://stripe/...` (ISSUE-2)
